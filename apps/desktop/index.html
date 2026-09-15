@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tiny Shrooms</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: default;
+      }
+      canvas {
+        display: block;
+      }
+      #poignee {
+        position: fixed;
+        inset: 0;
+      }
+      #sonde {
+        position: fixed;
+        left: 6px;
+        right: 6px;
+        bottom: 6px;
+        font: 10px ui-monospace, monospace;
+        color: #fff;
+        text-shadow: 0 0 2px #000, 0 0 2px #000;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="poignee" data-tauri-drag-region></div>
+    <div id="sonde">sonde : cache la fenêtre puis réaffiche-la</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
