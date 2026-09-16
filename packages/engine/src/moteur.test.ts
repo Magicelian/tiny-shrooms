@@ -5,6 +5,7 @@ import { TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
 import { terrainEn } from './ile';
 import { Moteur } from './moteur';
+import { charger, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
 import { PAS_PAR_MINUTE } from './temps';
 
 const MINUTE_MS = 60_000;
@@ -257,8 +258,9 @@ describe('Commandes', () => {
 describe('Moteur', () => {
   it('envoie l’île puis un instantané au démarrage', () => {
     const moteur = new Moteur(contenuDeTest(), 0);
-    const messages = moteur.recevoir({ type: 'demarrer', sauvegarde: null }, 0);
-    expect(messages.map((m) => m.type)).toEqual(['ile', 'instantane']);
+    const messages = moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
+    expect(messages.map((m) => m.type)).toEqual(['ile', 'partieChargee', 'instantane']);
+    expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'nouvelle' });
     expect(instantaneDe(messages).habitants[0]).not.toHaveProperty('mission');
   });
 
@@ -272,10 +274,17 @@ describe('Moteur', () => {
 
   it('se met en pause pendant la veille', () => {
     const moteur = new Moteur(contenuDeTest(), 0);
-    expect(instantaneDe(moteur.recevoir({ type: 'veille' }, MINUTE_MS)).temps).toMatchObject({ enPause: true, pas: PAS_PAR_MINUTE });
+    expect(instantaneDe(moteur.recevoir({ type: 'veille', momentMs: MINUTE_MS }, MINUTE_MS)).temps).toMatchObject({ enPause: true, pas: PAS_PAR_MINUTE });
     expect(instantaneDe(moteur.battre(30 * MINUTE_MS)).temps.pas).toBe(PAS_PAR_MINUTE);
     moteur.recevoir({ type: 'reveil' }, 30 * MINUTE_MS);
     expect(instantaneDe(moteur.battre(31 * MINUTE_MS)).temps).toMatchObject({ enPause: false, pas: 2 * PAS_PAR_MINUTE });
+  });
+
+  it('s’arrête à l’instant de la veille même si le message arrive après le réveil', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    expect(instantaneDe(moteur.recevoir({ type: 'veille', momentMs: MINUTE_MS }, 60 * MINUTE_MS)).temps.pas).toBe(PAS_PAR_MINUTE);
+    moteur.recevoir({ type: 'reveil' }, 60 * MINUTE_MS);
+    expect(instantaneDe(moteur.battre(61 * MINUTE_MS)).temps.pas).toBe(2 * PAS_PAR_MINUTE);
   });
 
   it('reprend une sauvegarde à l’identique', () => {
@@ -283,13 +292,59 @@ describe('Moteur', () => {
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('cueillette', caseLibre(moteur)));
     moteur.simuler(1000);
-    const [sauvegarde] = moteur.recevoir({ type: 'sauvegarder' }, 0);
-    if (sauvegarde?.type !== 'sauvegarde') throw new Error('sauvegarde attendue');
     const reprise = new Moteur(contenu, 0);
-    reprise.recevoir({ type: 'demarrer', sauvegarde: sauvegarde.contenu }, 0);
+    const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: [sauvegarder(moteur)] }, 0);
+    expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'sauvegarde' });
     expect(reprise.etatCourant).toEqual(moteur.etatCourant);
     reprise.simuler(500);
     moteur.simuler(500);
     expect(reprise.etatCourant).toEqual(moteur.etatCourant);
   });
+
+  it('ne rapporte rien pendant une heure jeu fermé', () => {
+    const contenu = contenuDeTest({ cueillette: { production: { baies: 6 } } });
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('cueillette', caseLibre(moteur)));
+    moteur.simuler(1000);
+    const reprise = new Moteur(contenu, 60 * MINUTE_MS);
+    reprise.recevoir({ type: 'demarrer', sauvegardes: [sauvegarder(moteur)] }, 60 * MINUTE_MS);
+    expect(reprise.battre(60 * MINUTE_MS + 100)).toMatchObject([{ instantane: { temps: { pas: 1000 } } }]);
+    expect(reprise.etatCourant).toEqual(moteur.etatCourant);
+  });
+
+  it('reprend sur la copie de secours la plus récente quand le fichier principal est abîmé', () => {
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
+    moteur.simuler(40);
+    const ancienne = sauvegarder(moteur);
+    moteur.simuler(40);
+    const recente = sauvegarder(moteur);
+    const abime = recente.slice(0, recente.length / 2);
+    const reprise = new Moteur(contenu, 0);
+    const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: [abime, '{"version":1,"etat":{}}', recente, ancienne] }, 0);
+    expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'secours' });
+    expect(reprise.etatCourant.pas).toBe(80);
+  });
+
+  it('commence une nouvelle partie si aucun fichier n’est lisible', () => {
+    const reprise = new Moteur(contenuDeTest(), 0);
+    const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: ['', '{"version":99,"etat":{}}'] }, 0);
+    expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'illisible' });
+    expect(reprise.etatCourant.pas).toBe(0);
+  });
 });
+
+describe('charger', () => {
+  it('écrit la version courante et refuse un fichier sans version', () => {
+    const etat = new Moteur(contenuDeTest(), 0).etatCourant;
+    expect(JSON.parse(serialiser(etat))).toMatchObject({ version: VERSION_SAUVEGARDE });
+    expect(charger(serialiser(etat))).toEqual(etat);
+    expect(() => charger(JSON.stringify(etat))).toThrow();
+  });
+});
+
+function sauvegarder(moteur: Moteur): string {
+  const [message] = moteur.recevoir({ type: 'sauvegarder' }, 0);
+  if (message?.type !== 'sauvegarde') throw new Error('sauvegarde attendue');
+  return message.contenu;
+}

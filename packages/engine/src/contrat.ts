@@ -243,16 +243,26 @@ export type Evenement =
 // ─── Protocole du Worker ─────────────────────────────────────────────────────
 
 export type MessageVersMoteur =
-  /** Lance la simulation ; `sauvegarde` est le JSON brut (format fixé à l'étape 5), `null` pour une nouvelle partie. */
-  | { type: 'demarrer'; sauvegarde: string | null }
+  /**
+   * Lance la simulation. `sauvegardes` : fichiers bruts du plus récent au plus ancien (principal puis
+   * copies de secours) ; le moteur reprend le premier lisible, ou une nouvelle partie si la liste est vide.
+   */
+  | { type: 'demarrer'; sauvegardes: string[] }
   | { type: 'commande'; commande: Commande }
   /** Veille ou réveil du système, signalés par Rust : seule cause de pause. */
-  | { type: 'veille' }
+  /** `momentMs` : instant de l'endormissement vu par Rust, le Worker a pu geler avant de lire ce message. */
+  | { type: 'veille'; momentMs: number }
   | { type: 'reveil' }
   | { type: 'sauvegarder' };
 
 export type MessageDepuisMoteur =
   | { type: 'ile'; ile: Ile }
+  /**
+   * Réponse à `demarrer`. `secours` : le fichier principal était illisible, une copie a pris le relais ;
+   * `illisible` : aucun fichier n'a pu être relu, une nouvelle partie commence.
+   */
+  | { type: 'partieChargee'; origine: 'nouvelle' | 'sauvegarde' | 'secours' | 'illisible' }
   /** Émis à chaque pas, avec les événements survenus depuis le précédent. */
   | { type: 'instantane'; instantane: Instantane; evenements: Evenement[] }
+  /** Réponse à `sauvegarder`, JSON prêt à écrire (format et version dans `sauvegarde.ts`). */
   | { type: 'sauvegarde'; contenu: string };

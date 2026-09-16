@@ -27,8 +27,7 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
 ## Où on en est
 
 - **Étape 0 validée**. macOS gèle le Worker fenêtre cachée : le moteur rattrape le temps écoulé sur
-  l'horloge réelle, seule une veille signalée par Rust met en pause. **Rust ne détecte pas encore la
-  veille** : à faire à l'étape 5, le Worker n'a qu'à relayer `veille` / `reveil` au moteur.
+  l'horloge réelle, seule une veille signalée par Rust met en pause.
 - **Contrat** : `packages/engine/src/contrat.ts` (grille carrée, repère en tête de fichier).
 - **Étape 3 validée** : rendu à ½ de la fenêtre (⅓ était illisible à 320 px), 2,9 ms par image.
   Caméra : boutons en bas à droite, ←/→ ou Q/E, Z ou molette.
@@ -36,5 +35,11 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
 - **Étape 4 validée**. Fenêtre sans le focus :
   la vue web ne reçoit pas la souris, Rust surveille le curseur et émet `survol` (vrai/faux). L'aperçu fantôme utilise
   `emplacementRefuse` / `bonusVoisinage`, fonctions pures du moteur. JSX : `oxc.jsx` dans `vite.config.ts`.
-- **Prochaine étape : 5** (sauvegarde et pause).
+- **Étape 5 validée**. Format et migrations :
+  `packages/engine/src/sauvegarde.ts`. Fichiers : `src-tauri/src/sauvegarde.rs`, dans
+  `~/Library/Application Support/fr.magicelian.tinyshrooms/` (`partie.json` + `partie.1..3.json`).
+  Veille : `src-tauri/src/veille.rs` (NSWorkspace), l'événement porte l'instant de l'endormissement.
+  « Quitter » demande d'abord la sauvegarde au frontend (filet : sortie forcée à 3 s).
+  Dans le navigateur, la partie va dans `localStorage`.
 - `pnpm --filter desktop vite` + `.claude/launch.json` : aperçu dans le navigateur, sans Tauri.
+- **Prochaine étape : 6** (saisons et météo).

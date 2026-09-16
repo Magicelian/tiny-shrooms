@@ -5,6 +5,7 @@ import type { Contenu } from './contenu';
 import { creerEtat, type Etat } from './etat';
 import { casesLibres } from './grille';
 import { Horloge } from './horloge';
+import { chargerPremiereValide, serialiser } from './sauvegarde';
 import { appliquerCommande, avancer, instantane } from './simulation';
 
 export class Moteur {
@@ -28,23 +29,32 @@ export class Moteur {
 
   recevoir(message: MessageVersMoteur, maintenantMs: number): MessageDepuisMoteur[] {
     switch (message.type) {
-      case 'demarrer':
-        this.etat = message.sauvegarde ? (JSON.parse(message.sauvegarde) as Etat) : creerEtat(this.contenu);
+      case 'demarrer': {
+        const reprise = chargerPremiereValide(message.sauvegardes);
+        this.etat = reprise?.etat ?? creerEtat(this.contenu);
         this.evenements = [];
+        // Le temps passé jeu fermé ne compte pas : l'horloge repart d'ici.
         this.horloge.reveil(maintenantMs);
-        return [{ type: 'ile', ile: this.etat.ile }, this.publier()];
+        const origine =
+          message.sauvegardes.length === 0 ? 'nouvelle'
+          : reprise === null ? 'illisible'
+          : reprise.rang === 0 ? 'sauvegarde'
+          : 'secours';
+        return [{ type: 'ile', ile: this.etat.ile }, { type: 'partieChargee', origine }, this.publier()];
+      }
       case 'commande':
         this.rattraper(this.horloge.pasARattraper(maintenantMs));
         this.evenements.push(...appliquerCommande(this.etat, this.contenu, message.commande));
         return [this.publier()];
       case 'veille':
-        this.rattraper(this.horloge.veille(maintenantMs));
+        // Le Worker a pu geler avant de lire ce message : on s'arrête à l'instant signalé par Rust.
+        this.rattraper(this.horloge.veille(Math.min(message.momentMs, maintenantMs)));
         return [this.publier()];
       case 'reveil':
         this.horloge.reveil(maintenantMs);
         return [this.publier()];
       case 'sauvegarder':
-        return [{ type: 'sauvegarde', contenu: JSON.stringify(this.etat) }];
+        return [{ type: 'sauvegarde', contenu: serialiser(this.etat) }];
     }
   }
 

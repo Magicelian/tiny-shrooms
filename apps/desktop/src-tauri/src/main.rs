@@ -1,5 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod sauvegarde;
+mod veille;
+
+use std::time::Duration;
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
@@ -27,7 +32,7 @@ fn surveiller_survol(app: AppHandle) {
     std::thread::spawn(move || {
         let mut dedans = false;
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            std::thread::sleep(Duration::from_millis(100));
             let Some(fenetre) = app.get_webview_window("main") else {
                 continue;
             };
@@ -49,6 +54,26 @@ fn curseur_dans(app: &AppHandle, fenetre: &tauri::WebviewWindow) -> bool {
     x >= 0.0 && y >= 0.0 && x < taille.width as f64 && y < taille.height as f64
 }
 
+/// Demande au frontend d'écrire la partie avant de quitter ; il rappelle `quitter` une fois fait.
+/// Filet de sécurité : on quitte de toute façon au bout de quelques secondes.
+fn demander_fermeture(app: &AppHandle) {
+    match app.get_webview_window("main") {
+        Some(fenetre) if fenetre.emit("fermeture-demandee", ()).is_ok() => {
+            let app = app.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_secs(3));
+                app.exit(0);
+            });
+        }
+        _ => app.exit(0),
+    }
+}
+
+#[tauri::command]
+fn quitter(app: AppHandle) {
+    app.exit(0);
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -67,7 +92,7 @@ fn main() {
             icone.set_show_menu_on_left_click(false)?;
             icone.on_menu_event(|app, evenement| match evenement.id.as_ref() {
                 "basculer" => basculer_fenetre(app),
-                "quitter" => app.exit(0),
+                "quitter" => demander_fermeture(app),
                 _ => {}
             });
             icone.on_tray_icon_event(|icone, evenement| {
@@ -81,8 +106,14 @@ fn main() {
                 }
             });
             surveiller_survol(app.handle().clone());
+            veille::surveiller(app.handle().clone());
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            sauvegarde::lire_sauvegardes,
+            sauvegarde::ecrire_sauvegarde,
+            quitter
+        ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de Tiny Shrooms");
 }

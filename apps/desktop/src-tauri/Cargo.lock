@@ -3353,6 +3353,9 @@ dependencies = [
 name = "tiny-shrooms"
 version = "0.0.1"
 dependencies = [
+ "block2",
+ "objc2-app-kit",
+ "objc2-foundation",
  "tauri",
  "tauri-build",
 ]

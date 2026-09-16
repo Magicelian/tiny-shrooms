@@ -352,6 +352,10 @@ son critère n'est pas rempli.
 - Écriture fichier via Tauri, versions et migrations, 3 copies de secours, sauvegarde à la fermeture et à la veille.
 - **Critère** : quitter en pleine partie puis relancer restitue l'état exact ; aucun gain après 1 h fermé ;
   un fichier corrompu est récupéré.
+- **Résultat (16/09/2026)** : validé sur Mac. Fichier versionné (`partie.json` + 3 copies en rotation,
+  écriture via un fichier temporaire), sauvegarde toutes les 30 s, à la fermeture et à la veille (détectée
+  par NSWorkspace). L'événement de veille porte l'instant de l'endormissement : un Worker gelé qui le lit au
+  réveil ne rattrape pas la durée de la veille.
 
 ### Étape 6 — Saisons et météo
 - Moteur : cycle des saisons, effets de la météo, ralentissement hivernal, séchoir, feu de camp.

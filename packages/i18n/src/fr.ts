@@ -103,4 +103,6 @@ export const fr = {
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.stockPlein': 'Stock plein : {ressource}',
+  'message.partieSecours': 'Sauvegarde abîmée : partie reprise sur une copie de secours',
+  'message.partieIllisible': 'Aucune sauvegarde lisible : nouvelle partie',
 } as const;

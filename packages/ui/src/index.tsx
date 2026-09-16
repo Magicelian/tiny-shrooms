@@ -54,6 +54,10 @@ export class ControleurInterface {
 
   recevoir(message: MessageDepuisMoteur): void {
     if (message.type === 'ile') this.magasin.modifier({ ile: message.ile });
+    if (message.type === 'partieChargee') {
+      if (message.origine === 'secours') this.magasin.annoncer(t('message.partieSecours'));
+      if (message.origine === 'illisible') this.magasin.annoncer(t('message.partieIllisible'));
+    }
     if (message.type !== 'instantane') return;
     this.magasin.modifier({ instantane: message.instantane });
     for (const e of message.evenements) {
