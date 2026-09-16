@@ -8,6 +8,7 @@ import type {
   IdBatiment,
   Ile,
   Position,
+  Prestige,
   Quantites,
   Reglages,
   Ressource,
@@ -16,6 +17,7 @@ import type {
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { centreSouche, genererIle } from './ile';
+import { effetsPrestige, prestigeNeuf } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
 
 export interface BatimentEtat extends Batiment {
@@ -58,6 +60,8 @@ export interface Etat {
   /** Cases en cours de défrichage, dans l'ordre des commandes. */
   defrichages: Defrichage[];
   ameliorations: Record<AmeliorationVillage, number>;
+  /** Gardé d'une renaissance à l'autre. */
+  prestige: Prestige;
   reglages: Reglages;
   /** Ressources dont le stock était plein au pas précédent, pour n'annoncer `stockPlein` qu'une fois. */
   stocksPleins: Ressource[];
@@ -65,24 +69,28 @@ export interface Etat {
   arrivages: Record<Ressource, number>;
 }
 
-export function creerEtat(contenu: Contenu, graine = 1): Etat {
+export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = prestigeNeuf()): Etat {
   const ile = genererIle(contenu.ile.taille, graine);
+  const effets = effetsPrestige(contenu, prestige.bonus);
+  const stocks = { ...contenu.stocksDeDepart };
+  for (const r of RESSOURCES) stocks[r] += effets.stocksDeDepart[r] ?? 0;
   const etat: Etat = {
     pas: 0,
     graine,
     ile,
-    stocks: { ...contenu.stocksDeDepart },
+    stocks,
     batiments: [],
     prochainId: 1,
     habitants: [],
     pousses: ile.elements.map(() => 1),
     prochainIdHabitant: 1,
-    pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * (PAS_PAR_MINUTE / 60),
+    pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * effets.arrivee * (PAS_PAR_MINUTE / 60),
     batimentsDebloques: [...(contenu.paliers[0]?.debloque ?? [])],
     palier: 0,
     retraitSouche: null,
     defrichages: [],
     ameliorations: { vitesse: 0, outils: 0 },
+    prestige,
     reglages: {
       langue: 'fr',
       sonActive: false,
@@ -94,7 +102,8 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
     stocksPleins: [],
     arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
   };
-  for (let i = 0; i < contenu.habitants.auDepart; i++) ajouterHabitant(etat);
+  for (let i = 0; i < contenu.habitants.auDepart + effets.habitantsDeDepart; i++) ajouterHabitant(etat);
+  prestige.populationMax = Math.max(prestige.populationMax, etat.habitants.length);
   return etat;
 }
 

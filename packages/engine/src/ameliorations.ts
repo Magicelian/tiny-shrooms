@@ -3,6 +3,7 @@ import type { AmeliorationVillage, Quantites } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import type { Etat } from './etat';
+import { effetsPrestige } from './prestige';
 
 /** Coût du prochain niveau, ou `null` si le niveau maximal est atteint. */
 export function coutAmelioration(contenu: Contenu, amelioration: AmeliorationVillage, niveau: number): Quantites | null {
@@ -18,6 +19,11 @@ export function coutAmelioration(contenu: Contenu, amelioration: AmeliorationVil
 /** Multiplicateur apporté par une amélioration (1 au niveau 0). */
 export function effetAmelioration(etat: Etat, contenu: Contenu, amelioration: AmeliorationVillage): number {
   return 1 + contenu.ameliorations[amelioration].effet * etat.ameliorations[amelioration];
+}
+
+/** Multiplicateur de production : outils de l'atelier et bonus de prestige. */
+export function bonusProduction(etat: Etat, contenu: Contenu): number {
+  return effetAmelioration(etat, contenu, 'outils') * effetsPrestige(contenu, etat.prestige.bonus).production;
 }
 
 /** Prélève un coût s'il est entièrement disponible. */

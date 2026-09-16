@@ -33,7 +33,7 @@ let prochaineVersion = 1;
 
 /** Met à jour la grille des cases infranchissables ; à appeler une fois par pas, avant de déplacer qui que ce soit. */
 export function preparerGrille(etat: Etat): void {
-  const signature = `${etat.ile.soucheEnPlace};` + etat.batiments.map((b) => `${b.case.x},${b.case.y}`).join(';');
+  const signature = `${etat.graine};${etat.ile.soucheEnPlace};` + etat.batiments.map((b) => `${b.case.x},${b.case.y}`).join(';');
   if (grilles.get(etat)?.signature === signature) return;
   const { ile } = etat;
   const bloquee = new Uint8Array(ile.largeur * ile.profondeur);

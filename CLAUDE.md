@@ -94,4 +94,10 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   navigateur : envelopper `moteur.onmessage` et forcer `instantane.temps.nuit = true`.
   Pour inspecter une partie avancée dans le navigateur : importer le moteur via `/@fs/<chemin>/packages/engine/src/index.ts`,
   simuler, puis écrire `serialiser(etat)` dans `localStorage['tiny-shrooms.partie']` et recharger.
-- **Prochaine étape : 14** (île extensible).
+- **Étape 14 implémentée, à valider** : la renaissance remplace l'île extensible (abandonnée). Moteur :
+  `packages/engine/src/prestige.ts` (`etat.prestige` : graines, bonus, population maximale ; `renaitre` remplace
+  l'état sur place). Sanctuaire au palier bourg ; sa bulle porte l'arbre de bonus (`ArbreBonus`,
+  `packages/ui/src/panneaux.tsx`). Sauvegarde en version 10. Critère : `packages/content/src/renaissance.test.ts`
+  (joueur scripté commun : `joueur.ts`). Dans le navigateur, la partie en cours réécrit `localStorage` au
+  rechargement : bloquer `Storage.prototype.setItem` avant de recharger une partie préparée.
+- **Prochaine étape : 15** (habillage).

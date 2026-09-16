@@ -1,7 +1,9 @@
 // Règles du jeu : un pas de simulation, les commandes et la vue publiée de l'état.
 import type { Commande, Evenement, Instantane, Quantites, RaisonRefus, Ressource, Stock } from './contrat';
 import { RESSOURCES } from './contrat';
-import { coutAmelioration, effetAmelioration, payer } from './ameliorations';
+import { bonusProduction, coutAmelioration, payer } from './ameliorations';
+import { BONUS_PRESTIGE } from './contrat';
+import { coutBatiment, coutBonus, peutRenaitre, renaitre } from './prestige';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
@@ -25,12 +27,13 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
   const direct: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
   const h = contenu.habitants;
   const { loges } = logements(etat, contenu);
+  const bonus = bonusProduction(etat, contenu);
   for (const habitant of etat.habitants) {
     const logement = loges.get(habitant.id);
     if (!logement) continue;
     const rang = logement === true ? contenu.logement.rangs[0] : rangLogement(contenu, logement);
     const joie = Math.max(0, (habitant.bienEtre - h.seuilBonheur) / (1 - h.seuilBonheur));
-    direct.spores += (rang?.sporesParMinute ?? 0) * Math.min(1, joie);
+    direct.spores += (rang?.sporesParMinute ?? 0) * Math.min(1, joie) * bonus;
   }
 
   const production: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
@@ -43,7 +46,6 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
   const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
-  const bonus = effetAmelioration(etat, contenu, 'outils');
   for (const habitant of etat.habitants) {
     const m = habitant.mission;
     if (m?.tache !== 'recolter' || habitant.activite !== 'recolte') continue;
@@ -69,6 +71,7 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
   majPalier(etat, contenu, evenements);
+  etat.prestige.populationMax = Math.max(etat.prestige.populationMax, etat.habitants.length);
   repousser(etat, contenu);
 
   const max = plafonds(etat, contenu);
@@ -125,7 +128,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       const emplacement = verifierEmplacement(etat, commande.case);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];
-      if (!payer(etat, def.cout)) return refus('ressourcesInsuffisantes');
+      if (!payer(etat, coutBatiment(contenu, etat.prestige.bonus, commande.batiment))) return refus('ressourcesInsuffisantes');
       etat.batiments.push({
         id: etat.prochainId++,
         type: commande.batiment,
@@ -158,7 +161,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         return refus('depotRequis');
       }
       const [b] = etat.batiments.splice(i, 1);
-      const cout = coutTotal(contenu, b!);
+      const cout = coutTotal(contenu, b!, etat.prestige.bonus);
       for (const r of cles(cout)) etat.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
       // La récolte en attente n'est pas perdue.
       for (const r of cles(b!.reserve)) etat.stocks[r] += b!.reserve[r] ?? 0;
@@ -171,7 +174,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if ((etat.pousses[commande.element] ?? 1) < 1) return refus('pasPret');
       const { ressource, quantite } = contenu.recolte[element.type];
       const place = plafonds(etat, contenu)[ressource] - etat.stocks[ressource];
-      const gain = Math.min(quantite, Math.floor(place));
+      const gain = Math.min(Math.round(quantite * bonusProduction(etat, contenu)), Math.floor(place));
       if (gain <= 0) return refus('stockPlein');
       etat.stocks[ressource] += gain;
       etat.pousses[commande.element] = 0;
@@ -187,6 +190,20 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
     case 'defricher': {
       const raison = demanderDefrichage(etat, contenu, commande.case);
       return raison ? refus(raison) : [];
+    }
+    case 'renaitre': {
+      if (!peutRenaitre(etat)) return refus(etat.batimentsDebloques.includes('sanctuaire') ? 'indisponible' : 'nonDebloque');
+      return [{ type: 'renaissance', graines: renaitre(etat, contenu) }];
+    }
+    case 'acheterBonus': {
+      if (!BONUS_PRESTIGE.includes(commande.bonus)) return refus('introuvable');
+      const niveau = etat.prestige.bonus[commande.bonus];
+      const prix = coutBonus(contenu, commande.bonus, niveau);
+      if (prix === null) return refus('indisponible');
+      if (etat.prestige.graines < prix) return refus('ressourcesInsuffisantes');
+      etat.prestige.graines -= prix;
+      etat.prestige.bonus[commande.bonus] = niveau + 1;
+      return [];
     }
     case 'modifierReglage': {
       (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
@@ -245,6 +262,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     defrichages: etat.defrichages.map((d) => ({ ...d, case: { ...d.case } })),
     palier: etat.palier,
     ameliorations: { ...etat.ameliorations },
+    prestige: { ...etat.prestige, bonus: { ...etat.prestige.bonus } },
     reglages: { ...etat.reglages },
   };
 }

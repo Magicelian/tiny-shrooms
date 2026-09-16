@@ -32,6 +32,7 @@ export const contenu: Contenu = {
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
     puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
     marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
+    sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90 },
   },
   logement: {
     rangs: [
@@ -57,7 +58,7 @@ export const contenu: Contenu = {
   paliers: [
     { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
-    { nom: 'bourg', population: 50, debloque: ['marche'] },
+    { nom: 'bourg', population: 50, debloque: ['marche', 'sanctuaire'] },
     { nom: 'cite', population: 150, debloque: [] },
   ],
   recolte: {
@@ -86,6 +87,26 @@ export const contenu: Contenu = {
   ameliorations: {
     vitesse: { cout: { boisMort: 50, mousse: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
     outils: { cout: { boisMort: 70, mousse: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+  },
+  // Bourg (50 habitants) → 6 graines, 100 → 15, 150 → 25 : attendre rapporte de plus en plus.
+  prestige: {
+    gain: { diviseur: 10, puissance: 1.2 },
+    bonus: {
+      production: { cout: 2, hausseCout: 1.5, niveauMax: 10 },
+      depart: { cout: 3, hausseCout: 1.6, niveauMax: 5 },
+      construction: { cout: 2, hausseCout: 1.5, niveauMax: 5 },
+      logement: { cout: 4, hausseCout: 1.8, niveauMax: 3 },
+    },
+    effets: {
+      production: 0.1,
+      stocksDeDepart: { baies: 15, boisMort: 20, mousse: 10 },
+      habitantsDeDepart: 1,
+      reductionCout: 0.08,
+      vitesseChantier: 0.15,
+      bienEtre: 0.03,
+      places: 1,
+      accueil: 0.15,
+    },
   },
   remboursementDemolition: 0.5,
   temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0.25 },

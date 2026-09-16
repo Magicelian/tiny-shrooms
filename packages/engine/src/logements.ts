@@ -1,11 +1,12 @@
 // Logements : places, besoins par rang, montée en gamme et paliers de population.
 // Les fonctions pures ne lisent que des types du contrat : le frontend s'en sert pour les bulles et l'aperçu.
-import type { Batiment, Besoin, Case, Evenement, Ile, Quantites, RaisonRefus, Ressource } from './contrat';
+import type { Batiment, Besoin, BonusPrestige, Case, Evenement, Ile, Prestige, Quantites, RaisonRefus, Ressource } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu, DefinitionRang } from './contenu';
 import type { BatimentEtat, Etat } from './etat';
 import { payer } from './ameliorations';
 import { terrainEn } from './ile';
+import { coutBatiment, effetsPrestige } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
 
 type Emprise = Pick<Batiment, 'type' | 'case' | 'chantier'>;
@@ -17,13 +18,20 @@ export function rangLogement(contenu: Contenu, b: Pick<Batiment, 'type' | 'nivea
 }
 
 /** Places offertes par un bâtiment achevé. */
-export function placesLogement(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau' | 'chantier'>): number {
-  return b.chantier === null ? (rangLogement(contenu, b)?.places ?? 0) : 0;
+export function placesLogement(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau' | 'chantier'>, bonus = 0): number {
+  const rang = b.chantier === null ? rangLogement(contenu, b) : null;
+  return rang ? rang.places + bonus : 0;
+}
+
+/** Places de la souche-dépôt tant qu'elle est en place : celles de base et celles des habitants de départ. */
+export function placesSouche(contenu: Contenu, habitantsDeDepart: number, soucheEnPlace: boolean): number {
+  return soucheEnPlace ? contenu.habitants.logementDeBase + habitantsDeDepart : 0;
 }
 
 /** Places de toute la ville, souche-dépôt comprise tant qu'elle est en place. */
-export function capaciteLogement(contenu: Contenu, batiments: readonly Batiment[], soucheEnPlace = true): number {
-  return batiments.reduce((n, b) => n + placesLogement(contenu, b), soucheEnPlace ? contenu.habitants.logementDeBase : 0);
+export function capaciteLogement(contenu: Contenu, batiments: readonly Batiment[], soucheEnPlace: boolean, prestige: Pick<Prestige, 'bonus'>): number {
+  const effets = effetsPrestige(contenu, prestige.bonus);
+  return batiments.reduce((n, b) => n + placesLogement(contenu, b, effets.places), placesSouche(contenu, effets.habitantsDeDepart, soucheEnPlace));
 }
 
 /** Vrai si la case `c` est à portée d'un bâtiment de ce type posé sur `source`. */
@@ -124,8 +132,8 @@ export function monterLogement(etat: Etat, contenu: Contenu, b: BatimentEtat): R
 }
 
 /** Tout ce qu'a coûté un bâtiment : sa construction et, pour un logement, ses montées en gamme. */
-export function coutTotal(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau'>): Quantites {
-  const total: Quantites = { ...contenu.batiments[b.type].cout };
+export function coutTotal(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau'>, bonus: Record<BonusPrestige, number>): Quantites {
+  const total = coutBatiment(contenu, bonus, b.type);
   if (!contenu.batiments[b.type].logement) return total;
   for (const rang of contenu.logement.rangs.slice(1, b.niveau)) {
     for (const r of RESSOURCES) if (rang.cout?.[r]) total[r] = (total[r] ?? 0) + rang.cout[r];

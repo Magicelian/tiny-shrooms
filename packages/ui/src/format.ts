@@ -57,6 +57,7 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   const besoin = (Object.keys(contenu.logement.sources) as Besoin[]).find((b) => contenu.logement.sources[b] === type);
   if (besoin && def.portee) lignes.push(t('effet.portee', { besoin: nomBesoin(besoin), portee: def.portee }));
   if (def.postes && !def.production) lignes.push(t('effet.tenu'));
+  if (type === 'sanctuaire') lignes.push(t('effet.sanctuaire'));
   if (lignes.length === 0) lignes.push(t('effet.aVenir'));
   for (const regle of def.voisinage ?? []) {
     const voisin = (TYPES_BATIMENT as readonly string[]).includes(regle.voisin)

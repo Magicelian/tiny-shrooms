@@ -2,7 +2,21 @@
 import { useState } from 'preact/hooks';
 import type { Batiment, Case, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 import { elementEn } from '@tiny-shrooms/engine';
-import { AMELIORATIONS_VILLAGE, besoinsSuivis, coutAmelioration, coutTotal, rangLogement, refusMontee } from '@tiny-shrooms/engine';
+import {
+  AMELIORATIONS_VILLAGE,
+  besoinsSuivis,
+  BONUS_PRESTIGE,
+  coutAmelioration,
+  coutBatiment,
+  coutBonus,
+  coutTotal,
+  effetsPrestige,
+  gainRenaissance,
+  placesLogement,
+  placesSouche,
+  rangLogement,
+  refusMontee,
+} from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, pourcent } from './format';
 import { natureVisee, type ControleurInterface } from './index';
@@ -19,7 +33,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   const { contenu, couleurs } = controleur;
   const { bonusVise } = useMagasin(controleur.magasin);
   const { choix } = bulle;
-  const payable = choix !== null && abordable(contenu.batiments[choix].cout, instantane.stocks);
+  const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix), instantane.stocks);
   // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
   const verrouilles = contenu.paliers.flatMap((p, palier) =>
     p.debloque.filter((type) => !instantane.batimentsDebloques.includes(type)).map((type): [TypeBatiment, number] => [type, palier]),
@@ -28,7 +42,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
     <>
       <ul class="catalogue">
         {instantane.batimentsDebloques.map((type) => {
-          const cout = contenu.batiments[type].cout;
+          const cout = coutBatiment(contenu, instantane.prestige.bonus, type);
           return (
             <li key={type}>
               <button
@@ -77,7 +91,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const [confirmer, setConfirmer] = useState(false);
   const { contenu } = controleur;
   const def = contenu.batiments[batiment.type];
-  const remboursement = listeQuantites(coutTotal(contenu, batiment), contenu.remboursementDemolition);
+  const remboursement = listeQuantites(coutTotal(contenu, batiment, instantane.prestige.bonus), contenu.remboursementDemolition);
   const enChantier = batiment.chantier !== null;
   // Bâtisseurs pendant le chantier, récolteurs ensuite.
   const postes = enChantier ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
@@ -99,6 +113,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
       ))}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
       {batiment.type === 'atelier' && !enChantier && <Ameliorations controleur={controleur} instantane={instantane} />}
+      {batiment.type === 'sanctuaire' && !enChantier && <Sanctuaire controleur={controleur} instantane={instantane} />}
       <div class="actions">
         <button class="bouton" onClick={() => controleur.commencerDeplacement(batiment.id)}>
           {t('construction.deplacer')}
@@ -124,12 +139,13 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
   const rang = rangLogement(contenu, batiment);
   const suivant = contenu.logement.rangs[batiment.niveau];
   // Les places vont aux habitants dans l'ordre des bâtiments, la souche-dépôt d'abord.
-  let avant = controleur.magasin.valeur.ile?.soucheEnPlace === false ? 0 : contenu.habitants.logementDeBase;
+  const effets = effetsPrestige(contenu, instantane.prestige.bonus);
+  let avant = placesSouche(contenu, effets.habitantsDeDepart, controleur.magasin.valeur.ile?.soucheEnPlace !== false);
   for (const b of instantane.batiments) {
     if (b.id === batiment.id) break;
-    avant += b.chantier === null ? (rangLogement(contenu, b)?.places ?? 0) : 0;
+    avant += placesLogement(contenu, b, effets.places);
   }
-  const places = rang?.places ?? 0;
+  const places = placesLogement(contenu, batiment, effets.places);
   const loges = Math.min(places, Math.max(0, instantane.habitants.length - avant));
   const refus = refusMontee(contenu, batiment, instantane.palier);
   const cout = suivant?.cout ?? {};
@@ -253,6 +269,78 @@ function Ameliorations({ controleur, instantane }: Props) {
       })}
     </ul>
   );
+}
+
+/** Renaissance : gain annoncé, confirmation, puis l'arbre de bonus. */
+function Sanctuaire({ controleur, instantane }: Props) {
+  const [confirmer, setConfirmer] = useState(false);
+  const { prestige } = instantane;
+  const gain = gainRenaissance(controleur.contenu, prestige.populationMax);
+  return (
+    <>
+      <p>{t('prestige.gain', { gain, population: prestige.populationMax })}</p>
+      <p class="discret">{t('prestige.efface')}</p>
+      <button
+        class={`bouton large ${confirmer ? 'danger' : 'valider'}`}
+        onClick={() => (confirmer ? controleur.envoyer({ type: 'renaitre' }) : setConfirmer(true))}
+      >
+        {confirmer ? t('prestige.confirmer') : t('prestige.renaitre', { gain })}
+      </button>
+      <ArbreBonus controleur={controleur} instantane={instantane} />
+    </>
+  );
+}
+
+/** Bonus permanents achetés en graines de prestige. */
+function ArbreBonus({ controleur, instantane }: Props) {
+  const { contenu } = controleur;
+  const { prestige } = instantane;
+  return (
+    <>
+      <p>
+        <strong>{t('prestige.graines', { graines: prestige.graines })}</strong>
+      </p>
+      <ul class="ameliorations">
+        {BONUS_PRESTIGE.map((b) => {
+          const niveau = prestige.bonus[b];
+          const prix = coutBonus(contenu, b, niveau);
+          const effets = effetsPrestige(contenu, { ...prestige.bonus, [b]: niveau + (prix === null ? 0 : 1) });
+          return (
+            <li key={b}>
+              <p>
+                <strong>{t(`bonus.${b}`)}</strong> · {t('amelioration.niveau', { niveau, max: contenu.prestige.bonus[b].niveauMax })}
+              </p>
+              <p class="discret">{prix === null ? descriptionBonus(b, effets) : t('bonus.suivant', { effet: descriptionBonus(b, effets) })}</p>
+              {prix === null ? (
+                <p class="bonus">{t('amelioration.max')}</p>
+              ) : (
+                <button
+                  class={`bouton large ${prestige.graines >= prix ? '' : 'manque'}`}
+                  onClick={() => controleur.envoyer({ type: 'acheterBonus', bonus: b })}
+                >
+                  {t('prestige.acheter', { prix })}
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+/** Effet du bonus au niveau suivant (ou actuel au maximum). */
+function descriptionBonus(b: (typeof BONUS_PRESTIGE)[number], e: ReturnType<typeof effetsPrestige>): string {
+  switch (b) {
+    case 'production':
+      return t('bonus.effet.production', { pourcent: pourcent(e.production - 1) });
+    case 'depart':
+      return t('bonus.effet.depart', { liste: listeQuantites(e.stocksDeDepart), nombre: e.habitantsDeDepart });
+    case 'construction':
+      return t('bonus.effet.construction', { cout: pourcent(1 - e.cout), vitesse: pourcent(e.chantier - 1) });
+    case 'logement':
+      return t('bonus.effet.logement', { pourcent: pourcent(e.bienEtre), places: e.places, accueil: pourcent(1 - e.arrivee) });
+  }
 }
 
 function Jauge({ valeur }: { valeur: number }) {

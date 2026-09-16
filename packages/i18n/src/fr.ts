@@ -20,6 +20,7 @@ export const fr = {
   'batiment.atelier': 'Atelier',
   'batiment.puits': 'Puits',
   'batiment.marche': 'Place du marché',
+  'batiment.sanctuaire': 'Sanctuaire des spores',
 
   // Rangs des logements
   'rang.1': 'Hutte-chapeau',
@@ -36,6 +37,7 @@ export const fr = {
   'effet.voisinage': '+{pourcent} % à côté : {voisin}',
   'effet.bonusActuel': 'Bonus de voisinage : +{pourcent} %',
   'effet.chantier': 'Chantier : {pourcent} %',
+  'effet.sanctuaire': 'Permet de renaître sur une nouvelle île',
 
   // Terrains, pour les bonus de voisinage
   'terrain.foret': 'forêt',
@@ -104,6 +106,24 @@ export const fr = {
   'amelioration.niveau': 'niv. {niveau}/{max}',
   'amelioration.max': 'Au maximum',
   'amelioration.acheter': 'Améliorer : {liste}',
+
+  // Renaissance
+  'prestige.gain': 'Rapporte {gain} graines (record : {population} habitants)',
+  'prestige.efface': 'Tout repart de zéro sur une nouvelle île ; les graines et les bonus restent.',
+  'prestige.renaitre': 'Renaître (+{gain} graines)',
+  'prestige.confirmer': 'Sûr ? Le village sera effacé',
+  'prestige.graines': 'Graines de prestige : {graines}',
+  'prestige.acheter': 'Acheter : {prix} graines',
+  'bonus.suivant': 'Niveau suivant : {effet}',
+  'bonus.production': 'Sève vive',
+  'bonus.depart': 'Bagages',
+  'bonus.construction': 'Mains habiles',
+  'bonus.logement': 'Nids douillets',
+  'bonus.effet.production': 'Production +{pourcent} %',
+  'bonus.effet.depart': 'Au départ : {liste}, {nombre} habitant(s)',
+  'bonus.effet.construction': 'Coût −{cout} %, chantiers +{vitesse} %',
+  'bonus.effet.logement': 'Bien-être +{pourcent} %, +{places} place(s) par logement, arrivées +{accueil} % plus tôt',
+  'message.renaissance': 'Nouvelle île ! +{graines} graines de prestige',
 
   // Habitants
   'habitants.detail': 'Habitants {nombre}/{places} places',

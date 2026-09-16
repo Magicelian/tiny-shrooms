@@ -98,6 +98,7 @@ export const TYPES_BATIMENT = [
   'atelier',
   'puits',
   'marche',
+  'sanctuaire',
 ] as const;
 export type TypeBatiment = (typeof TYPES_BATIMENT)[number];
 
@@ -130,6 +131,22 @@ export type Besoin = (typeof BESOINS)[number];
 
 export const AMELIORATIONS_VILLAGE = ['vitesse', 'outils'] as const;
 export type AmeliorationVillage = (typeof AMELIORATIONS_VILLAGE)[number];
+
+// ─── Renaissance ─────────────────────────────────────────────────────────────
+
+/** Bonus permanents achetés en graines de prestige ; ils survivent aux renaissances. */
+export const BONUS_PRESTIGE = ['production', 'depart', 'construction', 'logement'] as const;
+export type BonusPrestige = (typeof BONUS_PRESTIGE)[number];
+
+export interface Prestige {
+  /** Graines de prestige à dépenser. */
+  graines: number;
+  renaissances: number;
+  /** Niveau acheté de chaque bonus. */
+  bonus: Record<BonusPrestige, number>;
+  /** Plus grand nombre d'habitants de la partie en cours : il fixe le gain de la prochaine renaissance. */
+  populationMax: number;
+}
 
 // ─── Habitants ───────────────────────────────────────────────────────────────
 
@@ -211,6 +228,7 @@ export interface Instantane {
   /** Indice du palier de population atteint dans `contenu.paliers` ; ne redescend jamais. */
   palier: number;
   ameliorations: Record<AmeliorationVillage, number>;
+  prestige: Prestige;
   reglages: Reglages;
 }
 
@@ -231,6 +249,10 @@ export type Commande =
   | { type: 'defricher'; case: Case }
   /** Sur un logement, la montée au rang suivant ; sur le village, un niveau d'amélioration de l'atelier. */
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
+  /** Au sanctuaire : efface l'île et le village contre des graines de prestige. */
+  | { type: 'renaitre' }
+  /** Dépense des graines de prestige ; possible à tout moment (juste après une renaissance notamment). */
+  | { type: 'acheterBonus'; bonus: BonusPrestige }
   | CommandeReglage;
 
 export type TypeCommande = Commande['type'];
@@ -261,6 +283,8 @@ export type Evenement =
   | { type: 'palierAtteint'; palier: number; debloques: TypeBatiment[] }
   | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }
   | { type: 'soucheRetiree' }
+  /** Nouvelle île : l'instantané suivant décrit déjà la nouvelle partie. */
+  | { type: 'renaissance'; graines: number }
   | { type: 'defriche'; case: Case; nature: Defrichable }
   | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
   | { type: 'commandeRefusee'; commande: Commande; raison: RaisonRefus };

@@ -69,6 +69,25 @@ function contenuDeTest(
       vitesse: { cout: { boisMort: 10 }, hausseCout: 2, effet: 0.5, niveauMax: 2 },
       outils: { cout: { boisMort: 10 }, hausseCout: 2, effet: 0.5, niveauMax: 2 },
     },
+    prestige: {
+      gain: { diviseur: 1, puissance: 1 },
+      bonus: {
+        production: { cout: 1, hausseCout: 2, niveauMax: 3 },
+        depart: { cout: 1, hausseCout: 2, niveauMax: 3 },
+        construction: { cout: 1, hausseCout: 2, niveauMax: 3 },
+        logement: { cout: 1, hausseCout: 2, niveauMax: 3 },
+      },
+      effets: {
+        production: 0.5,
+        stocksDeDepart: { mousse: 10 },
+        habitantsDeDepart: 1,
+        reductionCout: 0.5,
+        vitesseChantier: 1,
+        bienEtre: 0.1,
+        places: 1,
+        accueil: 0,
+      },
+    },
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
     saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1 },
@@ -797,5 +816,67 @@ describe('Défrichage', () => {
     expect(etat.ile.elements).toHaveLength(nombre - 1);
     expect(etat.pousses).toHaveLength(nombre - 1);
     expect(commander(moteur, { type: 'defricher', case: c })[0]).toMatchObject({ raison: 'introuvable' });
+  });
+});
+
+describe('Renaissance', () => {
+  it('exige un sanctuaire achevé', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    expect(commander(moteur, { type: 'renaitre' })[0]).toMatchObject({ raison: 'indisponible' });
+  });
+
+  it('efface la partie, change d’île et garde le prestige enrichi', () => {
+    const moteur = new Moteur(contenuDeTest({ hutte: { logement: true } }), 0);
+    const etat = moteur.etatCourant;
+    const ileAvant = etat.ile;
+    commander(moteur, poser('sanctuaire', caseLibre(moteur)));
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    expect(etat.prestige.populationMax).toBe(4);
+    etat.reglages.volume = 0.2;
+    const messages = moteur.recevoir({ type: 'commande', commande: { type: 'renaitre' } }, 0);
+    expect(instantaneDe(messages).prestige).toMatchObject({ graines: 4, renaissances: 1 });
+    expect(messages[0]).toMatchObject({ type: 'ile' });
+    expect(etat.ile).not.toEqual(ileAvant);
+    expect(etat.batiments).toEqual([]);
+    expect(etat.pas).toBe(0);
+    expect(etat.habitants).toHaveLength(2);
+    expect(etat.prestige.populationMax).toBe(2);
+    expect(etat.reglages.volume).toBe(0.2);
+  });
+
+  it('des bonus achetés en graines accélèrent la partie suivante', () => {
+    const moteur = new Moteur(contenuDeTest({ hutte: { cout: { boisMort: 10 }, constructionSecondes: 10, logement: true } }), 0);
+    const etat = moteur.etatCourant;
+    etat.prestige.graines = 4;
+    expect(commander(moteur, { type: 'acheterBonus', bonus: 'depart' })).toEqual([]);
+    expect(commander(moteur, { type: 'acheterBonus', bonus: 'construction' })).toEqual([]);
+    expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })).toEqual([]);
+    expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
+    expect(etat.prestige).toMatchObject({ graines: 1, bonus: { depart: 1, construction: 1, logement: 1 } });
+    commander(moteur, poser('sanctuaire', caseLibre(moteur)));
+    commander(moteur, { type: 'renaitre' });
+    // Départ : un habitant et de la mousse en plus, logés dans la souche.
+    expect(etat.habitants).toHaveLength(3);
+    expect(etat.stocks.mousse).toBe(10);
+    // Construction : moitié prix, chantier deux fois plus rapide.
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    expect(etat.stocks.boisMort).toBe(95);
+    moteur.simuler(PAS_PAR_MINUTE / 12);
+    expect(etat.batiments[0]!.chantier).toBeNull();
+    // Logement : une place de plus par hutte (2 + 1) en plus des 3 de la souche.
+    moteur.simuler(PAS_PAR_MINUTE * 3);
+    expect(etat.habitants).toHaveLength(6);
+  });
+
+  it('se sauvegarde et se recharge à l’identique, et migre une sauvegarde de version 9', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const etat = moteur.etatCourant as Etat;
+    etat.prestige = { graines: 3, renaissances: 2, bonus: { production: 1, depart: 0, construction: 2, logement: 0 }, populationMax: 7 };
+    expect(charger(serialiser(etat))).toEqual(etat);
+    const { prestige: _p, ...ancien } = etat;
+    const migre = charger(JSON.stringify({ version: 9, etat: { ...ancien, palier: 2 } }));
+    expect(migre.prestige).toMatchObject({ graines: 0, renaissances: 0, populationMax: 2 });
+    expect(migre.batimentsDebloques).toContain('sanctuaire');
   });
 });

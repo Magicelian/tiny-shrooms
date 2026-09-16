@@ -6,10 +6,11 @@ import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantE
 import { majBonusVoisinage } from './grille';
 import { centreSouche } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
-import { effetAmelioration } from './ameliorations';
+import { bonusProduction, effetAmelioration } from './ameliorations';
 import { etapeVers, preparerGrille } from './chemins';
 import { avancerDefrichage, memeCase } from './defrichage';
-import { besoinsManquants, evaluerBesoins, placesLogement, rangLogement } from './logements';
+import { besoinsManquants, evaluerBesoins, placesLogement, placesSouche, rangLogement } from './logements';
+import { effetsPrestige } from './prestige';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 /** Distance à laquelle un habitant est arrivé devant un bâtiment. */
@@ -34,9 +35,10 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   evaluerBesoins(etat, contenu, nourri, emploisTenus(etat));
   const { loges, capacite } = logements(etat, contenu);
   const nuit = estLaNuit(etat, contenu);
+  const bonusBienEtre = effetsPrestige(contenu, etat.prestige.bonus).bienEtre;
 
   for (const h of etat.habitants) {
-    majBienEtre(h, contenu, loges.get(h.id), nourri);
+    majBienEtre(h, contenu, loges.get(h.id), nourri, bonusBienEtre);
     if (nuit) {
       dormir(etat, contenu, h, loges.get(h.id));
       continue;
@@ -79,7 +81,8 @@ function avancerRetrait(etat: Etat, contenu: Contenu, cadence: number, evenement
 
 /** Fait avancer un chantier d'un pas ; renvoie vrai s'il vient de se terminer. */
 function avancerChantier(etat: Etat, contenu: Contenu, b: BatimentEtat, cadence: number, evenements: Evenement[]): boolean {
-  const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  const vitesse = effetsPrestige(contenu, etat.prestige.bonus).chantier;
+  const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS / vitesse;
   b.chantier = pasNecessaires > 0 ? b.chantier! + cadence / pasNecessaires : 1;
   if (b.chantier < 1 - 1e-9) return false;
   b.chantier = null;
@@ -111,10 +114,12 @@ function emploisTenus(etat: Etat): Set<number> {
 
 /** Logement de chaque habitant logé (`true` pour la souche-dépôt, sinon la hutte) et nombre total de places. */
 export function logements(etat: Etat, contenu: Contenu): { loges: Map<number, BatimentEtat | true>; capacite: number } {
-  const places: (BatimentEtat | true)[] = Array.from({ length: etat.ile.soucheEnPlace ? contenu.habitants.logementDeBase : 0 }, () => true);
+  const effets = effetsPrestige(contenu, etat.prestige.bonus);
+  const souche = placesSouche(contenu, effets.habitantsDeDepart, etat.ile.soucheEnPlace);
+  const places: (BatimentEtat | true)[] = Array.from({ length: souche }, () => true);
   for (const b of etat.batiments) {
     if (b.chantier !== null) continue;
-    for (let i = 0; i < placesLogement(contenu, b); i++) places.push(b);
+    for (let i = 0; i < placesLogement(contenu, b, effets.places); i++) places.push(b);
   }
   const loges = new Map<number, BatimentEtat | true>();
   etat.habitants.forEach((h, i) => {
@@ -124,9 +129,9 @@ export function logements(etat: Etat, contenu: Contenu): { loges: Map<number, Ba
   return { loges, capacite: places.length };
 }
 
-function majBienEtre(h: HabitantEtat, contenu: Contenu, logement: BatimentEtat | true | undefined, nourri: boolean): void {
+function majBienEtre(h: HabitantEtat, contenu: Contenu, logement: BatimentEtat | true | undefined, nourri: boolean, bonus: number): void {
   const c = contenu.habitants.bienEtre;
-  let cible = c.base + (nourri ? 0 : c.affame);
+  let cible = c.base + bonus + (nourri ? 0 : c.affame);
   if (logement) cible += c.loge + c.besoins * partSatisfaite(contenu, logement, nourri);
   cible = Math.min(1, Math.max(0, cible));
   h.bienEtre += (cible - h.bienEtre) / (c.minutesPourSeStabiliser * PAS_PAR_MINUTE);
@@ -147,7 +152,8 @@ function arrivees(etat: Etat, contenu: Contenu, capacite: number, evenements: Ev
   if (moyenne < contenu.habitants.seuilArrivee) return;
   etat.pasAvantArrivee--;
   if (etat.pasAvantArrivee > 0) return;
-  etat.pasAvantArrivee = (contenu.habitants.delaiArriveeSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  const accueil = effetsPrestige(contenu, etat.prestige.bonus).arrivee;
+  etat.pasAvantArrivee = (contenu.habitants.delaiArriveeSecondes * accueil * 1000) / PAS_DE_SIMULATION_MS;
   evenements.push({ type: 'habitantArrive', id: ajouterHabitant(etat).id });
 }
 
@@ -297,7 +303,7 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
 function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat, nourri: boolean): void {
   const def = contenu.batiments[b.type];
   const cadence =
-    cadenceTravail(etat, contenu, centreCase(b), nourri) * effetAmelioration(etat, contenu, 'outils');
+    cadenceTravail(etat, contenu, centreCase(b), nourri) * bonusProduction(etat, contenu);
   // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {

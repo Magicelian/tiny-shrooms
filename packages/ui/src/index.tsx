@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, casesCouvertes, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
+import { bonusVoisinage, casesCouvertes, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
@@ -123,6 +123,9 @@ export class ControleurInterface {
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
         if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
+      } else if (e.type === 'renaissance') {
+        this.fermer();
+        this.magasin.annoncer(t('message.renaissance', { graines: e.graines }));
       } else if (e.type === 'soucheRetiree') {
         this.magasin.annoncer(t('message.soucheRetiree'));
       } else if (e.type === 'palierAtteint') {
@@ -326,7 +329,7 @@ export class ControleurInterface {
     // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
     if (bulle?.type === 'construire') {
       const { choix } = bulle;
-      scene.montrerFantome(bulle.case, choix, !choix || abordable(this.contenu.batiments[choix].cout, instantane.stocks));
+      scene.montrerFantome(bulle.case, choix, !choix || abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix), instantane.stocks));
       scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
       scene.surligner(null);
       this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });

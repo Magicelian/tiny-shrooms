@@ -1,6 +1,7 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
 import type {
   AmeliorationVillage,
+  BonusPrestige,
   Defrichable,
   Besoin,
   Meteo,
@@ -128,6 +129,29 @@ export interface DefinitionPalier {
   debloque: TypeBatiment[];
 }
 
+/** Renaissance au sanctuaire. */
+export interface ContenuPrestige {
+  /** Graines gagnées : `floor((populationMax / diviseur) ^ puissance)`. */
+  gain: { diviseur: number; puissance: number };
+  /** Prix en graines du premier niveau, multiplié par `hausseCout` à chaque niveau suivant. */
+  bonus: Record<BonusPrestige, { cout: number; hausseCout: number; niveauMax: number }>;
+  /** Effet d'un niveau de chaque bonus. */
+  effets: {
+    /** `production` : +part de production. */
+    production: number;
+    /** `depart` : ressources en stock et habitants au début d'une partie, logés dans la souche. */
+    stocksDeDepart: Quantites;
+    habitantsDeDepart: number;
+    /** `construction` : −part du coût, +part de vitesse des chantiers. */
+    reductionCout: number;
+    vitesseChantier: number;
+    /** `logement` : +bien-être visé, +places par logement, −part du délai entre deux arrivées. */
+    bienEtre: number;
+    places: number;
+    accueil: number;
+  };
+}
+
 export interface Contenu {
   ile: { taille: number };
   stocksDeDepart: Record<Ressource, number>;
@@ -144,6 +168,7 @@ export interface Contenu {
   habitants: ContenuHabitants;
   /** Améliorations du village, achetées à l'atelier. */
   ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;
+  prestige: ContenuPrestige;
   /** Part du coût rendue à la démolition, entre 0 et 1. */
   remboursementDemolition: number;
   /** `heureDeDepart` : heure du jour (entre 0 et 1) au premier pas d'une partie. */

@@ -11,8 +11,9 @@
 Une île flottante vue en coupe isométrique, où de petits habitants-champignons bâtissent une ville
 qui **grandit sans fin**, façon SimCity en miniature. On commence seul, en ramassant baies, bois et
 mousse à la main ; puis les habitants arrivent, occupent les emplois, réclament de quoi vivre mieux,
-et leurs maisons montent en gamme. Leur bonheur produit des **spores**, avec lesquelles on achète de
-nouvelles parcelles : l'île s'étend dans toutes les directions.
+et leurs maisons montent en gamme. Leur bonheur produit des **spores**. Une fois le bourg atteint, un
+sanctuaire permet de **renaître** sur une nouvelle île, avec des bonus permanents qui rendent chaque
+partie plus rapide.
 
 **Promesse** : un compagnon de bureau apaisant, jamais punitif, qui ne réclame rien, et une ville
 qu'on a toujours une raison de faire grandir.
@@ -50,7 +51,7 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 | Rythme | Aucun rythme imposé : rien n'expire |
 | Alertes | Aucune pour l'instant (les visiteurs sont retirés) |
 | Backend | Moteur local en TypeScript + sauvegarde fichier ; synchronisation via Raspberry Pi en option, post-V1 |
-| Monde | **L'île s'agrandit** : parcelles voisines achetées en spores, sans limite |
+| Monde | **Une seule île** de 12 × 12 (agrandissement abandonné le 16/09/2026) ; **renaissance** au sanctuaire contre des bonus permanents |
 | Début de partie | Récolte **à la main** (clic sur buissons, bois mort, mousse) ; elle reste possible ensuite mais devient négligeable |
 | Construction | Clic sur une case → liste de ce qu'on peut y construire ; bonus de voisinage conservés |
 | Habitants | Besoins par logement + montée en gamme + **paliers de population** ; emplois occupés automatiquement, aucun réglage |
@@ -81,13 +82,14 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 ```
  clic du joueur (début) ─┐
                          ▼
- habitants employés ──► ressources ──► construire / acheter des parcelles
+ habitants employés ──► ressources ──► construire
         ▲                                     │
         │                                     ▼
  nouveaux habitants ◄── logements qui montent en gamme ◄── besoins satisfaits
         │
-        └──► bonheur ──► spores ──► parcelles + améliorations
+        └──► bonheur ──► spores ──► améliorations
                    population ──► paliers ──► nouveaux bâtiments
+                   bourg ──► sanctuaire ──► renaissance ──► graines ──► bonus permanents
 ```
 
 ### 3.2 Ressources (V1)
@@ -97,13 +99,13 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 | **Baies** | Nourriture des habitants ; stock pour l'hiver | Clic sur un buisson, puis cueillette (rien ne pousse en hiver) |
 | **Bois mort** | Construction | Clic sur du bois mort, puis tas de bois |
 | **Mousse** | Isolation, confort, montée en gamme | Clic sur la mousse, puis tapis de mousse (plus lent en été) |
-| **Spores** | Achat de parcelles et d'améliorations | Produites par les habitants, selon leur bonheur (l'« impôt » de la ville) |
+| **Spores** | Améliorations, défrichage, sanctuaire | Produites par les habitants, selon leur bonheur (l'« impôt » de la ville) |
 
 - Chaque ressource a un stock maximal, augmenté par les bâtiments de stockage.
 - **Récolte à la main** : un clic sur un élément naturel donne une petite quantité et l'épuise un
   moment (il repousse). C'est le moteur du tout début ; au palier village, la production des
   habitants la rend presque inutile, mais elle reste disponible.
-- Les éléments naturels se régénèrent et apparaissent aussi sur les nouvelles parcelles.
+- Les éléments naturels se régénèrent.
 
 ### 3.3 Bâtiments (V1)
 
@@ -156,22 +158,27 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 - Affichage : **à l'essai**, un petit indicateur intégré au décor (voir 6.2) ; retiré s'il ne rend
   pas bien, les saisons restant visibles sur l'île.
 
-### 3.6 Expansion de l'île
+### 3.6 (retiré) Expansion de l'île
 
-- L'île est découpée en **parcelles** (8 × 8 cases à régler). On part d'une parcelle.
-- Un clic sur le bord de l'île, face au vide, propose d'acheter la parcelle voisine ; son prix en
-  spores croît avec le nombre de parcelles possédées.
-- Une nouvelle parcelle arrive avec ses éléments naturels (buissons, bois mort, mousse, eau), tirés
-  de la graine de la partie. Pas de limite de taille.
-- La coupe (herbe, terre, roche) suit le contour de l'île.
+Abandonnée le 16/09/2026, avant d'être codée : l'île garde une taille fixe, la renaissance (§3.7) prend
+le relais pour la progression longue.
 
-### 3.7 (retiré) Arbre-mère et prestige
+### 3.7 Renaissance
 
-Abandonné le 16/09/2026 ; le code de l'étape 8 est retiré à l'étape 9.
+(L'arbre-mère de l'étape 8 est retiré à l'étape 9 ; la renaissance le remplace.)
+
+- **Sanctuaire des spores**, débloqué au palier bourg. Un clic dessus annonce le gain et propose de renaître
+  (confirmation demandée).
+- **Gain** : des graines de prestige, `floor((population maximale / 10) ^ 1,2)` : 6 au bourg, 15 à
+  100 habitants, 25 à 150. Attendre rapporte de plus en plus.
+- **Remise à zéro** : tout, sur une nouvelle île (nouvelle graine), sauf les graines, les bonus et les réglages.
+- **Bonus permanents**, achetés en graines dans la bulle du sanctuaire (la renaissance referme la bulle) :
+  production (sève vive), stock et habitants de départ (bagages), coût et vitesse des chantiers
+  (mains habiles), bien-être, places et rythme d'arrivée des habitants (nids douillets).
 
 ### 3.8 Contenu de la V1
 
-1 île extensible (forêt), 4 ressources, ~12 bâtiments, 3 rangs de logement, 4 paliers de
+1 île (forêt) et la renaissance, 4 ressources, ~12 bâtiments, 3 rangs de logement, 4 paliers de
 population, 4 saisons + météo, FR + EN, ambiances sonores.
 
 ---
@@ -248,9 +255,9 @@ tiny_shrooms/
   l'étape 0). Seule une **veille signalée par Rust** met le jeu en pause ; aucun écart n'est deviné
   à partir de sa seule durée.
 - **Systèmes** : ressources, production, récolte à la main, habitants (emplois, besoins,
-  montée en gamme), paliers de population, construction, parcelles, bonheur et spores, saisons et météo.
+  montée en gamme), paliers de population, construction, renaissance, bonheur et spores, saisons et météo.
 - **Commandes** (frontend → moteur) : `poserBatiment`, `deplacerBatiment`, `demolir`, `ameliorer`,
-  `recolter`, `acheterParcelle`, `modifierReglage`.
+  `recolter`, `renaitre`, `acheterBonus`, `modifierReglage`.
 - **Événements** (moteur → frontend) : instantané léger toutes les 250 ms + événements ponctuels
   (`saisonChangee`, `palierAtteint`, `logementAmeliore`, `stockPlein`…). Le contrat complet est dans
   `packages/engine/src/contrat.ts`.
@@ -294,8 +301,7 @@ tiny_shrooms/
   agrandie avec filtrage `nearest` ; passe de **contours** (détection de bords sur la profondeur et
   les normales) ; ombrage en paliers (toon) ; palette limitée.
 - Fond **transparent** (`alpha: true`, fond à opacité 0) : seul l'îlot flotte sur le bureau.
-- **Îlot en coupe** : couches herbe / terre / roche, qui suivent le contour des parcelles.
-- Grande île : maillages instanciés, seules les parcelles proches de la vue sont dessinées.
+- **Îlot en coupe** : couches herbe / terre / roche, qui suivent le contour de l'île.
 - Grille de placement visible uniquement en mode construction ; aperçu fantôme vert ou rouge.
 - Saisons : teinte du sol et des arbres, neige, feuilles qui tombent ; météo en particules.
 - Habitants : sprites 3D simples, animations par sous-parties (rebond, balancement).
@@ -318,7 +324,6 @@ tiny_shrooms/
 - **Clic sur un bâtiment** : bulle d'informations (emplois pourvus, production, besoins d'un
   logement) avec améliorer, déplacer, démolir.
 - **Clic sur un élément naturel** : récolte à la main, avec un petit chiffre qui s'envole.
-- **Clic au bord de l'île** : achat de la parcelle voisine.
 - Bulles et menus fermables d'un clic ailleurs ou avec Échap ; un glisser ne compte pas comme un clic.
 - **Curseur personnalisé** (pixel, cerclé de noir) dans la fenêtre seulement, avec des variantes :
   main (récolter), marteau (construire), main fermée (glisser).
@@ -514,11 +519,18 @@ son critère n'est pas rempli.
   Demande en cours d'étape : les ressources entrent dans le stock au fil de l'eau (6/min → une unité toutes les
   10 s) plutôt que par charges entières ; les livraisons attendent au dépôt (`arrivages`, sauvegarde en version 7).
 
-### Étape 14 — Île extensible
-- Parcelles, achat en spores au bord de l'île, éléments naturels générés par la graine, coupe qui suit le contour.
-- Rendu d'une grande île : instanciation, seules les parcelles proches de la vue sont dessinées.
-- **Critère** : une île de 50 parcelles reste à 30 i/s et sous 3 ms par image de simulation ;
-  sauvegarde et rechargement exacts.
+### Étape 14 — Renaissance
+(Remplace l'île extensible, abandonnée le 16/09/2026.)
+- Sanctuaire au palier bourg, graines de prestige selon la population maximale, bonus permanents, nouvelle île.
+- **Critère** : un joueur scripté renaît deux fois ; chaque bourg arrive plus vite que le précédent (le
+  deuxième au moins 10 % plus tôt) ; le prestige survit à la sauvegarde.
+
+- **Résultat (16/09/2026)** : implémenté, à valider en jeu. Moteur : `packages/engine/src/prestige.ts` ;
+  sauvegarde en version 10. Critère : `packages/content/src/renaissance.test.ts` (joueur scripté partagé dans
+  `joueur.ts`) : bourg en 66 → 53 → 49 min (graine 1) et 66 → 56 → 45 min (graine 2), avec 10 + 10 graines.
+  Au bourg, l'île n'a plus de case libre : il faut défricher un arbre pour poser le sanctuaire. Le rythme des
+  arrivées (1 habitant par minute) plafonnait le gain des bonus, d'où l'accueil plus rapide des nids douillets.
+  Le sanctuaire coûte 20 spores, le plafond de base du stock.
 
 ### Étape 15 — Habillage
 - Modèles définitifs (Blockbench ou MagicaVoxel), animations des habitants, police pixel, style de l'interface.
@@ -536,7 +548,7 @@ son critère n'est pas rempli.
 
 ### Après la V1
 1. Nouveaux paliers, bâtiments et ressources (pierre, champignons lumineux…), chemins et décorations.
-2. Biomes sur les nouvelles parcelles (marais, rochers…).
+2. Biomes sur les îles des renaissances suivantes (marais, rochers…).
 3. Espèces d'habitants rares et collection.
 4. Synchronisation via le Raspberry Pi.
 5. Signature et notarisation Apple, page itch.io.
@@ -551,15 +563,13 @@ son critère n'est pas rempli.
 | Fenêtre transparente capricieuse selon la version de macOS ou de Windows | Validée à l'étape 0 ; repli sur une fenêtre à fond coloré arrondi |
 | Consommation batterie d'un rendu 3D permanent | 30 i/s maximum, 0 caché, rendu à la demande quand rien ne bouge |
 | Interface illisible en 320 px | Test systématique à la taille minimale à chaque étape d'interface |
-| Île sans limite : rendu, simulation et sauvegarde qui grossissent | Instanciation et tri par parcelle ; simulation des bâtiments par agrégats ; mesure à l'étape 14 |
 | Curseur personnalisé et glisser dans une fenêtre sans le focus (la vue web ne reçoit pas la souris) | Premier clic = prise du focus ; curseur appliqué côté Rust si le CSS ne suffit pas |
 | Glisser la vue et ⌘ + glisser confondus avec un clic | Seuil de quelques pixels avant de considérer un appui comme un glisser |
 | Équilibrage d'une partie sans fin à régler à la main | Simulation accélérée sans affichage, possible grâce au moteur séparé |
 
 ## 9. Questions ouvertes (à trancher en cours de route)
 
-- Durée exacte d'une saison, seuils des paliers et prix des parcelles.
-- Taille d'une parcelle (8 × 8 en premier jet) et forme de l'île de départ.
+- Durée exacte d'une saison, seuils des paliers, gain et prix des bonus de renaissance.
 - Forme exacte de l'affichage des ressources dans le décor ; sort de l'affichage de la saison.
 - Identité des habitants : ont-ils un nom d'espèce propre ?
 - Direction musicale si on ajoute un jour une musique.

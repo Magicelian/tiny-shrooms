@@ -9,8 +9,9 @@ export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
 export { coutAmelioration, effetAmelioration } from './ameliorations';
 export { demanderDefrichage, natureEn } from './defrichage';
-export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutTotal, placesLogement, rangLogement, refusMontee } from './logements';
-export type { Contenu, ContenuLogement, DefinitionPalier, DefinitionRang, DefinitionAmelioration, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, DefinitionRecolte, RegleVoisinage } from './contenu';
+export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutTotal, placesLogement, placesSouche, rangLogement, refusMontee } from './logements';
+export { coutBatiment, coutBonus, effetsPrestige, gainRenaissance, peutRenaitre, prestigeNeuf, renaitre, type EffetsPrestige } from './prestige';
+export type { Contenu, ContenuPrestige, ContenuLogement, DefinitionPalier, DefinitionRang, DefinitionAmelioration, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, DefinitionRecolte, RegleVoisinage } from './contenu';
 
 export type * from './contrat';
-export { AMELIORATIONS_VILLAGE, BESOINS, RESSOURCES, SAISONS, TACHES, TYPES_BATIMENT, TYPES_ELEMENT } from './contrat';
+export { AMELIORATIONS_VILLAGE, BESOINS, BONUS_PRESTIGE, RESSOURCES, SAISONS, TACHES, TYPES_BATIMENT, TYPES_ELEMENT } from './contrat';

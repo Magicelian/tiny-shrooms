@@ -108,7 +108,7 @@ function Ecriteau({ instantane }: { instantane: Instantane }) {
 /** Palier, habitants et places libres, sur une planche en haut à droite. */
 function Population({ controleur, instantane }: Props & { instantane: Instantane }) {
   const { contenu } = controleur;
-  const places = capaciteLogement(contenu, instantane.batiments, controleur.magasin.valeur.ile?.soucheEnPlace);
+  const places = capaciteLogement(contenu, instantane.batiments, controleur.magasin.valeur.ile?.soucheEnPlace ?? true, instantane.prestige);
   const habitants = instantane.habitants.length;
   const suivant = contenu.paliers[instantane.palier + 1];
   const prochain = suivant

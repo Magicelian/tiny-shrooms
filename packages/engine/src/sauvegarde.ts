@@ -3,8 +3,9 @@
 import type { Case, Ile } from './contrat';
 import type { Etat } from './etat';
 import { placerElements } from './ile';
+import { prestigeNeuf } from './prestige';
 
-export const VERSION_SAUVEGARDE = 9;
+export const VERSION_SAUVEGARDE = 10;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -50,6 +51,13 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
   7: (etat) => ({ ...etat, ile: { ...(etat.ile as object), soucheEnPlace: true }, retraitSouche: null }),
   // Version 9 : défrichage des arbres, buissons et plantes.
   8: (etat) => ({ ...etat, defrichages: [] }),
+  // Version 10 : renaissance et prestige.
+  // Le sanctuaire vient avec le bourg (palier 2) : une partie qui l'a déjà atteint le reçoit tout de suite.
+  9: (etat) => ({
+    ...etat,
+    prestige: { ...prestigeNeuf(), populationMax: (etat.habitants as unknown[]).length },
+    batimentsDebloques: [...(etat.batimentsDebloques as string[]), ...((etat.palier as number) >= 2 ? ['sanctuaire'] : [])],
+  }),
 };
 
 export function serialiser(etat: Etat): string {
@@ -99,7 +107,7 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 function verifier(etat: Record<string, unknown>): void {
   const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier'];
   const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins', 'defrichages'];
-  const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages'];
+  const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages', 'prestige'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??
     tableaux.find((cle) => !Array.isArray(etat[cle])) ??
