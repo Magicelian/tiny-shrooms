@@ -57,4 +57,7 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   Critère : `packages/content/src/floraison.test.ts` (joueur scripté, ~26 s ; `--reporter=verbose` affiche la
   durée de jeu). Pour inspecter un stade dans le navigateur : modifier `etat.arbreMere` dans
   `localStorage['tiny-shrooms.partie']` puis recharger.
-- **Prochaine étape : 9** (habillage).
+- **Réorientation (16/09/2026)** : city-builder sur île extensible (cahier des charges §1-3, 6.2, étapes 9-16).
+  Arbre-mère, visiteurs, priorités et interface au survol sont abandonnés ; les notes des étapes 7-8 ci-dessus
+  décrivent du code à retirer.
+- **Prochaine étape : 9** (retrait des systèmes abandonnés, souche-dépôt, sauvegarde en version 4).

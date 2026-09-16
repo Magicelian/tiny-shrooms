@@ -1,6 +1,6 @@
 # Tiny Shrooms — Cahier des charges
 
-> Jeu idle / gestion solo qui vit dans une petite fenêtre flottante dans un coin de l'écran.
+> Jeu idle / city-builder solo qui vit dans une petite fenêtre flottante dans un coin de l'écran.
 > On le laisse tourner, on y jette un œil quand on veut, on fait une action de temps en temps.
 > Application de bureau : **Mac en priorité**, Windows ensuite.
 
@@ -8,21 +8,26 @@
 
 ## 1. Vision
 
-Une clairière flottante, vue en coupe isométrique, où de petits habitants-champignons récoltent,
-construisent et font grandir leur village au fil des saisons. Le joueur place des bâtiments,
-règle les priorités du village, accueille des visiteurs et fait grandir l'**arbre-mère**, dont la
-floraison envoie des spores fonder de nouvelles îles.
+Une île flottante vue en coupe isométrique, où de petits habitants-champignons bâtissent une ville
+qui **grandit sans fin**, façon SimCity en miniature. On commence seul, en ramassant baies, bois et
+mousse à la main ; puis les habitants arrivent, occupent les emplois, réclament de quoi vivre mieux,
+et leurs maisons montent en gamme. Leur bonheur produit des **spores**, avec lesquelles on achète de
+nouvelles parcelles : l'île s'étend dans toutes les directions.
 
-**Promesse** : un compagnon de bureau apaisant, jamais punitif, qui ne réclame rien.
+**Promesse** : un compagnon de bureau apaisant, jamais punitif, qui ne réclame rien, et une ville
+qu'on a toujours une raison de faire grandir.
 
 **Critère de réussite de la V1** : Celian le garde ouvert toute une journée de travail sans qu'il
-gêne (ni visuellement, ni en batterie), et a envie d'y revenir jusqu'à la première floraison.
+gêne (ni visuellement, ni en batterie), et a envie d'y revenir jusqu'au palier « bourg ».
+
+> **Réorientation du 16/09/2026** : l'arbre-mère, la floraison, les visiteurs, le menu Habitants et
+> l'interface au survol sont abandonnés au profit de ce modèle (voir étapes 9 et suivantes).
 
 ### Référence visuelle
 
 *Tiny Tycoon* : îlot cubique flottant montrant ses couches (herbe, terre, roche), rendu 3D
 affiché en basse résolution avec des pixels nets, contours fins, interface en police pixel épaisse
-avec des boutons colorés cerclés de noir.
+avec des boutons colorés cerclés de noir. Son début de partie aussi : on récolte d'abord à la main.
 
 ---
 
@@ -30,26 +35,33 @@ avec des boutons colorés cerclés de noir.
 
 | Sujet | Décision |
 |---|---|
-| Genre | Idle / gestion |
-| Concept | Le village des champignons |
+| Genre | Idle / city-builder (façon SimCity miniature) |
+| Concept | La ville des champignons |
 | Style | Pixel art 3D isométrique (façon Tiny Tycoon) |
 | Rendu | Three.js, rendu basse résolution pixelisé + contours |
-| Fenêtre | Flottante, sans bordure, toujours au-dessus, fond transparent **+ icône dans la barre des menus** |
+| Fenêtre | Flottante, sans bordure, toujours au-dessus, fond transparent, **fixe à 320 × 320** + icône dans la barre des menus |
+| Navigation | Clic maintenu = faire glisser l'île dans toutes les directions ; zoom à la molette ; rotation par pas de 90° |
+| Déplacer la fenêtre | **⌘ + clic maintenu** ; option « Verrouiller la position » (paramètres et menu de l'icône) |
+| Curseur | Curseur pixel personnalisé, uniquement quand la souris est dans la fenêtre |
+| Focus | Fenêtre sans le focus : aucune interface révélée, aucun aperçu ; le premier clic donne le focus sans agir |
 | Emballage | Tauri v2 |
 | Jeu fermé | **Pause totale** : aucune progression hors ligne |
 | Fenêtre cachée (appli ouverte) | La simulation continue, seul le rendu s'arrête |
-| Rythme | Aucun rythme imposé : rien n'expire, les visiteurs attendent |
-| Alertes | Discrètes : habitant qui fait signe + point sur l'icône de la barre des menus |
+| Rythme | Aucun rythme imposé : rien n'expire |
+| Alertes | Aucune pour l'instant (les visiteurs sont retirés) |
 | Backend | Moteur local en TypeScript + sauvegarde fichier ; synchronisation via Raspberry Pi en option, post-V1 |
-| Construction | Placement libre sur grille, bonus de voisinage |
+| Monde | **L'île s'agrandit** : parcelles voisines achetées en spores, sans limite |
+| Début de partie | Récolte **à la main** (clic sur buissons, bois mort, mousse) ; elle reste possible ensuite mais devient négligeable |
+| Construction | Clic sur une case → liste de ce qu'on peut y construire ; bonus de voisinage conservés |
+| Habitants | Besoins par logement + montée en gamme + **paliers de population** ; emplois occupés automatiquement, aucun réglage |
 | Difficulté | Ralentissements seulement, on ne perd jamais rien |
-| Habitants | Automatiques, guidés par des priorités réglables ; affectation manuelle possible |
-| Long terme | Floraison de l'arbre-mère → nouvelle île + bonus permanents (prestige) |
+| Long terme | Expansion sans fin + paliers (hameau → village → bourg → cité → …) qui débloquent bâtiments et améliorations |
 | Son | Ambiances douces liées à la météo + petits sons d'interface, **coupé par défaut** |
 | Langue | Jeu en FR (défaut) + EN ; code et documentation en français |
 | Diffusion | Celian d'abord, amis ensuite : installeurs .dmg/.exe via GitHub Actions + mises à jour automatiques, sans signature payante au départ |
-| Interface | Au repos, l'îlot seul ; au survol, ressources et barre d'outils ; panneaux par-dessus l'îlot |
-| Contenu V1 | Une île complète (voir §3.8) |
+| Interface | **Plus d'interface au survol** : ressources (et saison, à l'essai) intégrées au décor en permanence ; menus au clic ; icône Paramètres |
+| Sauvegardes | Format en version 4 ; une ancienne partie est archivée à part et on repart de zéro |
+| Contenu V1 | Une île extensible (voir §3.8) |
 
 ### Hors périmètre
 
@@ -58,6 +70,7 @@ avec des boutons colorés cerclés de noir.
 - Mobile et navigateur web.
 - Progression hors ligne (choix assumé : pause totale).
 - Signature et notarisation Apple, publication itch.io / Steam (reportées après la V1).
+- Arbre-mère, prestige, visiteurs, réglage des priorités des habitants (retirés le 16/09/2026).
 
 ---
 
@@ -66,86 +79,97 @@ avec des boutons colorés cerclés de noir.
 ### 3.1 Boucle principale
 
 ```
-Habitants récoltent ──► ressources ──► construire / améliorer
+ clic du joueur (début) ─┐
+                         ▼
+ habitants employés ──► ressources ──► construire / acheter des parcelles
         ▲                                     │
         │                                     ▼
- nouveaux habitants ◄── logements + bien-être ◄── bâtiments
-                                              │
-                                              ▼
-                        spores ──► arbre-mère ──► floraison (prestige)
+ nouveaux habitants ◄── logements qui montent en gamme ◄── besoins satisfaits
+        │
+        └──► bonheur ──► spores ──► parcelles + améliorations
+                   population ──► paliers ──► nouveaux bâtiments
 ```
 
 ### 3.2 Ressources (V1)
 
 | Ressource | Rôle | Source principale |
 |---|---|---|
-| **Baies** | Nourriture des habitants ; stock pour l'hiver | Cueillette (rien ne pousse en hiver) |
-| **Bois mort** | Construction | Ramassage en forêt |
-| **Mousse** | Isolation, confort, améliorations | Tapis de mousse (plus lent en été) |
-| **Spores** | Croissance de l'arbre-mère, déblocages | Habitants heureux + racines de l'arbre-mère |
+| **Baies** | Nourriture des habitants ; stock pour l'hiver | Clic sur un buisson, puis cueillette (rien ne pousse en hiver) |
+| **Bois mort** | Construction | Clic sur du bois mort, puis tas de bois |
+| **Mousse** | Isolation, confort, montée en gamme | Clic sur la mousse, puis tapis de mousse (plus lent en été) |
+| **Spores** | Achat de parcelles et d'améliorations | Produites par les habitants, selon leur bonheur (l'« impôt » de la ville) |
 
-Chaque ressource a un stock maximal, augmenté par les bâtiments de stockage.
+- Chaque ressource a un stock maximal, augmenté par les bâtiments de stockage.
+- **Récolte à la main** : un clic sur un élément naturel donne une petite quantité et l'épuise un
+  moment (il repousse). C'est le moteur du tout début ; au palier village, la production des
+  habitants la rend presque inutile, mais elle reste disponible.
+- Les éléments naturels se régénèrent et apparaissent aussi sur les nouvelles parcelles.
 
-### 3.3 Bâtiments (V1 : 10)
+### 3.3 Bâtiments (V1)
 
-| Bâtiment | Effet | Bonus de voisinage (exemples) |
-|---|---|---|
-| Hutte-chapeau | Loge 2 habitants | +bien-être à côté d'un feu de camp |
-| Cueillette | Produit des baies | +25 % à côté d'un buisson sauvage |
-| Tas de bois | Produit du bois mort | +25 % en lisière de forêt |
-| Tapis de mousse | Produit de la mousse | +25 % près de l'eau ou à l'ombre |
-| Garde-manger | +stock de baies | — |
-| Remise | +stock de bois et de mousse | — |
-| Séchoir | Convertit des baies en baies séchées, qui se conservent pour l'hiver | +vitesse à côté du garde-manger |
-| Feu de camp | Bien-être et chaleur alentour (réduit le ralentissement hivernal) | — |
-| Atelier | Améliorations : vitesse des habitants, outils | — |
-| Relais des visiteurs | Accueille jusqu'à 2 visiteurs à la fois | — |
+| Bâtiment | Effet | Emplois | Palier |
+|---|---|---|---|
+| Souche-dépôt | Dépôt de départ, présent dès le début | — | départ |
+| Hutte-chapeau | Logement, monte en gamme (voir 3.4) | — | départ |
+| Cueillette | Produit des baies (+25 % à côté d'un buisson sauvage) | 2 | départ |
+| Tas de bois | Produit du bois mort (+25 % en lisière de forêt) | 2 | départ |
+| Tapis de mousse | Produit de la mousse (+25 % près de l'eau ou à l'ombre) | 2 | départ |
+| Garde-manger | +stock de baies | — | hameau |
+| Remise | +stock de bois et de mousse | — | hameau |
+| Feu de camp | Chaleur et confort alentour | — | hameau |
+| Séchoir | Baies → baies séchées, qui se conservent pour l'hiver | 1 | village |
+| Puits / fontaine | Besoin « eau » des maisons | — | village |
+| Atelier | Améliorations (vitesse, production) payées en spores | 1 | village |
+| Place du marché | Besoin « commerce » des maisons de rang 3 | 2 | bourg |
 
-L'**arbre-mère** est présent dès le départ, au centre de l'île ; il ne se construit pas.
+- Un bâtiment de production ne tourne qu'avec ses emplois pourvus ; à moitié pourvu, il produit
+  à moitié. Un clic dessus affiche les postes occupés et sa production.
+- La liste s'allonge à chaque nouveau palier (contenu post-V1 : chemins, décorations, pierre…).
 
 ### 3.4 Habitants
 
-- Arrivent quand il y a des logements libres et un bien-être suffisant.
-- Choisissent seuls leur tâche selon les **priorités du village** (curseurs : récolter / construire /
-  stocker / soigner l'arbre-mère).
-- On peut **épingler** un habitant sur une tâche précise.
+- **Arrivée** : un logement libre attire des habitants tant que la ville a de quoi les nourrir.
+- **Emplois** : chaque habitant prend seul le poste libre le plus proche de chez lui ; les porteurs
+  et bâtisseurs sont pris parmi les sans-emploi. **Aucun réglage**, aucun menu Habitants.
+- **Besoins et montée en gamme** (par logement) :
+
+| Rang | Logement | Habitants | Besoins |
+|---|---|---|---|
+| 1 | Hutte | 2 | Nourriture |
+| 2 | Maison | 4 | + chaleur (feu de camp proche) + eau (puits proche) |
+| 3 | Manoir | 8 | + mousse livrée + commerce (marché proche) |
+
+  Un logement dont un besoin manque ne descend pas en gamme : il cesse seulement de progresser et
+  son bonheur baisse, donc il produit moins de spores.
+- **Paliers de population** : hameau (0) → village (15) → bourg (50) → cité (150) → … (seuils à
+  régler). Chaque palier débloque bâtiments et améliorations, et s'annonce discrètement.
 - Animations visibles : marcher, porter, construire, dormir la nuit, se réchauffer au feu en hiver.
-- V1 : une seule espèce, avec des variations de couleur de chapeau. Espèces rares après la V1.
+- V1 : une seule espèce, avec des variations de couleur de chapeau.
 
 ### 3.5 Saisons et météo
 
-- Cycle printemps → été → automne → hiver, mesuré en **temps de jeu ouvert** (durée à régler,
-  base de départ : 30 min par saison).
-- La météo (soleil, pluie, vent, neige) module légèrement la production et pilote les ambiances sonores.
-- **Hiver** : les baies ne poussent plus et la production baisse sans stock ni feux de camp.
-  Ce n'est qu'un **ralentissement** : jamais de perte d'habitants ni de ressources.
+- Inchangé : cycle printemps → été → automne → hiver en **temps de jeu ouvert**, météo qui module
+  légèrement la production, hiver qui ralentit sans jamais rien faire perdre.
+- Affichage : **à l'essai**, un petit indicateur intégré au décor (voir 6.2) ; retiré s'il ne rend
+  pas bien, les saisons restant visibles sur l'île.
 
-### 3.6 Visiteurs
+### 3.6 Expansion de l'île
 
-Ils arrivent au relais, **attendent indéfiniment**, et déclenchent le point sur l'icône de la
-barre des menus.
+- L'île est découpée en **parcelles** (8 × 8 cases à régler). On part d'une parcelle.
+- Un clic sur le bord de l'île, face au vide, propose d'acheter la parcelle voisine ; son prix en
+  spores croît avec le nombre de parcelles possédées.
+- Une nouvelle parcelle arrive avec ses éléments naturels (buissons, bois mort, mousse, eau), tirés
+  de la graine de la partie. Pas de limite de taille.
+- La coupe (herbe, terre, roche) suit le contour de l'île.
 
-| Visiteur | Interaction |
-|---|---|
-| Hérisson marchand | Échange de ressources à un taux variable |
-| Escargot voyageur | Mini-quête : « apporte-moi X », récompensée en spores ou en plan de bâtiment |
-| Luciole | Bonus temporaire de production (se déclenche quand on l'accepte) |
+### 3.7 (retiré) Arbre-mère et prestige
 
-### 3.7 Arbre-mère et prestige
-
-- Nourri de spores, il passe par des stades visibles (pousse → arbuste → arbre → floraison).
-  Son **mycélium** s'étend dans la coupe souterraine de l'île.
-- Chaque stade débloque des bâtiments ou des améliorations.
-- **Floraison** : les spores s'envolent vers une **nouvelle île** (après la V1 : marais, montagne,
-  île de corail…). On repart avec des **bonus permanents** (graines de mycélium) et l'ancienne île
-  reste consultable.
-- V1 : la première floraison est jouable jusqu'au bout ; l'écran de départ vers une nouvelle île
-  annonce la suite.
+Abandonné le 16/09/2026 ; le code de l'étape 8 est retiré à l'étape 9.
 
 ### 3.8 Contenu de la V1
 
-1 île (forêt), 4 ressources, 10 bâtiments, 4 saisons + météo, 3 visiteurs, arbre-mère en 4 stades
-jusqu'à la première floraison, FR + EN, ambiances sonores.
+1 île extensible (forêt), 4 ressources, ~12 bâtiments, 3 rangs de logement, 4 paliers de
+population, 4 saisons + météo, FR + EN, ambiances sonores.
 
 ---
 
@@ -199,7 +223,7 @@ tiny_shrooms/
 │       └── src/            # assemblage frontend + worker moteur
 ├── packages/
 │   ├── engine/             # BACKEND : simulation pure, testée
-│   ├── content/            # données : ressources, bâtiments, visiteurs, équilibrage
+│   ├── content/            # données : ressources, bâtiments, paliers, équilibrage
 │   ├── renderer/           # FRONTEND : scène Three.js pixelisée
 │   ├── ui/                 # FRONTEND : interface Preact
 │   └── i18n/               # textes FR / EN
@@ -220,12 +244,12 @@ tiny_shrooms/
   soit la durée de l'écart : macOS peut geler le Worker plus de 20 min fenêtre cachée (mesuré à
   l'étape 0). Seule une **veille signalée par Rust** met le jeu en pause ; aucun écart n'est deviné
   à partir de sa seule durée.
-- **Systèmes** : ressources, production, habitants (choix de tâche par priorités), construction,
-  bien-être, saisons et météo, visiteurs, arbre-mère.
+- **Systèmes** : ressources, production, récolte à la main, habitants (emplois, besoins,
+  montée en gamme), paliers de population, construction, parcelles, bonheur et spores, saisons et météo.
 - **Commandes** (frontend → moteur) : `poserBatiment`, `deplacerBatiment`, `demolir`, `ameliorer`,
-  `reglerPriorites`, `epinglerHabitant`, `repondreVisiteur`, `nourrirArbre`, `fleurir`, `modifierReglage`.
+  `recolter`, `acheterParcelle`, `modifierReglage`.
 - **Événements** (moteur → frontend) : instantané léger toutes les 250 ms + événements ponctuels
-  (`visiteurArrive`, `saisonChangee`, `stadeAtteint`, `stockPlein`…). Le contrat complet est dans
+  (`saisonChangee`, `palierAtteint`, `logementAmeliore`, `stockPlein`…). Le contrat complet est dans
   `packages/engine/src/contrat.ts`.
 - Toutes les valeurs d'équilibrage viennent de `packages/content` : on n'écrit aucun chiffre en dur
   dans le moteur.
@@ -241,10 +265,10 @@ tiny_shrooms/
 
 ### 5.3 Shell natif (`apps/desktop/src-tauri`)
 
-- Fenêtre sans bordure, transparente, toujours au-dessus, redimensionnable (minimum 240×240, défaut 320×320),
-  déplaçable par glisser ; position et taille mémorisées.
-- Réglages : opacité de la fenêtre, « toujours au-dessus » activable, lancement au démarrage.
-- **Icône de barre des menus** : afficher / cacher, point de notification, résumé des ressources
+- Fenêtre sans bordure, transparente, toujours au-dessus, **fixe à 320 × 320** ;
+  déplaçable par ⌘ + glisser, sauf si la position est verrouillée ; position mémorisée.
+- Réglages : verrouillage de la position, opacité de la fenêtre, « toujours au-dessus » activable, lancement au démarrage.
+- **Icône de barre des menus** : afficher / cacher, verrouiller la position, résumé des ressources
   dans le menu, quitter.
 - Quand la fenêtre est cachée : prévenir le frontend pour qu'il coupe le rendu, la simulation continue.
 - Détection de mise en veille et de réveil du système → sauvegarde + pause.
@@ -261,12 +285,14 @@ tiny_shrooms/
 
 ### 6.1 Rendu (`packages/renderer`)
 
-- Caméra **orthographique isométrique** ; rotation par pas de 90° ; 2 niveaux de zoom.
+- Caméra **orthographique isométrique** ; rotation par pas de 90° ; zoom à la molette (plusieurs niveaux) ;
+  **glisser au clic maintenu** dans toutes les directions, borné à l'étendue de l'île.
 - **Pipeline pixelisé** : rendu dans une cible basse résolution (½ de la taille de la fenêtre),
   agrandie avec filtrage `nearest` ; passe de **contours** (détection de bords sur la profondeur et
   les normales) ; ombrage en paliers (toon) ; palette limitée.
 - Fond **transparent** (`alpha: true`, fond à opacité 0) : seul l'îlot flotte sur le bureau.
-- **Îlot en coupe** : couches herbe / terre / roche, mycélium de l'arbre-mère visible sous terre.
+- **Îlot en coupe** : couches herbe / terre / roche, qui suivent le contour des parcelles.
+- Grande île : maillages instanciés, seules les parcelles proches de la vue sont dessinées.
 - Grille de placement visible uniquement en mode construction ; aperçu fantôme vert ou rouge.
 - Saisons : teinte du sol et des arbres, neige, feuilles qui tombent ; météo en particules.
 - Habitants : sprites 3D simples, animations par sous-parties (rebond, balancement).
@@ -275,10 +301,25 @@ tiny_shrooms/
 
 ### 6.2 Interface (`packages/ui`)
 
-- **Au repos** : l'îlot seul. Un habitant fait signe au-dessus du relais quand un visiteur attend.
-- **Au survol** : compteurs de ressources (colonne en bas à gauche, façon Tiny Tycoon) + barre
-  d'outils compacte : Construire · Habitants · Arbre-mère · Réglages.
-- Panneaux superposés à l'îlot, fermables d'un clic ou avec Échap.
+- **Aucune interface au survol.** L'île occupe la fenêtre ; seuls restent :
+  - les **ressources**, affichées en permanence et intégrées au décor (par exemple de petits
+    panneaux de bois plantés dans un coin, ou des pots et sacs posés sur une étagère en pixel,
+    avec leur nombre) plutôt qu'une colonne de compteurs ;
+  - la **saison et la météo**, à l'essai, dans le même esprit (un petit écriteau ou une girouette) ;
+    retirées si le rendu ne convainc pas ;
+  - une **icône Paramètres** discrète dans un coin, qui ouvre le menu des réglages (son, langue,
+    verrouillage de la fenêtre, opacité…) et les boutons de caméra.
+- **Clic sur une case vide** : petite bulle listant ce qu'on peut y construire (coût, effet, bonus de
+  voisinage), puis aperçu fantôme vert ou rouge avant de confirmer.
+- **Clic sur un bâtiment** : bulle d'informations (emplois pourvus, production, besoins d'un
+  logement) avec améliorer, déplacer, démolir.
+- **Clic sur un élément naturel** : récolte à la main, avec un petit chiffre qui s'envole.
+- **Clic au bord de l'île** : achat de la parcelle voisine.
+- Bulles et menus fermables d'un clic ailleurs ou avec Échap ; un glisser ne compte pas comme un clic.
+- **Curseur personnalisé** (pixel, cerclé de noir) dans la fenêtre seulement, avec des variantes :
+  main (récolter), marteau (construire), main fermée (glisser).
+- **Sans le focus** : rien ne s'affiche au passage de la souris ; le premier clic sert seulement à
+  prendre le focus.
 - Style : police pixel épaisse, boutons pleins cerclés de noir, contrastes forts pour rester
   lisible en 320 px.
 - Infobulles : coût, production, bonus de voisinage.
@@ -286,7 +327,7 @@ tiny_shrooms/
 ### 6.3 Audio
 
 - Ambiances en boucle (oiseaux, pluie, vent, feu) mixées selon la météo et la saison.
-- Petits sons d'interface (poser, récolter, visiteur).
+- Petits sons d'interface (poser, récolter, palier atteint).
 - Coupé par défaut, bouton unique pour activer ; volume dans les réglages.
 
 ### 6.4 Langues
@@ -391,23 +432,68 @@ son critère n'est pas rempli.
   accélérée avec un joueur scripté : floraison en **17,8 h** de jeu (arbuste à 1,8 h, arbre à 5,3 h), le test
   exige entre 10 et 30 h. Sauvegarde en version 3.
 
-### Étape 9 — Habillage
+> **Réorientation (16/09/2026)** : les étapes 0 à 8 sont conservées comme historique. Les visiteurs
+> (étape 7) et l'arbre-mère (étape 8) sont retirés à l'étape 9 ; la suite reprend le nouveau modèle.
+
+### Étape 9 — Réorientation : retrait et nouvelle base
+- Retirer arbre-mère, floraison, spores de l'arbre, visiteurs, relais, alertes d'icône, priorités,
+  épinglage, menu Habitants (moteur, contenu, rendu, interface, i18n, tests).
+- Souche-dépôt à la place de l'arbre-mère comme dépôt de départ.
+- Sauvegarde en version 4 : une partie plus ancienne est archivée (`partie.v3.json`) et on repart de zéro.
+- **Critère** : tests et types verts ; le jeu se lance sur une partie neuve sans trace des systèmes retirés.
+
+### Étape 10 — Commandes à la souris et fenêtre
+- Glisser au clic maintenu pour déplacer la vue, dans toutes les directions ; molette pour le zoom.
+- ⌘ + glisser pour déplacer la fenêtre ; « Verrouiller la position » dans les paramètres et le menu de l'icône.
+- Curseur personnalisé et ses variantes, dans la fenêtre seulement.
+- Sans le focus : plus rien ne se révèle au survol ; le premier clic prend le focus sans agir.
+- **Critère** : à 320 px, on parcourt l'île à la souris sans jamais déplacer la fenêtre par erreur ;
+  le curseur retrouve son apparence normale dès qu'il sort de la fenêtre.
+
+### Étape 11 — Interface au clic
+- Suppression de la barre d'outils au survol ; bulle de construction sur une case vide, bulle
+  d'informations sur un bâtiment, icône et menu Paramètres.
+- Ressources intégrées au décor ; saison et météo à l'essai dans le même style.
+- **Critère** : toute la boucle se joue au clic, à 320 px ; les ressources restent lisibles sur
+  toutes les saisons ; décision prise (garder ou retirer) pour l'affichage de la saison.
+
+### Étape 12 — Récolte à la main
+- Éléments naturels cliquables (buissons, bois mort, mousse), épuisement puis repousse, chiffre qui s'envole.
+- Partie neuve : aucun habitant, seuls la souche-dépôt et quelques éléments naturels.
+- **Critère** : depuis une partie neuve, on construit la première hutte uniquement en récoltant à la main
+  (cible : 2 à 4 min).
+
+### Étape 13 — Habitants façon SimCity
+- Emplois par bâtiment, affectation automatique ; besoins par logement, bonheur, montée en gamme
+  (hutte → maison → manoir) ; spores produites selon le bonheur.
+- Paliers de population et déblocages ; nouveaux bâtiments (puits, marché).
+- **Critère** : simulation accélérée d'un joueur scripté qui atteint le palier bourg ; un besoin
+  manquant ralentit sans jamais faire perdre d'habitants.
+
+### Étape 14 — Île extensible
+- Parcelles, achat en spores au bord de l'île, éléments naturels générés par la graine, coupe qui suit le contour.
+- Rendu d'une grande île : instanciation, seules les parcelles proches de la vue sont dessinées.
+- **Critère** : une île de 50 parcelles reste à 30 i/s et sous 3 ms par image de simulation ;
+  sauvegarde et rechargement exacts.
+
+### Étape 15 — Habillage
 - Modèles définitifs (Blockbench ou MagicaVoxel), animations des habitants, police pixel, style de l'interface.
 - Ambiances sonores et sons d'interface ; traduction EN.
 - **Critère** : plus aucune forme provisoire ; FR et EN complets ; son coupé au premier lancement.
 
-### Étape 10 — Équilibrage et diffusion → **V1**
-- Simulations accélérées pour régler la courbe (temps jusqu'à la floraison : cible à définir, base 15-25 h de jeu ouvert).
+### Étape 16 — Équilibrage et diffusion → **V1**
+- Simulations accélérées pour régler la courbe (temps jusqu'au palier bourg : cible à définir, base 10-20 h de jeu ouvert).
 - Consommation : CPU et batterie fenêtre visible et cachée.
 - GitHub Actions : .dmg (Mac Apple Silicon + Intel) et .exe ; mises à jour automatiques.
 - Vérification sous Windows : transparence, toujours au-dessus, zone de notification.
 - **Critère** : Celian installe la V1 depuis le .dmg et la garde ouverte une journée entière.
 
 ### Après la V1
-1. Nouvelles îles (marais, montagne…) et bonus permanents de prestige.
-2. Espèces d'habitants rares et collection.
-3. Synchronisation via le Raspberry Pi.
-4. Signature et notarisation Apple, page itch.io.
+1. Nouveaux paliers, bâtiments et ressources (pierre, champignons lumineux…), chemins et décorations.
+2. Biomes sur les nouvelles parcelles (marais, rochers…).
+3. Espèces d'habitants rares et collection.
+4. Synchronisation via le Raspberry Pi.
+5. Signature et notarisation Apple, page itch.io.
 
 ---
 
@@ -418,12 +504,16 @@ son critère n'est pas rempli.
 | macOS gèle le Worker quand la fenêtre est cachée (**confirmé** à l'étape 0) | Rattrapage du temps écoulé ; fenêtre cachée, un pouls envoyé par Rust toutes les 20 s suffit à réveiller le Worker (mesuré à l'étape 7) |
 | Fenêtre transparente capricieuse selon la version de macOS ou de Windows | Validée à l'étape 0 ; repli sur une fenêtre à fond coloré arrondi |
 | Consommation batterie d'un rendu 3D permanent | 30 i/s maximum, 0 caché, rendu à la demande quand rien ne bouge |
-| Interface illisible en 320 px | Test systématique à la taille minimale dès l'étape 4 |
-| Équilibrage d'un idle long à régler à la main | Simulation accélérée sans affichage, possible grâce au moteur séparé |
+| Interface illisible en 320 px | Test systématique à la taille minimale à chaque étape d'interface |
+| Île sans limite : rendu, simulation et sauvegarde qui grossissent | Instanciation et tri par parcelle ; simulation des bâtiments par agrégats ; mesure à l'étape 14 |
+| Curseur personnalisé et glisser dans une fenêtre sans le focus (la vue web ne reçoit pas la souris) | Premier clic = prise du focus ; curseur appliqué côté Rust si le CSS ne suffit pas |
+| Glisser la vue et ⌘ + glisser confondus avec un clic | Seuil de quelques pixels avant de considérer un appui comme un glisser |
+| Équilibrage d'une partie sans fin à régler à la main | Simulation accélérée sans affichage, possible grâce au moteur séparé |
 
 ## 9. Questions ouvertes (à trancher en cours de route)
 
-- Durée exacte d'une saison et temps cible jusqu'à la floraison (premier jet : 17,8 h, étape 8).
-- Taille de la grille de départ et éventuel agrandissement de l'île.
+- Durée exacte d'une saison, seuils des paliers et prix des parcelles.
+- Taille d'une parcelle (8 × 8 en premier jet) et forme de l'île de départ.
+- Forme exacte de l'affichage des ressources dans le décor ; sort de l'affichage de la saison.
 - Identité des habitants : ont-ils un nom d'espèce propre ?
 - Direction musicale si on ajoute un jour une musique.
