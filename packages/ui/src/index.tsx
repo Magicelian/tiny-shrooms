@@ -1,10 +1,10 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, elementEn, emplacementRefuse } from '@tiny-shrooms/engine';
+import { bonusVoisinage, casesCouvertes, elementEn, emplacementRefuse } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
-import { abordable, nomBatiment, nomRessource } from './format';
+import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
 import { Interface } from './interface';
 import { Magasin, type Bulle } from './magasin';
 
@@ -15,6 +15,8 @@ export interface SceneInteractive {
   afficherGrille(visible: boolean): void;
   montrerFantome(c: Case, type: TypeBatiment | null, valide: boolean): void;
   cacherFantome(): void;
+  /** Surligne les cases à portée d'un service ; une liste vide efface la zone. */
+  montrerPortee(cases: readonly Case[]): void;
   tourner(sens: 1 | -1): void;
   basculerZoom(): void;
   zoomer(sens: 1 | -1): void;
@@ -83,10 +85,6 @@ export class ControleurInterface {
       if (message.origine === 'ancienne') this.magasin.annoncer(t('message.partieAncienne'));
     }
     if (message.type !== 'instantane') return;
-    const avant = this.magasin.valeur.instantane?.batimentsDebloques;
-    for (const type of avant ? message.instantane.batimentsDebloques : []) {
-      if (!avant!.includes(type)) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
-    }
     this.magasin.modifier({ instantane: message.instantane });
     // Le bâtiment visé a disparu (démoli) : sa bulle ou son déplacement n'ont plus d'objet.
     const { bulle, deplacement } = this.magasin.valeur;
@@ -105,7 +103,13 @@ export class ControleurInterface {
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
-        if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomBatiment(b.type) }));
+        if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
+      } else if (e.type === 'palierAtteint') {
+        const palier = nomPalier(this.contenu, e.palier);
+        const liste = e.debloques.map((type) => nomBatiment(type)).join(', ');
+        this.magasin.annoncer(liste ? t('message.palierAtteint', { palier, liste }) : t('message.palierAtteintSeul', { palier }));
+      } else if (e.type === 'logementAmeliore') {
+        this.magasin.annoncer(t('message.logementAmeliore', { rang: nomRang(e.niveau) }));
       }
     }
     // Le village a changé : l'aperçu sous la souris aussi.
@@ -300,6 +304,7 @@ export class ControleurInterface {
     if (bulle?.type === 'construire') {
       const { choix } = bulle;
       scene.montrerFantome(bulle.case, choix, !choix || abordable(this.contenu.batiments[choix].cout, instantane.stocks));
+      scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
       this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });
       return this.majCurseur('fleche');
     }
@@ -310,6 +315,7 @@ export class ControleurInterface {
       const libre = !!visee?.case && emplacementRefuse(ile, autres, visee.case) === null;
       if (visee?.case) scene.montrerFantome(visee.case, deplace.type, libre);
       else scene.cacherFantome();
+      scene.montrerPortee(visee?.case ? casesCouvertes(ile, this.contenu, { type: deplace.type, case: visee.case }) : []);
       this.magasin.modifier({ bonusVise: libre ? bonusVoisinage(ile, autres, this.contenu, deplace.type, visee!.case!) : null });
       return this.majCurseur('marteau');
     }
@@ -320,6 +326,7 @@ export class ControleurInterface {
     const recoltable = element >= 0 && (instantane.pousses[element] ?? 0) >= 1;
     // Le bâtiment de la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
     const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : survole;
+    scene.montrerPortee(cible ? casesCouvertes(ile, this.contenu, cible) : []);
     if (cible) scene.montrerFantome(cible.case, null, true);
     else if ((libre || element >= 0) && !bulle) scene.montrerFantome(visee!.case!, null, libre || recoltable);
     else scene.cacherFantome();

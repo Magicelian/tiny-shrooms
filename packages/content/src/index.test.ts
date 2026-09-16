@@ -73,7 +73,9 @@ describe('Une année sans préparer l’hiver', () => {
       // (les baies récoltées avant peuvent encore être livrées).
       expect(moteur.etatCourant.habitants.length).toBeGreaterThanOrEqual(habitants);
       for (const r of RESSOURCES) expect(stocks[r]).toBeGreaterThanOrEqual(0);
-      if (m >= 3 * minutesParSaison) expect(reserveDeBaies()).toBeLessThanOrEqual(enReserve + 1e-9);
+      // La dernière minute finit sur le premier pas du printemps, où la cueillette reprend.
+      const toutEnHiver = m >= 3 * minutesParSaison && m < 4 * minutesParSaison - 1;
+      if (toutEnHiver) expect(reserveDeBaies()).toBeLessThanOrEqual(enReserve + 1e-9);
     }
     expect(saisons).toEqual(['ete', 'automne', 'hiver', 'printemps']);
   });

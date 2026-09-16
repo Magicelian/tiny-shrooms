@@ -29,6 +29,8 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   sechoir: 0xe38a3a,
   feuDeCamp: 0xf2612d,
   atelier: 0x5b7fb8,
+  puits: 0x6fa8c9,
+  marche: 0xd9a441,
 };
 
 /** Hauteur provisoire de chaque bâtiment, en unités de case. */
@@ -42,6 +44,8 @@ export const HAUTEURS_BATIMENT: Record<TypeBatiment, number> = {
   sechoir: 0.8,
   feuDeCamp: 0.35,
   atelier: 1.35,
+  puits: 0.6,
+  marche: 0.9,
 };
 
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {

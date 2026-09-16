@@ -1,9 +1,9 @@
 // Contenu des bulles ouvertes au clic.
 import { useState } from 'preact/hooks';
-import type { Batiment, Instantane } from '@tiny-shrooms/engine';
-import { AMELIORATIONS_VILLAGE, coutAmelioration } from '@tiny-shrooms/engine';
+import type { Batiment, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import { AMELIORATIONS_VILLAGE, besoinsSuivis, coutAmelioration, coutTotal, rangLogement, refusMontee } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import { abordable, effets, listeQuantites, nomBatiment, pourcent } from './format';
+import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 
@@ -19,6 +19,10 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   const { bonusVise } = useMagasin(controleur.magasin);
   const { choix } = bulle;
   const payable = choix !== null && abordable(contenu.batiments[choix].cout, instantane.stocks);
+  // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
+  const verrouilles = contenu.paliers.flatMap((p, palier) =>
+    p.debloque.filter((type) => !instantane.batimentsDebloques.includes(type)).map((type): [TypeBatiment, number] => [type, palier]),
+  );
   return (
     <>
       <ul class="catalogue">
@@ -37,6 +41,15 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
             </li>
           );
         })}
+        {verrouilles.map(([type, palier]) => (
+          <li key={type}>
+            <button class="carte verrou" disabled>
+              <span class="pastille" style={{ background: hex(couleurs.batiments[type]) }} />
+              <span class="nom">{nomBatiment(type)}</span>
+              <span class="cout">{t('logement.palierRequis', { palier: nomPalier(contenu, palier) })}</span>
+            </button>
+          </li>
+        ))}
       </ul>
       <div class="detail">
         {choix ? (
@@ -63,7 +76,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const [confirmer, setConfirmer] = useState(false);
   const { contenu } = controleur;
   const def = contenu.batiments[batiment.type];
-  const remboursement = listeQuantites(def.cout, contenu.remboursementDemolition);
+  const remboursement = listeQuantites(coutTotal(contenu, batiment), contenu.remboursementDemolition);
   const enChantier = batiment.chantier !== null;
   // Bâtisseurs pendant le chantier, récolteurs ensuite.
   const postes = enChantier ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
@@ -79,7 +92,8 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
         </>
       )}
       {postes > 0 && <p><strong>{t(enChantier ? 'construction.batisseurs' : 'construction.emplois', { pourvus, postes })}</strong></p>}
-      {effets(contenu, batiment.type).map((ligne) => (
+      {!enChantier && def.logement && <Logement controleur={controleur} instantane={instantane} batiment={batiment} />}
+      {!def.logement && effets(contenu, batiment.type).map((ligne) => (
         <p key={ligne}>{ligne}</p>
       ))}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
@@ -99,6 +113,61 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
           {confirmer ? t('construction.confirmer', { liste: remboursement }) : t('construction.demolir')}
         </button>
       </div>
+    </>
+  );
+}
+
+/** Habitants, besoins du rang et montée au rang suivant. */
+function Logement({ controleur, instantane, batiment }: Props & { batiment: Batiment }) {
+  const { contenu } = controleur;
+  const rang = rangLogement(contenu, batiment);
+  const suivant = contenu.logement.rangs[batiment.niveau];
+  // Les places vont aux habitants dans l'ordre des bâtiments, la souche-dépôt d'abord.
+  let avant = contenu.habitants.logementDeBase;
+  for (const b of instantane.batiments) {
+    if (b.id === batiment.id) break;
+    avant += b.chantier === null ? (rangLogement(contenu, b)?.places ?? 0) : 0;
+  }
+  const places = rang?.places ?? 0;
+  const loges = Math.min(places, Math.max(0, instantane.habitants.length - avant));
+  const refus = refusMontee(contenu, batiment, instantane.palier);
+  const cout = suivant?.cout ?? {};
+  const suivis = besoinsSuivis(contenu, batiment.niveau);
+  const Besoins = ({ liste }: { liste: readonly string[] }) => (
+    <ul class="besoins">
+      {suivis
+        .filter((b) => liste.includes(b))
+        .map((b) => (
+          <li key={b} class={batiment.besoins[b] ? 'bonus' : 'manque'}>
+            {batiment.besoins[b] ? '✓' : '✗'} {nomBesoin(b)}
+          </li>
+        ))}
+    </ul>
+  );
+  return (
+    <>
+      <p><strong>{t('logement.habitants', { nombre: loges, places })}</strong></p>
+      <p class="discret">{t('logement.besoins')}</p>
+      <Besoins liste={rang?.besoins ?? []} />
+      {suivant ? (
+        <>
+          <p class="discret">{t('logement.pourMonter', { rang: nomRang(batiment.niveau + 1) })}</p>
+          {refus === 'nonDebloque' ? (
+            <p class="manque">{t('logement.palierRequis', { palier: nomPalier(contenu, suivant.palier) })}</p>
+          ) : (
+            <Besoins liste={suivant.besoins.filter((b) => !rang?.besoins.includes(b))} />
+          )}
+          <button
+            class={`bouton large ${refus === null && abordable(cout, instantane.stocks) ? 'valider' : 'manque'}`}
+            disabled={refus !== null}
+            onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { batiment: batiment.id } })}
+          >
+            {t('logement.monter', { liste: listeQuantites(cout) })}
+          </button>
+        </>
+      ) : (
+        <p class="bonus">{t('logement.rangMax')}</p>
+      )}
     </>
   );
 }

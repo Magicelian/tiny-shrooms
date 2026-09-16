@@ -77,4 +77,11 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   ni logement de base ; sans habitants les chantiers avancent seuls. Sauvegarde en version 5 (migration depuis la 4).
   Rendu : `packages/renderer/src/elements.ts`. Critère : `packages/content/src/recolte.test.ts` (hutte achevée à ~3 min).
   Menu Réglages retiré : habitants/places en haut à droite, ressources en rangée discrète en bas (plafond au survol).
-- **Prochaine étape : 13** (habitants façon SimCity).
+- **Étape 13 implémentée, à valider**. Logements, besoins, montée en gamme et paliers : `packages/engine/src/logements.ts`
+  (fonctions pures réutilisées par l'interface). Chiffres : `contenu.logement` et `contenu.paliers`. Zone de portée :
+  `AidesConstruction.montrerPortee`. Critère : `packages/content/src/bourg.test.ts`. Sauvegarde en version 7.
+  Livraisons : une charge déposée passe par `etat.arrivages`, rangés dans le stock au rythme de la production
+  (6/min → +1 toutes les 10 s).
+  Pour inspecter une partie avancée dans le navigateur : importer le moteur via `/@fs/<chemin>/packages/engine/src/index.ts`,
+  simuler, puis écrire `serialiser(etat)` dans `localStorage['tiny-shrooms.partie']` et recharger.
+- **Prochaine étape : 14** (île extensible).

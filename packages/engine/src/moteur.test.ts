@@ -25,7 +25,17 @@ function contenuDeTest(
     stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores: 0 },
     plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000 },
     batiments: defs,
-    batimentsDeDepart: [...TYPES_BATIMENT],
+    logement: {
+      rangs: [
+        { places: 2, besoins: ['nourriture'], palier: 0, sporesParMinute: 0 },
+        { places: 4, besoins: ['nourriture', 'eau'], cout: { boisMort: 10 }, palier: 1, sporesParMinute: 0 },
+      ],
+      sources: { eau: 'puits' },
+    },
+    paliers: [
+      { nom: 'hameau', population: 0, debloque: [...TYPES_BATIMENT] },
+      { nom: 'village', population: 4, debloque: [] },
+    ],
     recolte: {
       buisson: { ressource: 'baies', quantite: 3, repousseSecondes: 10 },
       boisMort: { ressource: 'boisMort', quantite: 2, repousseSecondes: 10 },
@@ -41,13 +51,12 @@ function contenuDeTest(
       ouvriersParChantier: 2,
       delaiArriveeSecondes: 10,
       seuilArrivee: 0.5,
-      seuilBonheur: 2,
-      sporesParHabitantHeureux: 0,
+      seuilBonheur: 0.99,
       reevaluationSecondes: 30,
       nuit: { debut: 0, fin: 0 },
       travailAffame: 1,
       valeurBaieSechee: 1,
-      bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.4, feuDeCamp: 0.1, minutesPourSeStabiliser: 1 },
+      bienEtre: { base: 0.4, loge: 0.2, besoins: 0.2, affame: -0.4, minutesPourSeStabiliser: 1 },
       ...habitants,
     },
     ameliorations: {
@@ -56,7 +65,7 @@ function contenuDeTest(
     },
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
-    saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1, rayonChaleur: 2 },
+    saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1 },
     meteo: {
       minutesParPeriode: 5,
       probabilites: { printemps: { soleil: 1 }, ete: { soleil: 1 }, automne: { soleil: 1 }, hiver: { soleil: 1 } },
@@ -188,7 +197,7 @@ describe('Habitants', () => {
   });
 
   it('arrivent quand il y a de la place et du bien-être', () => {
-    const moteur = new Moteur(contenuDeTest({ hutte: { logement: 2, constructionSecondes: 10 } }), 0);
+    const moteur = new Moteur(contenuDeTest({ hutte: { logement: true, constructionSecondes: 10 } }), 0);
     moteur.simuler(2 * PAS_PAR_MINUTE);
     expect(moteur.etatCourant.habitants).toHaveLength(2);
     commander(moteur, poser('hutte', caseLibre(moteur)));
@@ -224,7 +233,7 @@ describe('Commandes', () => {
 
   it('refuse un bâtiment non débloqué', () => {
     const contenu = contenuDeTest();
-    contenu.batimentsDeDepart = ['hutte'];
+    contenu.paliers = [{ nom: 'hameau', population: 0, debloque: ['hutte'] }];
     const moteur = new Moteur(contenu, 0);
     expect(commander(moteur, poser('atelier', caseLibre(moteur)))[0]).toMatchObject({ raison: 'nonDebloque' });
   });
@@ -345,7 +354,7 @@ describe('Saisons et météo', () => {
   const MIN = PAS_PAR_MINUTE;
   const AUTOMNE = 60 * MIN;
   const HIVER = 90 * MIN;
-  const saisonsNeutres = { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1, rayonChaleur: 2 };
+  const saisonsNeutres = { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1 };
 
   /** Moteur dont la partie commence au pas donné. */
   function moteurAu(contenu: Contenu, pas: number): Moteur {
@@ -390,7 +399,7 @@ describe('Saisons et météo', () => {
   });
 
   it('ralentit le travail au froid, sauf près d’un feu de camp', () => {
-    const contenu = contenuDeTest({ tasDeBois: { production: { boisMort: 6 } } }, { reserveMax: 1000 }, {
+    const contenu = contenuDeTest({ tasDeBois: { production: { boisMort: 6 } }, feuDeCamp: { portee: 2 } }, { reserveMax: 1000 }, {
       saisons: { ...saisonsNeutres, travailAuFroid: 0.5 },
     });
     const recolte = (pas: number, feu: boolean) => {
@@ -410,8 +419,9 @@ describe('Saisons et météo', () => {
     };
     const automne = recolte(AUTOMNE, false);
     expect(automne).toBeGreaterThan(5);
-    expect(recolte(HIVER, false)).toBeCloseTo(automne / 2);
-    expect(recolte(HIVER, true)).toBeCloseTo(automne);
+    // À 1 % près : les habitants sans travail ne cherchent qu'à intervalles, les trajets décalent la récolte de quelques pas.
+    expect(recolte(HIVER, false) / automne).toBeCloseTo(0.5, 1);
+    expect(recolte(HIVER, true) / automne).toBeCloseTo(1, 1);
   });
 
   it('va se réchauffer au feu quand il n’a rien à faire en hiver', () => {
@@ -488,7 +498,7 @@ describe('Récolte à la main', () => {
 
   it('ne fait pas repousser les buissons en hiver', () => {
     const hiver = { printemps: { baies: 0 }, ete: {}, automne: {}, hiver: {} };
-    const moteur = new Moteur(contenuDeTest({}, {}, { saisons: { production: hiver, travailAuFroid: 1, rayonChaleur: 2 } }), 0);
+    const moteur = new Moteur(contenuDeTest({}, {}, { saisons: { production: hiver, travailAuFroid: 1 } }), 0);
     const element = premier(moteur, 'buisson');
     commander(moteur, { type: 'recolter', element });
     moteur.simuler(PAS_PAR_MINUTE);
@@ -511,5 +521,124 @@ describe('Récolte à la main', () => {
     expect(etat.pousses).toHaveLength(etat.ile.elements.length);
     const hutte = etat.batiments[0]!.case;
     expect(etat.ile.elements.some((e) => e.case.x === hutte.x && e.case.y === hutte.y)).toBe(false);
+  });
+});
+
+describe('Arrivages', () => {
+  it('une livraison entre dans les stocks peu à peu, sans à-coup', () => {
+    const moteur = new Moteur(contenuDeTest({}, { auDepart: 0 }), 0);
+    const etat = moteur.etatCourant as Etat;
+    etat.arrivages.baies = 6;
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    const apres10s = etat.stocks.baies - 100;
+    expect(apres10s).toBeGreaterThan(0.5);
+    expect(apres10s).toBeLessThan(1.5);
+    moteur.simuler(10 * PAS_PAR_MINUTE);
+    expect(etat.stocks.baies).toBeCloseTo(106);
+    expect(etat.arrivages.baies).toBe(0);
+  });
+});
+
+describe('Logements et paliers', () => {
+  const contenuVillage = () => contenuDeTest({ hutte: { logement: true }, puits: { portee: 2 } });
+  const hutteEt = (moteur: Moteur) => moteur.etatCourant.batiments.find((b) => b.type === 'hutte')!;
+  const monter = (moteur: Moteur, id: number) => commander(moteur, { type: 'ameliorer', cible: { batiment: id } });
+
+  it('suit les besoins du rang actuel et du suivant', () => {
+    const moteur = new Moteur(contenuVillage(), 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    moteur.simuler(1);
+    expect(hutteEt(moteur).besoins).toEqual({ nourriture: true, eau: false });
+  });
+
+  it('franchit un palier avec la population, puis monte en gamme une fois le puits à portée', () => {
+    const moteur = new Moteur(contenuVillage(), 0);
+    const c = caseLibre(moteur);
+    commander(moteur, poser('hutte', c));
+    const hutte = hutteEt(moteur);
+    expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'nonDebloque' });
+
+    const evenements = moteur.simuler(2 * PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.habitants).toHaveLength(4);
+    expect(evenements).toContainEqual({ type: 'palierAtteint', palier: 1, debloques: [] });
+    expect(moteur.etatCourant.palier).toBe(1);
+    expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'besoinsManquants' });
+
+    const puits = moteur.casesLibres().find((p) => Math.max(Math.abs(p.x - c.x), Math.abs(p.y - c.y)) <= 2)!;
+    commander(moteur, poser('puits', puits));
+    moteur.simuler(1);
+    const bois = moteur.etatCourant.stocks.boisMort;
+    expect(monter(moteur, hutte.id)).toEqual([{ type: 'logementAmeliore', id: hutte.id, niveau: 2 }]);
+    expect(moteur.etatCourant.stocks.boisMort).toBe(bois - 10);
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.habitants).toHaveLength(6);
+    expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'indisponible' });
+  });
+
+  it('un besoin manquant baisse le bien-être sans faire partir personne ni redescendre', () => {
+    const moteur = new Moteur(contenuVillage(), 0);
+    const c = caseLibre(moteur);
+    commander(moteur, poser('hutte', c));
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    const puits = moteur.casesLibres().find((p) => Math.max(Math.abs(p.x - c.x), Math.abs(p.y - c.y)) <= 2)!;
+    commander(moteur, poser('puits', puits));
+    moteur.simuler(1);
+    monter(moteur, hutteEt(moteur).id);
+    moteur.simuler(3 * PAS_PAR_MINUTE);
+    const avant = moteur.etatCourant.habitants.length;
+    commander(moteur, { type: 'demolir', id: moteur.etatCourant.batiments.find((b) => b.type === 'puits')!.id });
+    moteur.simuler(5 * PAS_PAR_MINUTE);
+    const { habitants } = moteur.etatCourant;
+    expect(habitants.length).toBeGreaterThanOrEqual(avant);
+    expect(hutteEt(moteur).niveau).toBe(2);
+    expect(hutteEt(moteur).besoins.eau).toBe(false);
+    // Hutte au rang 2 sans eau : la moitié des besoins, soit 0,4 + 0,2 + 0,2 × ½.
+    expect(habitants.slice(2).every((h) => h.bienEtre < 0.75)).toBe(true);
+  });
+
+  it('rembourse aussi la montée en gamme à la démolition', () => {
+    const moteur = new Moteur(contenuVillage(), 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    const hutte = hutteEt(moteur);
+    hutte.niveau = 2;
+    const bois = moteur.etatCourant.stocks.boisMort;
+    commander(moteur, { type: 'demolir', id: hutte.id });
+    expect(moteur.etatCourant.stocks.boisMort).toBe(bois + 5);
+  });
+
+  it('un logement consomme sa ressource et signale le manque', () => {
+    const contenu = contenuVillage();
+    contenu.logement.rangs[0] = { places: 2, besoins: ['nourriture', 'mousse'], palier: 0, sporesParMinute: 0, consommation: { mousse: 6 } };
+    contenu.stocksDeDepart.mousse = 1;
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    moteur.simuler(PAS_PAR_MINUTE / 12);
+    expect(moteur.etatCourant.stocks.mousse).toBeCloseTo(0.5);
+    expect(hutteEt(moteur).besoins.mousse).toBe(true);
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    expect(moteur.etatCourant.stocks.mousse).toBe(0);
+    expect(hutteEt(moteur).besoins.mousse).toBe(false);
+  });
+
+  it('un emploi sans production est tenu par un habitant', () => {
+    const moteur = new Moteur(contenuDeTest({ marche: { postes: 1 } }), 0);
+    commander(moteur, poser('marche', caseLibre(moteur)));
+    moteur.simuler(PAS_PAR_MINUTE);
+    const [message] = moteur.recevoir({ type: 'commande', commande: { type: 'demolir', id: 999 } }, 0);
+    const instantane = message?.type === 'instantane' ? message.instantane : null;
+    const marche = moteur.etatCourant.batiments[0]!;
+    expect(instantane?.habitants.filter((h) => h.lieu === marche.id && h.tache === 'tenir')).toHaveLength(1);
+    expect(instantane?.habitants.some((h) => h.activite === 'tient')).toBe(true);
+  });
+
+  it('migre une sauvegarde de version 5 en rebloquant les bâtiments de palier', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    const { palier: _p, batiments, ...reste } = moteur.etatCourant;
+    const v5 = { ...reste, batimentsDebloques: ['hutte', 'sechoir', 'atelier'], batiments: batiments.map(({ besoins: _b, ...b }) => b) };
+    const etat = charger(JSON.stringify({ version: 5, etat: v5 }));
+    expect(etat.palier).toBe(0);
+    expect(etat.batimentsDebloques).toEqual(['hutte']);
+    expect(etat.batiments[0]!.besoins).toEqual({});
   });
 });

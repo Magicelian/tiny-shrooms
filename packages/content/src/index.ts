@@ -7,7 +7,7 @@ export const contenu: Contenu = {
   stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
   plafondsDeBase: { baies: 50, baiesSechees: 20, boisMort: 80, mousse: 30, spores: 20 },
   batiments: {
-    hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: 2, voisinage: [{ voisin: 'feuDeCamp', bonus: 0.1 }] },
+    hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: true },
     cueillette: { cout: { boisMort: 15 }, constructionSecondes: 20, production: { baies: 6 }, voisinage: [{ voisin: 'buisson', bonus: 0.25 }] },
     tasDeBois: { cout: { baies: 10 }, constructionSecondes: 20, production: { boisMort: 5 }, voisinage: [{ voisin: 'foret', bonus: 0.25 }] },
     tapisDeMousse: {
@@ -28,11 +28,32 @@ export const contenu: Contenu = {
       consommation: { baies: 2 },
       voisinage: [{ voisin: 'gardeManger', bonus: 0.25 }],
     },
-    feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20 },
+    feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20, portee: 2 },
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
+    puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
+    marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
   },
-  // Tout est disponible d'emblée en attendant les paliers de population (étape 13).
-  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp', 'sechoir', 'atelier'],
+  logement: {
+    rangs: [
+      { places: 2, besoins: ['nourriture'], palier: 0, sporesParMinute: 0.2 },
+      { places: 4, besoins: ['nourriture', 'chaleur', 'eau'], cout: { boisMort: 40, mousse: 20 }, palier: 1, sporesParMinute: 0.3 },
+      {
+        places: 8,
+        besoins: ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce'],
+        cout: { boisMort: 80, mousse: 40, spores: 30 },
+        palier: 2,
+        sporesParMinute: 0.5,
+        consommation: { mousse: 0.5 },
+      },
+    ],
+    sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche' },
+  },
+  paliers: [
+    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'] },
+    { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
+    { nom: 'bourg', population: 50, debloque: ['marche'] },
+    { nom: 'cite', population: 150, debloque: [] },
+  ],
   recolte: {
     buisson: { ressource: 'baies', quantite: 3, repousseSecondes: 45 },
     boisMort: { ressource: 'boisMort', quantite: 2, repousseSecondes: 45 },
@@ -49,13 +70,12 @@ export const contenu: Contenu = {
     ouvriersParChantier: 2,
     delaiArriveeSecondes: 60,
     seuilArrivee: 0.5,
-    seuilBonheur: 0.7,
-    sporesParHabitantHeureux: 0.2,
+    seuilBonheur: 0.5,
     reevaluationSecondes: 30,
     nuit: { debut: 0.85, fin: 0.05 },
     travailAffame: 0.5,
     valeurBaieSechee: 3,
-    bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.2, feuDeCamp: 0.1, minutesPourSeStabiliser: 3 },
+    bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, minutesPourSeStabiliser: 3 },
   },
   ameliorations: {
     vitesse: { cout: { boisMort: 50, mousse: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
@@ -71,7 +91,6 @@ export const contenu: Contenu = {
       hiver: { baies: 0, boisMort: 0.8, mousse: 0.5 },
     },
     travailAuFroid: 0.6,
-    rayonChaleur: 2,
   },
   meteo: {
     minutesParPeriode: 4,

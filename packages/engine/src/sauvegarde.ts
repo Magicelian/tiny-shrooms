@@ -4,7 +4,7 @@ import type { Case, Ile } from './contrat';
 import type { Etat } from './etat';
 import { placerElements } from './ile';
 
-export const VERSION_SAUVEGARDE = 5;
+export const VERSION_SAUVEGARDE = 7;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -33,6 +33,19 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
     const elements = placerElements(ile, etat.graine as number, occupees);
     return { ...etat, ile: { ...ile, elements }, pousses: elements.map(() => 1) };
   },
+  // Version 6 : paliers de population et besoins des logements. Les bâtiments de palier supérieur,
+  // jusque-là offerts d'emblée, se débloquent de nouveau en franchissant les paliers.
+  5: (etat) => {
+    const hameau = ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'];
+    return {
+      ...etat,
+      palier: 0,
+      batimentsDebloques: (etat.batimentsDebloques as string[]).filter((type) => hameau.includes(type)),
+      batiments: (etat.batiments as object[]).map((b) => ({ ...b, besoins: {} })),
+    };
+  },
+  // Version 7 : livraisons rangées peu à peu dans les stocks.
+  6: (etat) => ({ ...etat, arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 } }),
 };
 
 export function serialiser(etat: Etat): string {
@@ -80,9 +93,9 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
-  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee'];
+  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier'];
   const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins'];
-  const objets = ['ile', 'stocks', 'reglages', 'ameliorations'];
+  const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??
     tableaux.find((cle) => !Array.isArray(etat[cle])) ??

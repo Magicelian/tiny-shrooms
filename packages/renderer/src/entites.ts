@@ -62,7 +62,7 @@ export class Entites {
       const phase = maintenant / 90 + h.donnees.id;
       if (activite === 'marche' || activite === 'porte') {
         h.objet.position.y = Math.abs(Math.sin(phase)) * 0.06;
-      } else if (activite === 'recolte' || activite === 'construit') {
+      } else if (activite === 'recolte' || activite === 'construit' || activite === 'tient') {
         h.objet.rotation.z = Math.sin(phase * 0.8) * 0.2;
       }
       h.objet.scale.y = ECHELLE_HABITANT * (activite === 'dort' ? 0.7 : 1);
@@ -84,7 +84,8 @@ export class Entites {
       // Emprise provisoire d'une case ; la vraie taille viendra de packages/content.
       versMonde({ x: b.case.x + 0.5, y: b.case.y + 0.5 }, ile, maillage.position);
       maillage.rotation.y = (-b.orientation * Math.PI) / 2;
-      const hauteur = HAUTEURS_BATIMENT[b.type];
+      // Rang d'un logement : chaque montée en gamme le rehausse d'un tiers.
+      const hauteur = HAUTEURS_BATIMENT[b.type] * (1 + (b.niveau - 1) / 3);
       const avancement = b.chantier === null ? 1 : Math.max(0.1, b.chantier);
       maillage.scale.set(0.9, hauteur * avancement, 0.9);
       maillage.material = materiau(b.chantier === null ? COULEURS_BATIMENT[b.type] : COULEURS.chantier);

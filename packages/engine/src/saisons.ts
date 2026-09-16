@@ -75,7 +75,7 @@ export function cadenceTravail(etat: Etat, contenu: Contenu, position: Position,
   let cadence = nourri ? 1 : contenu.habitants.travailAffame;
   if (estLHiver(etat, contenu)) {
     const feu = feuLePlusProche(etat, position);
-    const auChaud = feu !== null && Math.max(Math.abs(feu.x - position.x), Math.abs(feu.y - position.y)) <= contenu.saisons.rayonChaleur + 0.01;
+    const auChaud = feu !== null && Math.max(Math.abs(feu.x - position.x), Math.abs(feu.y - position.y)) <= (contenu.batiments.feuDeCamp.portee ?? 0) + 0.01;
     if (!auChaud) cadence *= contenu.saisons.travailAuFroid;
   }
   return cadence;

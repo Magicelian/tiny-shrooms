@@ -7,6 +7,9 @@ import { centreCase } from './repere';
 
 const VERT = 0xb6ff5c;
 const ROUGE = 0xff4a4a;
+/** Cases à portée d'un feu, d'un puits ou d'un marché. */
+const BLEU = 0x7fd4ff;
+const SOL = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
 
 export class AidesConstruction {
   readonly scene = new THREE.Scene();
@@ -14,7 +17,10 @@ export class AidesConstruction {
   private readonly materiauFantome = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false });
   private readonly fantome = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.9).translate(0, 0.5, 0), this.materiauFantome);
   private readonly materiauSol = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6, depthWrite: false });
-  private readonly sol = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), this.materiauSol);
+  private readonly sol = new THREE.Mesh(SOL, this.materiauSol);
+  private readonly materiauPortee = new THREE.MeshBasicMaterial({ color: BLEU, transparent: true, opacity: 0.3, depthWrite: false });
+  /** Cases de portée, réutilisées d'un affichage à l'autre. */
+  private readonly portee: THREE.Mesh[] = [];
   private ile: Ile | null = null;
 
   constructor() {
@@ -24,7 +30,22 @@ export class AidesConstruction {
   }
 
   get actives(): boolean {
-    return this.grille?.visible === true || this.sol.visible;
+    return this.grille?.visible === true || this.sol.visible || this.portee.some((m) => m.visible);
+  }
+
+  /** Surligne les cases à portée ; une liste vide efface la zone. */
+  montrerPortee(cases: readonly Case[]): void {
+    if (!this.ile) return;
+    while (this.portee.length < cases.length) {
+      const m = new THREE.Mesh(SOL, this.materiauPortee);
+      this.portee.push(m);
+      this.scene.add(m);
+    }
+    this.portee.forEach((m, i) => {
+      const c = cases[i];
+      m.visible = !!c;
+      if (c) centreCase(c.x, c.y, this.ile!, m.position).setY(0.015);
+    });
   }
 
   changerIle(ile: Ile): void {

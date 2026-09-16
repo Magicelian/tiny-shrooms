@@ -1,6 +1,7 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
 import type {
   AmeliorationVillage,
+  Besoin,
   Meteo,
   Quantites,
   Ressource,
@@ -28,7 +29,10 @@ export interface DefinitionBatiment {
   postes?: number;
   /** Hausse des plafonds de stock ; fait aussi du bâtiment un point de dépôt. */
   stockage?: Quantites;
-  logement?: number;
+  /** Fait du bâtiment un logement : places et besoins suivent son rang (`Contenu.logement`). */
+  logement?: boolean;
+  /** Rayon d'effet en cases (carré centré sur le bâtiment) : chaleur d'un feu, eau d'un puits, commerce d'un marché. */
+  portee?: number;
   voisinage?: RegleVoisinage[];
 }
 
@@ -54,9 +58,8 @@ export interface ContenuHabitants {
   delaiArriveeSecondes: number;
   /** Bien-être moyen minimal pour qu'un nouvel habitant arrive. */
   seuilArrivee: number;
-  /** Au-delà, un habitant compte comme heureux et produit des spores. */
+  /** Bien-être à partir duquel un habitant produit des spores ; la production croît jusqu'à 1. */
   seuilBonheur: number;
-  sporesParHabitantHeureux: number;
   /** Durée entre deux remises en question de la tâche en cours. */
   reevaluationSecondes: number;
   /** Heures du jour (entre 0 et 1) où tout le monde dort. */
@@ -65,16 +68,18 @@ export interface ContenuHabitants {
   travailAffame: number;
   /** Nombre de baies fraîches qu'une baie séchée remplace au repas. */
   valeurBaieSechee: number;
-  bienEtre: { base: number; loge: number; nourri: number; affame: number; feuDeCamp: number; minutesPourSeStabiliser: number };
+  /**
+   * Bien-être visé : `base`, plus `loge` et `besoins` × part des besoins satisfaits pour un habitant logé,
+   * plus `affame` quand le village manque de nourriture.
+   */
+  bienEtre: { base: number; loge: number; besoins: number; affame: number; minutesPourSeStabiliser: number };
 }
 
 export interface ContenuSaisons {
   /** Multiplicateur de production par saison (1 pour une ressource absente). */
   production: Record<Saison, Quantites>;
-  /** En hiver, cadence de travail d'un poste trop loin d'un feu de camp. */
+  /** En hiver, cadence de travail d'un poste hors de portée d'un feu de camp. */
   travailAuFroid: number;
-  /** Portée de la chaleur d'un feu de camp, en cases. */
-  rayonChaleur: number;
 }
 
 export interface ContenuMeteo {
@@ -95,12 +100,41 @@ export interface DefinitionAmelioration {
   niveauMax: number;
 }
 
+/** Rang d'un logement ; le premier est celui d'un logement neuf. */
+export interface DefinitionRang {
+  places: number;
+  besoins: Besoin[];
+  /** Prix de la montée depuis le rang précédent (absent au premier rang). */
+  cout?: Quantites;
+  /** Palier de population à atteindre pour monter à ce rang. */
+  palier: number;
+  /** Spores par minute d'un habitant pleinement heureux. */
+  sporesParMinute: number;
+  /** Prélevé dans les stocks par minute ; le besoin du même nom n'est satisfait que si tout est servi. */
+  consommation?: Quantites;
+}
+
+export interface ContenuLogement {
+  rangs: DefinitionRang[];
+  /** Bâtiment dont la portée satisfait chaque besoin de proximité. */
+  sources: Partial<Record<Besoin, TypeBatiment>>;
+}
+
+export interface DefinitionPalier {
+  /** Clé de traduction `palier.<nom>`. */
+  nom: string;
+  population: number;
+  debloque: TypeBatiment[];
+}
+
 export interface Contenu {
   ile: { taille: number };
   stocksDeDepart: Record<Ressource, number>;
   plafondsDeBase: Record<Ressource, number>;
   batiments: Record<TypeBatiment, DefinitionBatiment>;
-  batimentsDeDepart: TypeBatiment[];
+  logement: ContenuLogement;
+  /** Paliers de population dans l'ordre ; le premier, à 0 habitant, donne les bâtiments de départ. */
+  paliers: DefinitionPalier[];
   recolte: Record<TypeElement, DefinitionRecolte>;
   habitants: ContenuHabitants;
   /** Améliorations du village, achetées à l'atelier. */

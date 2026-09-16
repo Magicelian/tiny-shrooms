@@ -141,6 +141,9 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 
   Un logement dont un besoin manque ne descend pas en gamme : il cesse seulement de progresser et
   son bonheur baisse, donc il produit moins de spores.
+  La montée se fait **au clic, contre paiement**, dans la bulle du logement, une fois les besoins du rang suivant
+  satisfaits. Le logement garde sa case. La mousse du manoir est prélevée dans le stock, un peu chaque minute.
+  Feu, puits et marché couvrent un carré autour d'eux ; la zone s'affiche à la pose et dans leur bulle.
 - **Paliers de population** : hameau (0) → village (15) → bourg (50) → cité (150) → … (seuils à
   régler). Chaque palier débloque bâtiments et améliorations, et s'annonce discrètement.
 - Animations visibles : marcher, porter, construire, dormir la nuit, se réchauffer au feu en hiver.
@@ -498,6 +501,18 @@ son critère n'est pas rempli.
 - Paliers de population et déblocages ; nouveaux bâtiments (puits, marché).
 - **Critère** : simulation accélérée d'un joueur scripté qui atteint le palier bourg ; un besoin
   manquant ralentit sans jamais faire perdre d'habitants.
+
+- **Résultat (16/09/2026)** : implémenté, à valider en jeu. Rangs, besoins, sources et paliers dans
+  `packages/content` ; le bien-être suit la part des besoins satisfaits, les spores croissent avec lui au-delà de 0,5
+  (0,2 / 0,3 / 0,5 par minute selon le rang). Le marché ne rend service que tenu (tâche `tenir`). Bâtiments de palier
+  supérieur grisés dans la bulle de construction ; palier sur l'écriteau des habitants, prochain seuil au survol.
+  Joueur scripté (`packages/content/src/bourg.test.ts`) : bourg atteint en ~1 h de jeu sur trois graines, sans perte
+  d'habitant — **bien plus vite que la cible de 10 à 20 h**, à régler à l'étape 16. L'île de 12 cases n'a qu'une
+  cinquantaine de cases libres : juste assez pour le bourg. Les habitants sans tâche ne cherchent plus qu'une fois
+  par seconde (simulation 16× plus rapide à 50 habitants). Sauvegarde en version 6 : les bâtiments de palier
+  supérieur des anciennes parties se re-débloquent en franchissant les paliers.
+  Demande en cours d'étape : les ressources entrent dans le stock au fil de l'eau (6/min → une unité toutes les
+  10 s) plutôt que par charges entières ; les livraisons attendent au dépôt (`arrivages`, sauvegarde en version 7).
 
 ### Étape 14 — Île extensible
 - Parcelles, achat en spores au bord de l'île, éléments naturels générés par la graine, coupe qui suit le contour.

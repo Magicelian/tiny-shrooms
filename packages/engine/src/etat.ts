@@ -24,6 +24,7 @@ export interface BatimentEtat extends Batiment {
 export type Mission =
   | { tache: 'recolter'; batiment: IdBatiment }
   | { tache: 'construire'; batiment: IdBatiment }
+  | { tache: 'tenir'; batiment: IdBatiment }
   | { tache: 'stocker'; etape: 'prendre'; batiment: IdBatiment }
   | { tache: 'stocker'; etape: 'deposer'; destination: Position; rayon: number };
 
@@ -46,10 +47,14 @@ export interface Etat {
   prochainIdHabitant: number;
   pasAvantArrivee: number;
   batimentsDebloques: TypeBatiment[];
+  /** Indice du palier de population atteint. */
+  palier: number;
   ameliorations: Record<AmeliorationVillage, number>;
   reglages: Reglages;
   /** Ressources dont le stock était plein au pas précédent, pour n'annoncer `stockPlein` qu'une fois. */
   stocksPleins: Ressource[];
+  /** Livraisons posées au dépôt, rangées dans les stocks peu à peu, au rythme de la production. */
+  arrivages: Record<Ressource, number>;
 }
 
 export function creerEtat(contenu: Contenu, graine = 1): Etat {
@@ -65,7 +70,8 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
     pousses: ile.elements.map(() => 1),
     prochainIdHabitant: 1,
     pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * (PAS_PAR_MINUTE / 60),
-    batimentsDebloques: [...contenu.batimentsDeDepart],
+    batimentsDebloques: [...(contenu.paliers[0]?.debloque ?? [])],
+    palier: 0,
     ameliorations: { vitesse: 0, outils: 0 },
     reglages: {
       langue: 'fr',
@@ -76,6 +82,7 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
       lancementAuDemarrage: false,
     },
     stocksPleins: [],
+    arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
   };
   for (let i = 0; i < contenu.habitants.auDepart; i++) ajouterHabitant(etat);
   return etat;

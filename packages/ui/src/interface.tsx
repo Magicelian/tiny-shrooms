@@ -2,8 +2,9 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource } from '@tiny-shrooms/engine';
+import { capaciteLogement } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import { nomBatiment, nomRessource, pourcent } from './format';
+import { nomPalier, nomPose, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 import { BulleBatiment, BulleConstruire } from './panneaux';
@@ -64,7 +65,7 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
   const batiment = controleur.batiment(bulle.id);
   if (!batiment) return null;
   return (
-    <Cadre titre={nomBatiment(batiment.type)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+    <Cadre titre={nomPose(controleur.contenu, batiment)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
       <BulleBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
     </Cadre>
   );
@@ -95,16 +96,18 @@ function Ecriteau({ instantane }: { instantane: Instantane }) {
   );
 }
 
-/** Habitants et places libres, sur une planche en haut à droite. */
+/** Palier, habitants et places libres, sur une planche en haut à droite. */
 function Population({ controleur, instantane }: Props & { instantane: Instantane }) {
   const { contenu } = controleur;
-  const places = instantane.batiments.reduce(
-    (n, b) => n + (b.chantier === null ? (contenu.batiments[b.type].logement ?? 0) : 0),
-    contenu.habitants.logementDeBase,
-  );
+  const places = capaciteLogement(contenu, instantane.batiments);
   const habitants = instantane.habitants.length;
+  const suivant = contenu.paliers[instantane.palier + 1];
+  const prochain = suivant
+    ? t('palier.prochain', { palier: nomPalier(contenu, instantane.palier + 1), population: suivant.population })
+    : t('palier.dernier');
   return (
-    <div class="ecriteau population" title={t('habitants.detail', { nombre: habitants, places })}>
+    <div class="ecriteau population" title={`${t('habitants.detail', { nombre: habitants, places })} · ${prochain}`}>
+      <span class="palier">{nomPalier(contenu, instantane.palier)}</span>
       <span class="pastille chapeau" />
       <span>
         {nombre(habitants)}
@@ -158,7 +161,7 @@ function BandeauDeplacement({ controleur, bonus }: Props & { bonus: number | nul
     <div class="bandeau commande">
       <div class="ligne">
         <span>
-          <strong>{nomBatiment(batiment.type)}</strong>
+          <strong>{nomPose(controleur.contenu, batiment)}</strong>
           {bonus !== null && bonus > 1 && <span class="bonus"> · {t('construction.bonusIci', { pourcent: pourcent(bonus - 1) })}</span>}
         </span>
         <button class="bouton fermer" title={t('panneau.fermer')} onClick={() => controleur.fermer()}>

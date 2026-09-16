@@ -18,12 +18,20 @@ export const fr = {
   'batiment.sechoir': 'Séchoir',
   'batiment.feuDeCamp': 'Feu de camp',
   'batiment.atelier': 'Atelier',
+  'batiment.puits': 'Puits',
+  'batiment.marche': 'Place du marché',
+
+  // Rangs des logements
+  'rang.1': 'Hutte-chapeau',
+  'rang.2': 'Maison-chapeau',
+  'rang.3': 'Manoir-chapeau',
 
   'effet.production': 'Produit {liste} par habitant',
   'effet.consommation': 'Consomme {liste}',
-  'effet.logement': 'Loge {nombre} habitants',
+  'effet.logement': 'Loge {nombre} habitants, plus une fois agrandi',
+  'effet.portee': '{besoin} à {portee} cases autour',
+  'effet.tenu': 'Il faut un habitant pour le tenir',
   'effet.stockage': 'Stock : {liste}',
-  'effet.feuDeCamp': 'Bien-être alentour',
   'effet.aVenir': 'Utile dans une prochaine version',
   'effet.voisinage': '+{pourcent} % à côté : {voisin}',
   'effet.bonusActuel': 'Bonus de voisinage : +{pourcent} %',
@@ -52,7 +60,26 @@ export const fr = {
   'construction.emplois': 'Emplois : {pourvus}/{postes}',
   'construction.batisseurs': 'Bâtisseurs : {pourvus}/{postes}',
 
-  // Habitants
+  // Logements
+  'logement.habitants': 'Habitants : {nombre}/{places}',
+  'logement.besoins': 'Besoins',
+  'logement.pourMonter': 'Pour devenir {rang}',
+  'logement.monter': 'Agrandir : {liste}',
+  'logement.rangMax': 'Rang le plus haut',
+  'logement.palierRequis': 'Débloqué au palier {palier}',
+  'besoin.nourriture': 'Nourriture',
+  'besoin.chaleur': 'Chaleur',
+  'besoin.eau': 'Eau',
+  'besoin.mousse': 'Mousse livrée',
+  'besoin.commerce': 'Commerce',
+
+  // Paliers
+  'palier.hameau': 'Hameau',
+  'palier.village': 'Village',
+  'palier.bourg': 'Bourg',
+  'palier.cite': 'Cité',
+  'palier.prochain': '{palier} à {population} habitants',
+  'palier.dernier': 'Plus haut palier atteint',
 
   // Atelier
   'amelioration.vitesse': 'Sabots légers',
@@ -86,7 +113,10 @@ export const fr = {
   'refus.indisponible': 'Pas encore possible',
   'refus.pasPret': 'Pas encore repoussé',
   'refus.stockPlein': 'Stock plein',
-  'message.planObtenu': 'Nouveau plan : {batiment}',
+  'refus.besoinsManquants': 'Il manque encore quelque chose',
+  'message.palierAtteint': '{palier} ! Nouveaux plans : {liste}',
+  'message.palierAtteintSeul': 'Le village devient {palier} !',
+  'message.logementAmeliore': '{rang} achevé',
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.stockPlein': 'Stock plein : {ressource}',

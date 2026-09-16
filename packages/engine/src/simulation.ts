@@ -5,21 +5,39 @@ import { coutAmelioration, effetAmelioration, payer } from './ameliorations';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
-import { avancerHabitants } from './habitants';
+import { avancerHabitants, logements } from './habitants';
+import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 type Flux = Record<Ressource, number>;
 
-/** Variations de stock qui ne passent pas par un transport : spores, repas, récoltes en cours (estimées). */
-function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Flux } {
+/** Délai au bout duquel des arrivages en retard sur la production sont rangés, en minutes. */
+const MINUTES_POUR_RANGER = 1;
+
+/**
+ * Variations de stock par minute. `direct` : ce qui ne passe pas par un transport (spores) ;
+ * `production` : récoltes en cours ; `estime` : bilan affiché, repas et consommations compris.
+ */
+function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production: Flux; estime: Flux } {
   const direct: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
   const h = contenu.habitants;
+  const { loges } = logements(etat, contenu);
   for (const habitant of etat.habitants) {
-    if (habitant.bienEtre >= h.seuilBonheur) direct.spores += h.sporesParHabitantHeureux;
+    const logement = loges.get(habitant.id);
+    if (!logement) continue;
+    const rang = logement === true ? contenu.logement.rangs[0] : rangLogement(contenu, logement);
+    const joie = Math.max(0, (habitant.bienEtre - h.seuilBonheur) / (1 - h.seuilBonheur));
+    direct.spores += (rang?.sporesParMinute ?? 0) * Math.min(1, joie);
   }
 
+  const production: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
   const estime = { ...direct };
+  // Les consommations des logements sont déjà prélevées pas à pas ; on les montre dans la tendance.
+  for (const b of etat.batiments) {
+    const consommation = b.chantier === null ? rangLogement(contenu, b)?.consommation : undefined;
+    for (const r of cles(consommation ?? {})) estime[r] -= consommation![r] ?? 0;
+  }
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
   const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
@@ -32,11 +50,13 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Fl
     const def = contenu.batiments[b.type];
     const cadence = cadenceTravail(etat, contenu, { x: b.case.x + 0.5, y: b.case.y + 0.5 }, nourri) * bonus;
     for (const r of cles(def.production ?? {})) {
-      estime[r] += (def.production![r] ?? 0) * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence;
+      const quantite = (def.production![r] ?? 0) * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence;
+      production[r] += quantite;
+      estime[r] += quantite;
     }
     for (const r of cles(def.consommation ?? {})) estime[r] -= (def.consommation![r] ?? 0) * cadence;
   }
-  return { direct, estime };
+  return { direct, production, estime };
 }
 
 export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
@@ -46,10 +66,12 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const saison = calendrier(etat.pas, contenu);
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
+  majPalier(etat, contenu, evenements);
   repousser(etat, contenu);
 
   const max = plafonds(etat, contenu);
-  const { direct } = fluxParMinute(etat, contenu);
+  const { direct, production } = fluxParMinute(etat, contenu);
+  ranger(etat, production);
   const pleins: Ressource[] = [];
   for (const r of RESSOURCES) {
     const avant = etat.stocks[r];
@@ -63,6 +85,22 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   }
   etat.stocksPleins = pleins;
   return evenements;
+}
+
+/**
+ * Les livraisons entrent dans les stocks au rythme de la production (6/min : une unité toutes les 10 s),
+ * plutôt que par charges entières ; un retard sur la production se résorbe en `MINUTES_POUR_RANGER`.
+ */
+function ranger(etat: Etat, production: Flux): void {
+  for (const r of RESSOURCES) {
+    const enAttente = etat.arrivages[r];
+    if (enAttente <= 0) continue;
+    // Au moins une unité par minute, pour que la file se vide même sans production.
+    const parMinute = Math.max(production[r], enAttente / MINUTES_POUR_RANGER, 1);
+    const range = Math.min(enAttente, parMinute / PAS_PAR_MINUTE);
+    etat.stocks[r] += range;
+    etat.arrivages[r] = enAttente - range < 1e-9 ? 0 : enAttente - range;
+  }
 }
 
 /** Les éléments naturels épuisés repoussent, au rythme de la saison pour leur ressource. */
@@ -94,6 +132,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         niveau: 1,
         chantier: def.constructionSecondes > 0 ? 0 : null,
         bonusVoisinage: 1,
+        besoins: {},
         reserve: {},
       });
       majBonusVoisinage(etat, contenu);
@@ -113,7 +152,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       const i = etat.batiments.findIndex((x) => x.id === commande.id);
       if (i < 0) return refus('introuvable');
       const [b] = etat.batiments.splice(i, 1);
-      const cout = contenu.batiments[b!.type].cout;
+      const cout = coutTotal(contenu, b!);
       for (const r of cles(cout)) etat.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
       // La récolte en attente n'est pas perdue.
       for (const r of cles(b!.reserve)) etat.stocks[r] += b!.reserve[r] ?? 0;
@@ -137,8 +176,13 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       return [];
     }
     case 'ameliorer': {
-      // Les améliorations propres à un bâtiment ne sont pas au programme de la V1.
-      if (!('village' in commande.cible)) return refus('indisponible');
+      if ('batiment' in commande.cible) {
+        const { batiment } = commande.cible;
+        const b = etat.batiments.find((x) => x.id === batiment);
+        if (!b) return refus('introuvable');
+        const raison = monterLogement(etat, contenu, b);
+        return raison ? refus(raison) : [{ type: 'logementAmeliore', id: b.id, niveau: b.niveau }];
+      }
       if (!etat.batiments.some((b) => b.type === 'atelier' && b.chantier === null)) {
         return refus(etat.batimentsDebloques.includes('atelier') ? 'indisponible' : 'nonDebloque');
       }
@@ -171,7 +215,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
       enPause,
     },
     stocks,
-    batiments: etat.batiments.map(({ reserve: _reserve, ...b }) => ({ ...b, case: { ...b.case } })),
+    batiments: etat.batiments.map(({ reserve: _reserve, ...b }) => ({ ...b, case: { ...b.case }, besoins: { ...b.besoins } })),
     habitants: etat.habitants.map(({ mission, charge: _c, pasDepuisChoix: _p, ...h }) => ({
       ...h,
       position: { ...h.position },
@@ -179,6 +223,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     })),
     pousses: [...etat.pousses],
     batimentsDebloques: [...etat.batimentsDebloques],
+    palier: etat.palier,
     ameliorations: { ...etat.ameliorations },
     reglages: { ...etat.reglages },
   };

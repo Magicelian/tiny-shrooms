@@ -109,6 +109,10 @@ export class Rendu {
     this.aides.cacherFantome();
   }
 
+  montrerPortee(cases: readonly Case[]): void {
+    this.aides.montrerPortee(cases);
+  }
+
   tourner(sens: 1 | -1): void {
     this.vue.tourner(sens);
   }

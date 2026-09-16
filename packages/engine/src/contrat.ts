@@ -83,6 +83,8 @@ export const TYPES_BATIMENT = [
   'sechoir',
   'feuDeCamp',
   'atelier',
+  'puits',
+  'marche',
 ] as const;
 export type TypeBatiment = (typeof TYPES_BATIMENT)[number];
 
@@ -99,18 +101,31 @@ export interface Batiment {
   chantier: number | null;
   /** Bonus de voisinage appliqué, en multiplicateur (1 = aucun). */
   bonusVoisinage: number;
+  /**
+   * Logements seulement : besoins du rang actuel et du rang suivant, satisfaits ou non.
+   * Vide pour les autres bâtiments et les chantiers.
+   */
+  besoins: Partial<Record<Besoin, boolean>>;
 }
+
+/**
+ * Besoins d'un logement : la nourriture du village, la proximité d'un bâtiment (chaleur, eau, commerce)
+ * ou une ressource consommée par le logement lui-même (mousse).
+ */
+export const BESOINS = ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce'] as const;
+export type Besoin = (typeof BESOINS)[number];
 
 export const AMELIORATIONS_VILLAGE = ['vitesse', 'outils'] as const;
 export type AmeliorationVillage = (typeof AMELIORATIONS_VILLAGE)[number];
 
 // ─── Habitants ───────────────────────────────────────────────────────────────
 
-export const TACHES = ['recolter', 'construire', 'stocker'] as const;
+/** `tenir` : occuper un emploi sans production (marché). */
+export const TACHES = ['recolter', 'construire', 'stocker', 'tenir'] as const;
 export type Tache = (typeof TACHES)[number];
 
 /** Ce que l'habitant fait en ce moment, pour choisir l'animation. */
-export type Activite = 'attend' | 'marche' | 'porte' | 'recolte' | 'construit' | 'dort' | 'seRechauffe';
+export type Activite = 'attend' | 'marche' | 'porte' | 'recolte' | 'construit' | 'tient' | 'dort' | 'seRechauffe';
 
 export type IdHabitant = number;
 
@@ -174,6 +189,8 @@ export interface Instantane {
   /** Repousse de chaque élément naturel (même ordre que `Ile.elements`), entre 0 et 1 : 1 = récoltable. */
   pousses: number[];
   batimentsDebloques: TypeBatiment[];
+  /** Indice du palier de population atteint dans `contenu.paliers` ; ne redescend jamais. */
+  palier: number;
   ameliorations: Record<AmeliorationVillage, number>;
   reglages: Reglages;
 }
@@ -189,6 +206,7 @@ export type Commande =
   | { type: 'deplacerBatiment'; id: IdBatiment; case: Case; orientation: Orientation }
   | { type: 'demolir'; id: IdBatiment }
   | { type: 'recolter'; element: IdElement }
+  /** Sur un logement, la montée au rang suivant ; sur le village, un niveau d'amélioration de l'atelier. */
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
   | CommandeReglage;
 
@@ -205,6 +223,8 @@ export type RaisonRefus =
   /** Élément naturel pas encore repoussé. */
   | 'pasPret'
   | 'stockPlein'
+  /** Montée en gamme : un besoin du rang suivant n'est pas satisfait. */
+  | 'besoinsManquants'
   /** L'action n'est pas possible pour l'instant (fonction à venir…). */
   | 'indisponible';
 
@@ -213,6 +233,8 @@ export type Evenement =
   | { type: 'stockPlein'; ressource: Ressource }
   | { type: 'habitantArrive'; id: IdHabitant }
   | { type: 'constructionTerminee'; id: IdBatiment }
+  | { type: 'palierAtteint'; palier: number; debloques: TypeBatiment[] }
+  | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }
   | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
   | { type: 'commandeRefusee'; commande: Commande; raison: RaisonRefus };
 
