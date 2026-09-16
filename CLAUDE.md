@@ -101,3 +101,26 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   (joueur scripté commun : `joueur.ts`). Dans le navigateur, la partie en cours réécrit `localStorage` au
   rechargement : bloquer `Storage.prototype.setItem` avant de recharger une partie préparée.
 - **Prochaine étape : 15** (habillage).
+
+## À faire en priorité (demandes du 16/09/2026, avant l'étape 15)
+
+1. **Annuler un arrachage en cours** (arbre, buisson, plante, souche) : nouvelle commande moteur, par ex.
+   `annulerArrachage { case }` (case nulle = souche) qui retire l'entrée de `etat.defrichages` (ou remet
+   `retraitSouche` à `null`) et **rembourse le prix payé** en entier (à confirmer). Les habitants dont la mission
+   `arracher` visait cette case la lâchent. Bouton « Annuler » dans `BulleNature` (`packages/ui/src/panneaux.tsx`) quand
+   `avancement !== null`. Tests dans `packages/engine/src/moteur.test.ts` (bloc « Défrichage »).
+2. **Arracher un buisson/une plante stock plein** : aujourd'hui un clic sur un élément prêt envoie toujours `recolter`
+   (`packages/ui/src/index.tsx`, `clic`, vers la ligne 308) ; stock plein → refus `stockPlein` et aucune bulle, donc
+   impossible d'arracher. Correctif proposé : si le stock de la ressource de l'élément est plein, ouvrir la bulle
+   `nature` au lieu de récolter (le frontend connaît `instantane.stocks` et `contenu.recolte`).
+3. **Fermer la bulle dès qu'on lance un arrachage** : dans `BulleNature`, appeler `controleur.fermer()` après
+   `envoyer({ type: 'defricher' | 'retirerSouche' })`. Pour annuler (point 1), on rouvre la bulle d'un clic.
+4. **Choisir ses bonus juste après une renaissance** : depuis le dernier commit, la renaissance referme la bulle du
+   sanctuaire et n'annonce que le gain ; les graines ne sont alors dépensables qu'au sanctuaire suivant (après le
+   bourg), ce qui les rend inutiles pour la partie qui commence. À faire : après l'événement `renaissance`, ouvrir un
+   **panneau distinct** (pas la bulle du sanctuaire) « Choisis tes bonus » avec `ArbreBonus` et un bouton
+   « Commencer » (réintroduire une bulle `{ type: 'prestige'; gain }` dans `magasin.ts`, rendue dans `interface.tsx`).
+   Accès permanent possible ensuite (ex. bulle de la souche) : à trancher avec Celian.
+
+Vérifier chaque point dans le navigateur (voir la note `localStorage` de l'étape 14), puis mettre à jour ce fichier et
+le cahier des charges (§3.7, étape 14).
