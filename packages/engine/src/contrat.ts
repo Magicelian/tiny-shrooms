@@ -41,6 +41,21 @@ export type Terrain = 'vide' | 'herbe' | 'foret' | 'buisson' | 'eau' | 'rocher';
 
 export type Biome = 'foret';
 
+// ─── Éléments naturels ───────────────────────────────────────────────────────
+
+/** Ce qu'on récolte à la main : un clic donne un peu de ressource et épuise l'élément, qui repousse. */
+export const TYPES_ELEMENT = ['buisson', 'boisMort', 'mousse'] as const;
+export type TypeElement = (typeof TYPES_ELEMENT)[number];
+
+/** Indice de l'élément dans `Ile.elements`. */
+export type IdElement = number;
+
+export interface ElementNaturel {
+  type: TypeElement;
+  /** Une case par élément ; elle ne peut pas recevoir de bâtiment. */
+  case: Case;
+}
+
 /** Description de l'île, envoyée au démarrage et à chaque changement d'île, pas à chaque pas. */
 export interface Ile {
   biome: Biome;
@@ -52,6 +67,8 @@ export interface Ile {
   souche: Case;
   /** Côté de l'emprise carrée de la souche, en cases. */
   tailleSouche: number;
+  /** Éléments naturels récoltables, placés d'après la graine. */
+  elements: ElementNaturel[];
 }
 
 // ─── Bâtiments ───────────────────────────────────────────────────────────────
@@ -154,6 +171,8 @@ export interface Instantane {
   stocks: Record<Ressource, Stock>;
   batiments: Batiment[];
   habitants: Habitant[];
+  /** Repousse de chaque élément naturel (même ordre que `Ile.elements`), entre 0 et 1 : 1 = récoltable. */
+  pousses: number[];
   batimentsDebloques: TypeBatiment[];
   ameliorations: Record<AmeliorationVillage, number>;
   reglages: Reglages;
@@ -169,6 +188,7 @@ export type Commande =
   | { type: 'poserBatiment'; batiment: TypeBatiment; case: Case; orientation: Orientation }
   | { type: 'deplacerBatiment'; id: IdBatiment; case: Case; orientation: Orientation }
   | { type: 'demolir'; id: IdBatiment }
+  | { type: 'recolter'; element: IdElement }
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
   | CommandeReglage;
 
@@ -182,6 +202,9 @@ export type RaisonRefus =
   | 'horsIle'
   | 'nonDebloque'
   | 'introuvable'
+  /** Élément naturel pas encore repoussé. */
+  | 'pasPret'
+  | 'stockPlein'
   /** L'action n'est pas possible pour l'instant (fonction à venir…). */
   | 'indisponible';
 
@@ -190,6 +213,7 @@ export type Evenement =
   | { type: 'stockPlein'; ressource: Ressource }
   | { type: 'habitantArrive'; id: IdHabitant }
   | { type: 'constructionTerminee'; id: IdBatiment }
+  | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
   | { type: 'commandeRefusee'; commande: Commande; raison: RaisonRefus };
 
 // ─── Protocole du Worker ─────────────────────────────────────────────────────

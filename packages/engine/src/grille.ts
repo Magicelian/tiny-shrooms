@@ -3,7 +3,7 @@
 import type { Batiment, Case, IdBatiment, Ile, RaisonRefus, TypeBatiment } from './contrat';
 import type { Contenu } from './contenu';
 import type { Etat } from './etat';
-import { dansLaSouche, terrainEn } from './ile';
+import { dansLaSouche, elementEn, terrainEn } from './ile';
 
 type Emprise = Pick<Batiment, 'id' | 'type' | 'case' | 'chantier'>;
 
@@ -11,7 +11,7 @@ type Emprise = Pick<Batiment, 'id' | 'type' | 'case' | 'chantier'>;
 export function emplacementRefuse(ile: Ile, batiments: readonly Emprise[], c: Case, ignorer?: IdBatiment): RaisonRefus | null {
   const terrain = terrainEn(ile, c.x, c.y);
   if (terrain === 'vide') return 'horsIle';
-  if (terrain !== 'herbe' || dansLaSouche(ile, c.x, c.y)) return 'emplacementOccupe';
+  if (terrain !== 'herbe' || dansLaSouche(ile, c.x, c.y) || elementEn(ile, c.x, c.y) >= 0) return 'emplacementOccupe';
   if (batiments.some((b) => b.id !== ignorer && b.case.x === c.x && b.case.y === c.y)) return 'emplacementOccupe';
   return null;
 }

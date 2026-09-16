@@ -39,7 +39,22 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
     if (!missionValide(etat, contenu, h)) choisirMission(etat, contenu, h);
     executer(etat, contenu, h, nourri, evenements);
   }
+  // Village encore vide : les chantiers avancent seuls, au rythme d'un bâtisseur.
+  if (etat.habitants.length === 0) {
+    for (const b of etat.batiments) if (b.chantier !== null) avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements);
+  }
   arrivees(etat, contenu, capacite, evenements);
+}
+
+/** Fait avancer un chantier d'un pas ; renvoie vrai s'il vient de se terminer. */
+function avancerChantier(etat: Etat, contenu: Contenu, b: BatimentEtat, cadence: number, evenements: Evenement[]): boolean {
+  const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  b.chantier = pasNecessaires > 0 ? b.chantier! + cadence / pasNecessaires : 1;
+  if (b.chantier < 1 - 1e-9) return false;
+  b.chantier = null;
+  majBonusVoisinage(etat, contenu);
+  evenements.push({ type: 'constructionTerminee', id: b.id });
+  return true;
 }
 
 // ─── Besoins ─────────────────────────────────────────────────────────────────
@@ -193,16 +208,8 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
       return;
     case 'construire': {
       const b = trouver(etat, m.batiment)!;
-      const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS;
-      const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri);
-      b.chantier = pasNecessaires > 0 ? b.chantier! + cadence / pasNecessaires : 1;
       h.activite = 'construit';
-      if (b.chantier >= 1 - 1e-9) {
-        b.chantier = null;
-        majBonusVoisinage(etat, contenu);
-        evenements.push({ type: 'constructionTerminee', id: b.id });
-        h.mission = null;
-      }
+      if (avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements)) h.mission = null;
       return;
     }
     case 'stocker':

@@ -79,8 +79,3 @@ pub fn appliquer_verrouillage(app: &AppHandle, verrouillee: bool) {
 pub fn lire_reglages(app: AppHandle) -> Reglages {
     app.state::<EtatReglages>().reglages.lock().unwrap().clone()
 }
-
-#[tauri::command]
-pub fn verrouiller_position(app: AppHandle, verrouillee: bool) {
-    appliquer_verrouillage(&app, verrouillee);
-}

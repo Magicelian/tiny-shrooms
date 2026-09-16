@@ -1,8 +1,10 @@
 // Format du fichier de sauvegarde : un numéro de version et l'état complet.
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
+import type { Case, Ile } from './contrat';
 import type { Etat } from './etat';
+import { placerElements } from './ile';
 
-export const VERSION_SAUVEGARDE = 4;
+export const VERSION_SAUVEGARDE = 5;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -23,7 +25,15 @@ interface FichierSauvegarde {
  * Migrations successives : `MIGRATIONS[v]` convertit une sauvegarde de la version `v`
  * vers la version `v + 1`. Toute évolution du format ajoute une entrée ici.
  */
-const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {};
+const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {
+  // Version 5 : éléments naturels récoltables, semés autour des bâtiments déjà posés.
+  4: (etat) => {
+    const ile = etat.ile as Omit<Ile, 'elements'>;
+    const occupees = (etat.batiments as { case: Case }[]).map((b) => b.case);
+    const elements = placerElements(ile, etat.graine as number, occupees);
+    return { ...etat, ile: { ...ile, elements }, pousses: elements.map(() => 1) };
+  },
+};
 
 export function serialiser(etat: Etat): string {
   const fichier: FichierSauvegarde = { version: VERSION_SAUVEGARDE, etat };
@@ -71,7 +81,7 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
   const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee'];
-  const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins'];
+  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins'];
   const objets = ['ile', 'stocks', 'reglages', 'ameliorations'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??

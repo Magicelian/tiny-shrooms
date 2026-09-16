@@ -37,11 +37,6 @@ export const fr = {
   'terrain.herbe': 'herbe',
   'terrain.vide': 'vide',
 
-  // Commandes
-  'outil.reglages': 'Réglages',
-  'outil.tournerGauche': 'Tourner à gauche',
-  'outil.tournerDroite': 'Tourner à droite',
-  'outil.zoom': 'Zoom',
   'panneau.fermer': 'Fermer',
 
   // Construction
@@ -68,10 +63,8 @@ export const fr = {
   'amelioration.max': 'Au maximum',
   'amelioration.acheter': 'Améliorer : {liste}',
 
-  // Réglages
-  'reglages.camera': 'Glisser pour déplacer la vue, molette pour zoomer, ←/→ pour tourner. ⌘ + glisser déplace la fenêtre.',
-  'reglages.verrouiller': 'Verrouiller la position',
-  'reglages.aVenir': 'Son, opacité et langue arriveront bientôt.',
+  // Habitants
+  'habitants.detail': 'Habitants {nombre}/{places} places',
 
   // Temps
   'saison.printemps': 'Printemps',
@@ -91,6 +84,8 @@ export const fr = {
   'refus.nonDebloque': 'Pas encore débloqué',
   'refus.introuvable': 'Introuvable',
   'refus.indisponible': 'Pas encore possible',
+  'refus.pasPret': 'Pas encore repoussé',
+  'refus.stockPlein': 'Stock plein',
   'message.planObtenu': 'Nouveau plan : {batiment}',
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',

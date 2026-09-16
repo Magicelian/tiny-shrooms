@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, emplacementRefuse } from '@tiny-shrooms/engine';
+import { bonusVoisinage, elementEn, emplacementRefuse } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomRessource } from './format';
@@ -29,8 +29,6 @@ export interface OptionsInterface {
   couleurs: { batiments: Record<TypeBatiment, number>; chapeaux: readonly number[] };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
-  /** Verrouille ou libère la position de la fenêtre (Tauri). */
-  verrouiller?: (verrouillee: boolean) => void;
 }
 
 /** Distance en pixels au-delà de laquelle un appui devient un glisser et non plus un clic. */
@@ -56,6 +54,8 @@ export class ControleurInterface {
   private focusDepuis = -Infinity;
   private molette = { cumul: 0, dernier: 0 };
   private curseur: Curseur = 'fleche';
+  /** Point cliqué pour chaque récolte envoyée, d'où partira son chiffre. */
+  private readonly recoltes = new Map<number, { x: number; y: number }>();
 
   constructor(
     racine: HTMLElement,
@@ -63,7 +63,7 @@ export class ControleurInterface {
   ) {
     installerCurseurs(document.documentElement);
     render(<Interface controleur={this} />, racine);
-    this.magasin.modifier({ focus: document.hasFocus(), fenetreMobile: !!options.deplacerFenetre });
+    this.magasin.modifier({ focus: document.hasFocus() });
     this.brancherSouris();
   }
 
@@ -93,7 +93,14 @@ export class ControleurInterface {
     const vise = bulle?.type === 'batiment' ? bulle.id : deplacement;
     if (vise !== null && !this.batiment(vise)) this.fermer();
     for (const e of message.evenements) {
-      if (e.type === 'commandeRefusee') this.magasin.annoncer(t(`refus.${e.raison}`));
+      if (e.type === 'recolte') {
+        const point = this.recoltes.get(e.element);
+        this.recoltes.delete(e.element);
+        if (point) this.magasin.envoler({ ...point, ressource: e.ressource, quantite: e.quantite });
+      } else if (e.type === 'commandeRefusee') {
+        if (e.commande.type === 'recolter') this.recoltes.delete(e.commande.element);
+        this.magasin.annoncer(t(`refus.${e.raison}`));
+      }
       else if (e.type === 'habitantArrive') this.magasin.annoncer(t('message.habitantArrive'));
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {
@@ -124,18 +131,9 @@ export class ControleurInterface {
     this.majVisee();
   }
 
-  /** Position de la fenêtre verrouillée ou libre, qu'importe d'où vient le changement (réglages ou icône). */
+  /** Position de la fenêtre verrouillée ou libre, depuis le menu de l'icône. */
   signalerVerrouillage(verrouillee: boolean): void {
     this.magasin.modifier({ verrouillee });
-  }
-
-  verrouiller(verrouillee: boolean): void {
-    this.magasin.modifier({ verrouillee });
-    this.options.verrouiller?.(verrouillee);
-  }
-
-  basculerReglages(): void {
-    this.ouvrir(this.magasin.valeur.bulle?.type === 'reglages' ? null : { type: 'reglages' });
   }
 
   /** Choix d'un bâtiment dans la bulle de construction : son fantôme apparaît sur la case. */
@@ -275,7 +273,12 @@ export class ControleurInterface {
     if (bulle) return this.fermer();
     const haut = y > window.innerHeight / 2;
     const id = visee.batiment ?? this.batimentSur(visee.case);
+    const element = visee.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
     if (id !== null) this.ouvrir({ type: 'batiment', id, haut });
+    else if (element >= 0) {
+      this.recoltes.set(element, { x, y });
+      this.envoyer({ type: 'recolter', element });
+    }
     else if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case) === null) {
       this.ouvrir({ type: 'construire', case: visee.case, choix: null, haut });
     }
@@ -313,12 +316,14 @@ export class ControleurInterface {
     const id = visee ? (visee.batiment ?? this.batimentSur(visee.case)) : null;
     const survole = id === null ? undefined : this.batiment(id);
     const libre = !survole && !!visee?.case && emplacementRefuse(ile, batiments, visee.case) === null;
+    const element = !survole && visee?.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
+    const recoltable = element >= 0 && (instantane.pousses[element] ?? 0) >= 1;
     // Le bâtiment de la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
     const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : survole;
     if (cible) scene.montrerFantome(cible.case, null, true);
-    else if (libre && !bulle) scene.montrerFantome(visee!.case!, null, true);
+    else if ((libre || element >= 0) && !bulle) scene.montrerFantome(visee!.case!, null, libre || recoltable);
     else scene.cacherFantome();
-    this.majCurseur(bulle ? 'fleche' : survole ? 'main' : libre ? 'marteau' : 'fleche');
+    this.majCurseur(bulle ? 'fleche' : survole || recoltable ? 'main' : libre ? 'marteau' : 'fleche');
   }
 
   /** Main fermée pendant un glisser, sinon la variante choisie selon ce qui est visé. */

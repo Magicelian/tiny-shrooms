@@ -134,7 +134,6 @@ fn main() {
             sauvegarde::ecrire_sauvegarde,
             sauvegarde::archiver_sauvegardes,
             reglages::lire_reglages,
-            reglages::verrouiller_position,
             quitter
         ])
         .run(tauri::generate_context!())

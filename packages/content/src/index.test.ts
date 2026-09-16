@@ -2,7 +2,14 @@
 // on pose 3 bâtiments, les habitants construisent, récoltent et stockent seuls.
 import { describe, expect, it } from 'vitest';
 import { Moteur, PAS_PAR_MINUTE, RESSOURCES, type Evenement, type TypeBatiment } from '@tiny-shrooms/engine';
-import { contenu } from './index';
+import { contenu as contenuV1 } from './index';
+
+// Village déjà lancé (stock et habitants de l'ancien départ) : la partie neuve est testée dans recolte.test.ts.
+const contenu = {
+  ...contenuV1,
+  stocksDeDepart: { baies: 20, baiesSechees: 0, boisMort: 60, mousse: 10, spores: 0 },
+  habitants: { ...contenuV1.habitants, auDepart: 2, logementDeBase: 2 },
+};
 
 describe('Une heure simulée avec le contenu de la V1', () => {
   const moteur = new Moteur(contenu, 0);

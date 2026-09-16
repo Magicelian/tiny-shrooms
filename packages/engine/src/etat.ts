@@ -41,6 +41,8 @@ export interface Etat {
   batiments: BatimentEtat[];
   prochainId: number;
   habitants: HabitantEtat[];
+  /** Repousse de chaque élément naturel de l'île, entre 0 et 1. */
+  pousses: number[];
   prochainIdHabitant: number;
   pasAvantArrivee: number;
   batimentsDebloques: TypeBatiment[];
@@ -51,14 +53,16 @@ export interface Etat {
 }
 
 export function creerEtat(contenu: Contenu, graine = 1): Etat {
+  const ile = genererIle(contenu.ile.taille, graine);
   const etat: Etat = {
     pas: 0,
     graine,
-    ile: genererIle(contenu.ile.taille, graine),
+    ile,
     stocks: { ...contenu.stocksDeDepart },
     batiments: [],
     prochainId: 1,
     habitants: [],
+    pousses: ile.elements.map(() => 1),
     prochainIdHabitant: 1,
     pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * (PAS_PAR_MINUTE / 60),
     batimentsDebloques: [...contenu.batimentsDeDepart],

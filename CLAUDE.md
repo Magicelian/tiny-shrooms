@@ -68,7 +68,13 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   fenêtre : `src-tauri/src/reglages.rs` (`reglages.json` : verrouillage + position, écrite en quittant), case du menu
   de l'icône et événement `verrouillage`.
 - **Étape 11 validée**. Clic → bulle (`Bulle` dans `packages/ui/src/magasin.ts`) : case libre
-  → construire (choix, fantôme, bouton), bâtiment → infos, déplacer, démolir ; ⚙ en haut à droite (caméra, verrouillage).
-  Ressources sur un poteau de planches, saison sur un écriteau (gardé), toujours visibles ; sans le focus, commandes
+  → construire (choix, fantôme, bouton), bâtiment → infos, déplacer, démolir.
+  Ressources, saison (écriteau gardé) et habitants toujours visibles ; sans le focus, commandes
   masquées et bulle fermée. L'instantané donne `habitant.lieu` (emplois pourvus).
-- **Prochaine étape : 12** (récolte à la main).
+- **Étape 12 validée**. Éléments naturels dans `ile.elements` (placés par la graine,
+  `placerElements` dans `packages/engine/src/ile.ts`), repousse dans `etat.pousses` / `instantane.pousses` ; commande
+  `recolter`, événement `recolte` (chiffre qui s'envole depuis le point cliqué). Partie neuve : ni stock, ni habitant,
+  ni logement de base ; sans habitants les chantiers avancent seuls. Sauvegarde en version 5 (migration depuis la 4).
+  Rendu : `packages/renderer/src/elements.ts`. Critère : `packages/content/src/recolte.test.ts` (hutte achevée à ~3 min).
+  Menu Réglages retiré : habitants/places en haut à droite, ressources en rangée discrète en bas (plafond au survol).
+- **Prochaine étape : 13** (habitants façon SimCity).

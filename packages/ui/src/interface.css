@@ -46,7 +46,7 @@
 .interface.active .commande {
   opacity: 1;
 }
-.interface.active :is(button, input, select, .planche) {
+.interface.active :is(button, .planche) {
   pointer-events: auto;
 }
 
@@ -82,37 +82,12 @@
   background: var(--rouge);
   color: #fff;
 }
-.outil {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  font-size: 16px;
-  line-height: 1;
-}
-.outil.petit {
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
-}
 .fermer {
   width: 22px;
   height: 22px;
   padding: 0;
   font-size: 11px;
   line-height: 1;
-}
-
-/* Icône Réglages, discrète en haut à droite */
-.outil.reglages {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
-}
-.interface.active .outil.reglages:not(:hover, .actif) {
-  opacity: 0.7;
 }
 
 /* Décor : bois sombre, texte clair cerclé de noir, lisible sur toutes les saisons. */
@@ -159,54 +134,60 @@
 .ecriteau::after {
   right: 8px;
 }
+/* Habitants, sur un écriteau jumeau en haut à droite */
+.ecriteau.population {
+  left: auto;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.population .places {
+  color: #e3cfa6;
+}
 .ecriteau .meteo {
   margin-right: 4px;
   color: var(--accent);
 }
 
-/* Ressources : planches clouées à un poteau planté en bas à gauche */
-.poteau {
+/* Habitants et ressources : rangée de petites planches en bas à gauche */
+.rangee {
   position: absolute;
-  left: 8px;
-  bottom: 0;
+  left: 4px;
+  bottom: 4px;
   margin: 0;
-  padding: 0 0 10px;
+  padding: 0;
   list-style: none;
   display: flex;
-  flex-direction: column;
   gap: 2px;
-}
-.poteau::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  left: 10px;
-  top: -4px;
-  bottom: 0;
-  width: 6px;
-  background: #4f321c;
-  border: var(--trait);
-  border-bottom: none;
-  border-radius: 2px 2px 0 0;
 }
 .planche {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  width: max-content;
-  padding: 0 6px 0 3px;
+  gap: 2px;
+  padding: 0 4px 0 2px;
+  opacity: 0.9;
 }
 .planche .quantite {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-}
-.planche .plafond {
-  font-size: 10px;
-  color: #e3cfa6;
 }
 .planche.plein .quantite {
   color: #ffb199;
+}
+.planche .pastille {
+  width: 8px;
+  height: 8px;
+}
+.pastille.chapeau {
+  width: 10px;
+  height: 6px;
+  /* Bas du chapeau sur la ligne de base des chiffres. */
+  position: relative;
+  top: -2px;
+  border-radius: 6px 6px 1px 1px;
+  background: #d8423a;
 }
 .pastille {
   display: inline-block;
@@ -218,9 +199,8 @@
 }
 .infobulle {
   position: absolute;
-  left: calc(100% + 4px);
-  top: 50%;
-  transform: translateY(-50%);
+  left: 0;
+  bottom: calc(100% + 4px);
   white-space: nowrap;
   background: var(--encre);
   color: var(--papier);
@@ -267,11 +247,11 @@
   font-weight: 700;
 }
 
-/* Bulles : dans la moitié de la fenêtre opposée à la case visée, à droite du poteau des ressources */
+/* Bulles : dans la moitié de la fenêtre opposée à la case visée, au-dessus de la rangée des ressources */
 .bulle {
   position: absolute;
   right: 6px;
-  width: min(230px, calc(100% - 90px));
+  width: min(250px, calc(100% - 12px));
   max-height: 58%;
   box-sizing: border-box;
   display: flex;
@@ -286,10 +266,7 @@
   top: 6px;
 }
 .bulle.bas {
-  bottom: 6px;
-}
-.bulle.reglages {
-  top: 36px;
+  bottom: 28px;
 }
 .bulle header {
   display: flex;
@@ -389,10 +366,42 @@
   background: var(--vert);
 }
 
+/* Chiffre de récolte : part du point cliqué et s'envole (900 ms, voir DUREE_ENVOL_MS) */
+.envol {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transform: translate(-50%, -100%);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--papier);
+  text-shadow:
+    1px 0 var(--encre),
+    -1px 0 var(--encre),
+    0 1px var(--encre),
+    0 -1px var(--encre);
+  white-space: nowrap;
+  animation: envol 0.9s steps(9) forwards;
+}
+.envol .pastille {
+  width: 8px;
+  height: 8px;
+}
+@keyframes envol {
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 28px));
+  }
+}
+
 /* Messages : discrets, en bas à droite */
 .messages {
   position: absolute;
-  bottom: 6px;
+  bottom: 26px;
   right: 6px;
   display: flex;
   flex-direction: column;
@@ -422,7 +431,7 @@
   gap: 4px;
   margin-top: 6px;
 }
-.actions .bouton:not(.outil) {
+.actions .bouton {
   flex: 1;
   padding: 4px;
 }
@@ -445,12 +454,7 @@ html,
 body {
   cursor: var(--curseur-fleche, default);
 }
-.interface.active :is(button:not(:disabled), .carte, input, select, label) {
+.interface.active :is(button:not(:disabled), .carte) {
   cursor: var(--curseur-main, pointer);
 }
 
-.case-a-cocher {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}

@@ -7,6 +7,7 @@ import type {
   Saison,
   Terrain,
   TypeBatiment,
+  TypeElement,
 } from './contrat';
 
 export interface RegleVoisinage {
@@ -29,6 +30,14 @@ export interface DefinitionBatiment {
   stockage?: Quantites;
   logement?: number;
   voisinage?: RegleVoisinage[];
+}
+
+/** Récolte à la main d'un type d'élément naturel. */
+export interface DefinitionRecolte {
+  ressource: Ressource;
+  quantite: number;
+  /** Durée de repousse en saison neutre ; le facteur de saison de la ressource la ralentit (l'hiver, les baies ne repoussent pas). */
+  repousseSecondes: number;
 }
 
 export interface ContenuHabitants {
@@ -92,6 +101,7 @@ export interface Contenu {
   plafondsDeBase: Record<Ressource, number>;
   batiments: Record<TypeBatiment, DefinitionBatiment>;
   batimentsDeDepart: TypeBatiment[];
+  recolte: Record<TypeElement, DefinitionRecolte>;
   habitants: ContenuHabitants;
   /** Améliorations du village, achetées à l'atelier. */
   ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;

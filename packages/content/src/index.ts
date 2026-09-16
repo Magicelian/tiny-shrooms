@@ -3,7 +3,8 @@ import type { Contenu } from '@tiny-shrooms/engine';
 
 export const contenu: Contenu = {
   ile: { taille: 12 },
-  stocksDeDepart: { baies: 20, baiesSechees: 0, boisMort: 60, mousse: 10, spores: 0 },
+  // Partie neuve : rien en stock, tout commence par la récolte à la main.
+  stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
   plafondsDeBase: { baies: 50, baiesSechees: 20, boisMort: 80, mousse: 30, spores: 20 },
   batiments: {
     hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: 2, voisinage: [{ voisin: 'feuDeCamp', bonus: 0.1 }] },
@@ -32,9 +33,15 @@ export const contenu: Contenu = {
   },
   // Tout est disponible d'emblée en attendant les paliers de population (étape 13).
   batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp', 'sechoir', 'atelier'],
+  recolte: {
+    buisson: { ressource: 'baies', quantite: 3, repousseSecondes: 45 },
+    boisMort: { ressource: 'boisMort', quantite: 2, repousseSecondes: 45 },
+    mousse: { ressource: 'mousse', quantite: 2, repousseSecondes: 60 },
+  },
+  // Aucun habitant ni logement au départ : ils arrivent avec la première hutte.
   habitants: {
-    auDepart: 2,
-    logementDeBase: 2,
+    auDepart: 0,
+    logementDeBase: 0,
     vitesseCasesParSeconde: 1.2,
     capaciteTransport: 5,
     reserveMax: 10,

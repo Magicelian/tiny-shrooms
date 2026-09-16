@@ -4,6 +4,7 @@ import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shro
 import { Ambiance } from './ambiance';
 import { CameraIso } from './camera';
 import { AidesConstruction } from './construction';
+import { ElementsRendu } from './elements';
 import { Entites } from './entites';
 import { construireIle } from './ile';
 import { Pixelisation } from './pixelisation';
@@ -30,6 +31,7 @@ export class Rendu {
   private readonly vue = new CameraIso();
   private readonly pixelisation: Pixelisation;
   private readonly entites = new Entites();
+  private readonly elements = new ElementsRendu();
   private readonly aides = new AidesConstruction();
   /** Teintes de saison et particules de météo. */
   readonly ambiance = new Ambiance();
@@ -57,7 +59,7 @@ export class Rendu {
     soleil.shadow.mapSize.set(512, 512);
     soleil.shadow.bias = -0.002;
     Object.assign(soleil.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 });
-    this.scene.add(soleil, this.entites.groupe);
+    this.scene.add(soleil, this.entites.groupe, this.elements.groupe);
     this.redimensionner();
   }
 
@@ -66,6 +68,7 @@ export class Rendu {
     this.decor = construireIle(ile);
     this.scene.add(this.decor);
     this.entites.changerIle(ile);
+    this.elements.changerIle(ile);
     this.aides.changerIle(ile);
     this.ambiance.changerIle(ile);
     this.ile = ile;
@@ -74,6 +77,7 @@ export class Rendu {
 
   appliquerInstantane(instantane: Instantane): void {
     this.entites.appliquer(instantane, performance.now());
+    this.elements.appliquer(instantane.pousses);
     this.ambiance.appliquer(instantane.temps);
   }
 

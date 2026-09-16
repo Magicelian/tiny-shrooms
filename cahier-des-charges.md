@@ -59,7 +59,7 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 | Son | Ambiances douces liées à la météo + petits sons d'interface, **coupé par défaut** |
 | Langue | Jeu en FR (défaut) + EN ; code et documentation en français |
 | Diffusion | Celian d'abord, amis ensuite : installeurs .dmg/.exe via GitHub Actions + mises à jour automatiques, sans signature payante au départ |
-| Interface | **Plus d'interface au survol** : ressources (et saison, à l'essai) intégrées au décor en permanence ; menus au clic ; icône Paramètres |
+| Interface | **Plus d'interface au survol** : ressources, saison et habitants intégrés au décor en permanence ; menus au clic ; pas de menu Paramètres pour l'instant (verrouillage dans le menu de l'icône) |
 | Sauvegardes | Format en version 4 ; une ancienne partie est archivée à part et on repart de zéro |
 | Contenu V1 | Une île extensible (voir §3.8) |
 
@@ -307,8 +307,9 @@ tiny_shrooms/
     avec leur nombre) plutôt qu'une colonne de compteurs ;
   - la **saison et la météo**, à l'essai, dans le même esprit (un petit écriteau ou une girouette) ;
     retirées si le rendu ne convainc pas ;
-  - une **icône Paramètres** discrète dans un coin, qui ouvre le menu des réglages (son, langue,
-    verrouillage de la fenêtre, opacité…) et les boutons de caméra.
+  - le **nombre d'habitants** et de places, sur un écriteau jumeau en haut à droite.
+  - ~~icône Paramètres~~ : retirée à l'étape 12 ; la caméra se commande à la souris et au clavier, le
+    verrouillage passe par le menu de l'icône. Un menu reviendra avec le son et la langue.
 - **Clic sur une case vide** : petite bulle listant ce qu'on peut y construire (coût, effet, bonus de
   voisinage), puis aperçu fantôme vert ou rouge avant de confirmer.
 - **Clic sur un bâtiment** : bulle d'informations (emplois pourvus, production, besoins d'un
@@ -484,6 +485,13 @@ son critère n'est pas rempli.
 - **Critère** : depuis une partie neuve, on construit la première hutte uniquement en récoltant à la main
   (cible : 2 à 4 min).
 
+- **Résultat (16/09/2026)** : validé. Un buisson récoltable sur chaque buisson sauvage, 3 bois morts et 3 mousses
+  semés par la graine ; un clic donne 3 baies, 2 bois ou 2 mousses, avec un chiffre qui s'envole, puis l'élément repousse
+  (45 à 60 s, au rythme de la saison ; aucun buisson l'hiver). Partie neuve sans stock, habitant ni logement de base ;
+  sans habitants, les chantiers avancent seuls. Joueur scripté : hutte achevée à 3 min. Sauvegarde en version 5.
+  Retouches : menu Paramètres retiré (verrouillage dans le menu de l'icône), habitants et places en haut à droite,
+  ressources en rangée discrète en bas.
+
 ### Étape 13 — Habitants façon SimCity
 - Emplois par bâtiment, affectation automatique ; besoins par logement, bonheur, montée en gamme
   (hutte → maison → manoir) ; spores produites selon le bonheur.
@@ -500,6 +508,8 @@ son critère n'est pas rempli.
 ### Étape 15 — Habillage
 - Modèles définitifs (Blockbench ou MagicaVoxel), animations des habitants, police pixel, style de l'interface.
 - Ambiances sonores et sons d'interface ; traduction EN.
+- Icône de la barre des menus (en haut de l'écran sur Mac) redessinée dans le style du jeu : petit champignon pixel,
+  lisible en 16 px et en modèle monochrome pour suivre le thème clair ou sombre.
 - **Critère** : plus aucune forme provisoire ; FR et EN complets ; son coupé au premier lancement.
 
 ### Étape 16 — Équilibrage et diffusion → **V1**

@@ -26,6 +26,11 @@ function contenuDeTest(
     plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000 },
     batiments: defs,
     batimentsDeDepart: [...TYPES_BATIMENT],
+    recolte: {
+      buisson: { ressource: 'baies', quantite: 3, repousseSecondes: 10 },
+      boisMort: { ressource: 'boisMort', quantite: 2, repousseSecondes: 10 },
+      mousse: { ressource: 'mousse', quantite: 2, repousseSecondes: 10 },
+    },
     habitants: {
       auDepart: 2,
       logementDeBase: 2,
@@ -448,5 +453,63 @@ describe('Améliorations', () => {
       return moteur.etatCourant.batiments[1]!.reserve.baies ?? 0;
     };
     expect(recolte(1)).toBeGreaterThan(recolte(0) * 1.4);
+  });
+});
+
+describe('Récolte à la main', () => {
+  const premier = (moteur: Moteur, type: string) => moteur.etatCourant.ile.elements.findIndex((e) => e.type === type);
+
+  it('sème buissons, bois mort et mousse hors des cases à bâtir', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const { ile } = moteur.etatCourant;
+    for (const type of ['buisson', 'boisMort', 'mousse']) expect(premier(moteur, type)).toBeGreaterThanOrEqual(0);
+    const element = ile.elements[premier(moteur, 'boisMort')]!;
+    expect(commander(moteur, poser('hutte', element.case))).toMatchObject([{ raison: 'emplacementOccupe' }]);
+  });
+
+  it('donne un peu de ressource, épuise l’élément, puis le laisse repousser', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const element = premier(moteur, 'boisMort');
+    const recolter: Commande = { type: 'recolter', element };
+    expect(commander(moteur, recolter)).toEqual([{ type: 'recolte', element, ressource: 'boisMort', quantite: 2 }]);
+    expect(moteur.etatCourant.stocks.boisMort).toBe(102);
+    expect(commander(moteur, recolter)).toMatchObject([{ raison: 'pasPret' }]);
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    expect(commander(moteur, recolter)).toMatchObject([{ type: 'recolte' }]);
+  });
+
+  it('ne donne que ce qui tient dans le stock', () => {
+    const moteur = new Moteur(contenuDeTest({}, {}, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 101, mousse: 1000, spores: 1000 } }), 0);
+    const element = premier(moteur, 'boisMort');
+    expect(commander(moteur, { type: 'recolter', element })).toMatchObject([{ quantite: 1 }]);
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    expect(commander(moteur, { type: 'recolter', element })).toMatchObject([{ raison: 'stockPlein' }]);
+  });
+
+  it('ne fait pas repousser les buissons en hiver', () => {
+    const hiver = { printemps: { baies: 0 }, ete: {}, automne: {}, hiver: {} };
+    const moteur = new Moteur(contenuDeTest({}, {}, { saisons: { production: hiver, travailAuFroid: 1, rayonChaleur: 2 } }), 0);
+    const element = premier(moteur, 'buisson');
+    commander(moteur, { type: 'recolter', element });
+    moteur.simuler(PAS_PAR_MINUTE);
+    expect(commander(moteur, { type: 'recolter', element })).toMatchObject([{ raison: 'pasPret' }]);
+  });
+
+  it('sans habitants, un chantier avance seul', () => {
+    const moteur = new Moteur(contenuDeTest({ hutte: { constructionSecondes: 30 } }, { auDepart: 0, logementDeBase: 0 }), 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    moteur.simuler(PAS_PAR_MINUTE / 2 + 1);
+    expect(moteur.etatCourant.batiments[0]!.chantier).toBeNull();
+  });
+
+  it('migre une sauvegarde de version 4 sans semer sur les bâtiments', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    const { ile, pousses: _p, ...reste } = moteur.etatCourant;
+    const { elements: _e, ...ileV4 } = ile;
+    const etat = charger(JSON.stringify({ version: 4, etat: { ...reste, ile: ileV4 } }));
+    expect(etat.pousses).toHaveLength(etat.ile.elements.length);
+    const hutte = etat.batiments[0]!.case;
+    expect(etat.ile.elements.some((e) => e.case.x === hutte.x && e.case.y === hutte.y)).toBe(false);
   });
 });

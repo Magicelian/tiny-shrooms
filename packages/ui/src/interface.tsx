@@ -1,4 +1,4 @@
-// Composants de l'interface : panneaux de bois (ressources), écriteau (saison), icône Réglages, bulles et messages.
+// Composants de l'interface : écriteaux (saison, habitants), rangée de planches (ressources), bulles et messages.
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource } from '@tiny-shrooms/engine';
@@ -6,7 +6,7 @@ import { nombre, t } from '@tiny-shrooms/i18n';
 import { nomBatiment, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
-import { BulleBatiment, BulleConstruire, BulleReglages } from './panneaux';
+import { BulleBatiment, BulleConstruire } from './panneaux';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -30,19 +30,17 @@ export function Interface({ controleur }: Props) {
   return (
     <div class={`interface ${etat.focus ? 'active' : ''}`}>
       <Ecriteau instantane={instantane} />
-      <Poteau instantane={instantane} />
-
-      <button
-        class={`bouton outil commande reglages ${bulle?.type === 'reglages' ? 'actif' : ''}`}
-        title={t('outil.reglages')}
-        aria-label={t('outil.reglages')}
-        onClick={() => controleur.basculerReglages()}
-      >
-        ⚙
-      </button>
+      <Population controleur={controleur} instantane={instantane} />
+      <Rangee instantane={instantane} />
 
       {deplacement !== null && <BandeauDeplacement controleur={controleur} bonus={etat.bonusVise} />}
       {bulle && <ContenuBulle controleur={controleur} bulle={bulle} instantane={instantane} />}
+
+      {etat.envols.map((e) => (
+        <span key={e.id} class="envol" style={{ left: `${e.x}px`, top: `${e.y}px` }}>
+          <span class="pastille" style={{ background: COULEURS_RESSOURCE[e.ressource] }} />+{nombre(e.quantite)}
+        </span>
+      ))}
 
       <div class="messages">
         {etat.messages.map((m) => (
@@ -57,12 +55,6 @@ export function Interface({ controleur }: Props) {
 
 function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle; instantane: Instantane }) {
   const fermer = () => controleur.fermer();
-  if (bulle.type === 'reglages')
-    return (
-      <Cadre titre={t('outil.reglages')} fermer={fermer} position="reglages">
-        <BulleReglages controleur={controleur} />
-      </Cadre>
-    );
   if (bulle.type === 'construire')
     return (
       <Cadre titre={t('construction.titre')} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
@@ -78,7 +70,7 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
   );
 }
 
-function Cadre(props: { titre: string; fermer: () => void; position: 'haut' | 'bas' | 'reglages'; children: ComponentChildren }) {
+function Cadre(props: { titre: string; fermer: () => void; position: 'haut' | 'bas'; children: ComponentChildren }) {
   return (
     <section class={`bulle commande ${props.position}`}>
       <header>
@@ -103,36 +95,57 @@ function Ecriteau({ instantane }: { instantane: Instantane }) {
   );
 }
 
-/** Ressources sur des planches clouées à un poteau, en bas à gauche. */
-function Poteau({ instantane }: { instantane: Instantane }) {
+/** Habitants et places libres, sur une planche en haut à droite. */
+function Population({ controleur, instantane }: Props & { instantane: Instantane }) {
+  const { contenu } = controleur;
+  const places = instantane.batiments.reduce(
+    (n, b) => n + (b.chantier === null ? (contenu.batiments[b.type].logement ?? 0) : 0),
+    contenu.habitants.logementDeBase,
+  );
+  const habitants = instantane.habitants.length;
+  return (
+    <div class="ecriteau population" title={t('habitants.detail', { nombre: habitants, places })}>
+      <span class="pastille chapeau" />
+      <span>
+        {nombre(habitants)}
+        <span class="places">/{nombre(places)}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Ressources sur une rangée de petites planches en bas de la fenêtre. */
+function Rangee({ instantane }: { instantane: Instantane }) {
   const { stocks } = instantane;
   const visibles: Ressource[] = ['baies', 'boisMort', 'mousse', 'spores'];
   if (stocks.baiesSechees.quantite > 0 || instantane.batimentsDebloques.includes('sechoir')) visibles.splice(1, 0, 'baiesSechees');
   return (
-    <ul class="poteau">
-      {visibles.map((r) => (
-        <Planche key={r} ressource={r} instantane={instantane} />
-      ))}
+    <ul class="rangee">
+      {visibles.map((r) => {
+        const stock = stocks[r];
+        const variation = stock.productionParMinute;
+        return (
+          <Planche
+            key={r}
+            icone={<span class="pastille" style={{ background: COULEURS_RESSOURCE[r] }} />}
+            quantite={Math.floor(stock.quantite)}
+            plein={stock.quantite >= stock.plafond}
+            detail={`${nomRessource(r)} ${nombre(Math.floor(stock.quantite))}/${nombre(stock.plafond)} · ${variation >= 0 ? '+' : ''}${t('ressource.parMinute', { valeur: nombre(variation, 1) })}`}
+          />
+        );
+      })}
     </ul>
   );
 }
 
-function Planche({ ressource, instantane }: { ressource: Ressource; instantane: Instantane }) {
-  const [detail, setDetail] = useState(false);
-  const stock = instantane.stocks[ressource];
-  const plein = stock.quantite >= stock.plafond;
-  const variation = stock.productionParMinute;
+/** `plein` : stock au plafond. */
+function Planche(props: { icone: ComponentChildren; quantite: number; plein: boolean; detail: string }) {
+  const [survol, setSurvol] = useState(false);
   return (
-    <li class={`planche ${plein ? 'plein' : ''}`} onMouseEnter={() => setDetail(true)} onMouseLeave={() => setDetail(false)}>
-      <span class="pastille" style={{ background: COULEURS_RESSOURCE[ressource] }} />
-      <span class="quantite">{nombre(Math.floor(stock.quantite))}</span>
-      <span class="plafond">/{nombre(stock.plafond)}</span>
-      {detail && (
-        <span class="infobulle">
-          {nomRessource(ressource)} · {variation >= 0 ? '+' : ''}
-          {t('ressource.parMinute', { valeur: nombre(variation, 1) })}
-        </span>
-      )}
+    <li class={`planche ${props.plein ? 'plein' : ''}`} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}>
+      {props.icone}
+      <span class="quantite">{nombre(props.quantite)}</span>
+      {survol && <span class="infobulle">{props.detail}</span>}
     </li>
   );
 }

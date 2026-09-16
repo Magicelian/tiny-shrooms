@@ -133,33 +133,6 @@ function Ameliorations({ controleur, instantane }: Props) {
   );
 }
 
-export function BulleReglages({ controleur }: { controleur: ControleurInterface }) {
-  const { fenetreMobile, verrouillee } = useMagasin(controleur.magasin);
-  return (
-    <>
-      <div class="actions">
-        <button class="bouton outil petit" title={t('outil.tournerGauche')} aria-label={t('outil.tournerGauche')} onClick={() => controleur.tourner(-1)}>
-          ⟲
-        </button>
-        <button class="bouton outil petit" title={t('outil.tournerDroite')} aria-label={t('outil.tournerDroite')} onClick={() => controleur.tourner(1)}>
-          ⟳
-        </button>
-        <button class="bouton outil petit" title={t('outil.zoom')} aria-label={t('outil.zoom')} onClick={() => controleur.basculerZoom()}>
-          ⌕
-        </button>
-      </div>
-      <p class="discret">{t('reglages.camera')}</p>
-      {fenetreMobile && (
-        <label class="case-a-cocher">
-          <input type="checkbox" checked={verrouillee} onChange={(e) => controleur.verrouiller(e.currentTarget.checked)} />
-          {t('reglages.verrouiller')}
-        </label>
-      )}
-      <p class="discret">{t('reglages.aVenir')}</p>
-    </>
-  );
-}
-
 function Jauge({ valeur }: { valeur: number }) {
   return (
     <div class="jauge">

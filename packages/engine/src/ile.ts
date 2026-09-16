@@ -1,8 +1,10 @@
 // Génération de l'île de forêt et lecture du terrain.
-import type { Ile, Position, Terrain } from './contrat';
+import type { Case, ElementNaturel, Ile, Position, Terrain, TypeElement } from './contrat';
 import { creerHasard } from './hasard';
 
 const TAILLE_SOUCHE = 2;
+/** Éléments semés sur l'herbe, en plus d'un buisson récoltable sur chaque case de buisson sauvage. */
+const ELEMENTS_EPARS: Partial<Record<TypeElement, number>> = { boisMort: 3, mousse: 3 };
 
 /** Île ronde bordée de forêt, avec une mare et la souche-dépôt au centre ; même graine, même île. */
 export function genererIle(taille: number, graine: number): Ile {
@@ -30,11 +32,42 @@ export function genererIle(taille: number, graine: number): Ile {
       terrain.push(t);
     }
   }
-  return { biome: 'foret', largeur: taille, profondeur: taille, terrain, souche, tailleSouche: TAILLE_SOUCHE };
+  const ile: Ile = { biome: 'foret', largeur: taille, profondeur: taille, terrain, souche, tailleSouche: TAILLE_SOUCHE, elements: [] };
+  ile.elements = placerElements(ile, graine, []);
+  return ile;
+}
+
+/**
+ * Éléments naturels de l'île : un buisson par case de buisson sauvage, puis du bois mort et de la mousse
+ * sur l'herbe, hors des abords de la souche et des cases `occupees`. Même graine, mêmes éléments.
+ */
+export function placerElements(ile: Omit<Ile, 'elements'>, graine: number, occupees: readonly Case[]): ElementNaturel[] {
+  const hasard = creerHasard(graine * 31 + 7);
+  const elements: ElementNaturel[] = [];
+  const candidates: Case[] = [];
+  for (let y = 0; y < ile.profondeur; y++) {
+    for (let x = 0; x < ile.largeur; x++) {
+      const terrain = terrainEn(ile, x, y);
+      if (terrain === 'buisson') elements.push({ type: 'buisson', case: { x, y } });
+      const loinDeLaSouche = x < ile.souche.x - 1 || x > ile.souche.x + ile.tailleSouche || y < ile.souche.y - 1 || y > ile.souche.y + ile.tailleSouche;
+      if (terrain === 'herbe' && loinDeLaSouche && !occupees.some((c) => c.x === x && c.y === y)) candidates.push({ x, y });
+    }
+  }
+  for (const [type, nombre] of Object.entries(ELEMENTS_EPARS) as [TypeElement, number][]) {
+    for (let i = 0; i < nombre && candidates.length > 0; i++) {
+      const [c] = candidates.splice(Math.floor(hasard() * candidates.length), 1);
+      elements.push({ type, case: c! });
+    }
+  }
+  return elements;
+}
+
+export function elementEn(ile: Ile, x: number, y: number): number {
+  return ile.elements.findIndex((e) => e.case.x === x && e.case.y === y);
 }
 
 /** Terrain de la case, `vide` hors de la grille. */
-export function terrainEn(ile: Ile, x: number, y: number): Terrain {
+export function terrainEn(ile: Pick<Ile, 'largeur' | 'profondeur' | 'terrain'>, x: number, y: number): Terrain {
   if (x < 0 || y < 0 || x >= ile.largeur || y >= ile.profondeur) return 'vide';
   return ile.terrain[y * ile.largeur + x] ?? 'vide';
 }

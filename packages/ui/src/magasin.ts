@@ -1,16 +1,24 @@
 // État affiché par l'interface : le dernier instantané du moteur et ce que le joueur est en train de faire.
 // Rien ici ne modifie la partie : les changements passent par des commandes envoyées au moteur.
 import { useEffect, useState } from 'preact/hooks';
-import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Case, IdBatiment, Ile, Instantane, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
 
 /**
  * Bulle ouverte au clic. `haut` : la bulle se place dans la moitié haute de la fenêtre,
  * pour laisser voir la case visée quand celle-ci est en bas.
  */
 export type Bulle =
-  | { type: 'reglages' }
   | { type: 'construire'; case: Case; choix: TypeBatiment | null; haut: boolean }
   | { type: 'batiment'; id: IdBatiment; haut: boolean };
+
+/** Petit chiffre qui s'envole d'un élément récolté, en pixels de la fenêtre. */
+export interface Envol {
+  id: number;
+  x: number;
+  y: number;
+  ressource: Ressource;
+  quantite: number;
+}
 
 export interface Message {
   id: number;
@@ -22,8 +30,7 @@ export interface EtatInterface {
   instantane: Instantane | null;
   /** Sans le focus, aucune commande n'est proposée. */
   focus: boolean;
-  /** La fenêtre peut-elle être déplacée (Tauri) et sa position est-elle verrouillée ? */
-  fenetreMobile: boolean;
+  /** Position de la fenêtre verrouillée (menu de l'icône) : ⌘ + glisser ne fait rien. */
   verrouillee: boolean;
   bulle: Bulle | null;
   /** Bâtiment en cours de déplacement : il suit la souris jusqu'au clic. */
@@ -31,21 +38,25 @@ export interface EtatInterface {
   /** Bonus de voisinage à l'emplacement visé, pendant le déplacement ou le choix d'un bâtiment. */
   bonusVise: number | null;
   messages: Message[];
+  envols: Envol[];
 }
 
 type Abonne = () => void;
+
+/** Doit suivre la durée de l'animation `envol` dans interface.css. */
+const DUREE_ENVOL_MS = 900;
 
 export class Magasin {
   private etat: EtatInterface = {
     ile: null,
     instantane: null,
     focus: false,
-    fenetreMobile: false,
     verrouillee: false,
     bulle: null,
     deplacement: null,
     bonusVise: null,
     messages: [],
+    envols: [],
   };
   private readonly abonnes = new Set<Abonne>();
   private prochainMessage = 0;
@@ -66,6 +77,12 @@ export class Magasin {
     const message = { id: this.prochainMessage++, texte };
     this.modifier({ messages: [...this.etat.messages.slice(-1), message] });
     setTimeout(() => this.modifier({ messages: this.etat.messages.filter((m) => m !== message) }), 2500);
+  }
+
+  envoler(envol: Omit<Envol, 'id'>): void {
+    const nouvel = { ...envol, id: this.prochainMessage++ };
+    this.modifier({ envols: [...this.etat.envols, nouvel] });
+    setTimeout(() => this.modifier({ envols: this.etat.envols.filter((e) => e !== nouvel) }), DUREE_ENVOL_MS);
   }
 
   abonner(f: Abonne): () => void {

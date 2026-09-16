@@ -38,7 +38,6 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   envoyer: (commande) => envoyer({ type: 'commande', commande }),
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
-  verrouiller: (verrouillee) => void invoke('verrouiller_position', { verrouillee }),
 });
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });
 

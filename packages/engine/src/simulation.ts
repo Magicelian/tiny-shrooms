@@ -7,7 +7,7 @@ import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants } from './habitants';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
-import { heureDuJour, PAS_PAR_MINUTE } from './temps';
+import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 type Flux = Record<Ressource, number>;
 
@@ -46,6 +46,7 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const saison = calendrier(etat.pas, contenu);
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
+  repousser(etat, contenu);
 
   const max = plafonds(etat, contenu);
   const { direct } = fluxParMinute(etat, contenu);
@@ -62,6 +63,17 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   }
   etat.stocksPleins = pleins;
   return evenements;
+}
+
+/** Les éléments naturels épuisés repoussent, au rythme de la saison pour leur ressource. */
+function repousser(etat: Etat, contenu: Contenu): void {
+  etat.ile.elements.forEach((element, i) => {
+    const pousse = etat.pousses[i] ?? 1;
+    if (pousse >= 1) return;
+    const def = contenu.recolte[element.type];
+    const pas = (def.repousseSecondes * 1000) / PAS_DE_SIMULATION_MS;
+    etat.pousses[i] = Math.min(1, pousse + facteurSaison(etat, contenu, def.ressource) / pas);
+  });
 }
 
 export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Commande): Evenement[] {
@@ -108,6 +120,18 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       majBonusVoisinage(etat, contenu);
       return [];
     }
+    case 'recolter': {
+      const element = etat.ile.elements[commande.element];
+      if (!element) return refus('introuvable');
+      if ((etat.pousses[commande.element] ?? 1) < 1) return refus('pasPret');
+      const { ressource, quantite } = contenu.recolte[element.type];
+      const place = plafonds(etat, contenu)[ressource] - etat.stocks[ressource];
+      const gain = Math.min(quantite, Math.floor(place));
+      if (gain <= 0) return refus('stockPlein');
+      etat.stocks[ressource] += gain;
+      etat.pousses[commande.element] = 0;
+      return [{ type: 'recolte', element: commande.element, ressource, quantite: gain }];
+    }
     case 'modifierReglage': {
       (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
       return [];
@@ -153,6 +177,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
       position: { ...h.position },
       lieu: mission && mission.tache !== 'stocker' ? mission.batiment : null,
     })),
+    pousses: [...etat.pousses],
     batimentsDebloques: [...etat.batimentsDebloques],
     ameliorations: { ...etat.ameliorations },
     reglages: { ...etat.reglages },
