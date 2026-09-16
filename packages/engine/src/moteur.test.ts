@@ -663,3 +663,33 @@ describe('Nuit', () => {
     }
   });
 });
+
+describe('Chemins', () => {
+  it('les habitants contournent les bâtiments qui ne sont pas leur destination', () => {
+    const contenu = contenuDeTest({ cueillette: { production: { baies: 6 }, postes: 2 } }, { auDepart: 4, logementDeBase: 4 });
+    const moteur = new Moteur(contenu, 0);
+    const libres = moteur.casesLibres();
+    const etat = moteur.etatCourant;
+    // Un mur de huttes à l'est de la souche, percé d'une seule ouverture ; la cueillette derrière.
+    const mur = etat.ile.souche.x + etat.ile.tailleSouche + 1;
+    const colonne = libres.filter((c) => c.x === mur).sort((p, q) => p.y - q.y);
+    for (const c of colonne.slice(0, -1)) commander(moteur, poser('hutte', c));
+    const derriere = libres.filter((c) => c.x > mur + 1 && c.y === etat.ile.souche.y);
+    commander(moteur, poser('cueillette', derriere[0]!));
+    const caseDe = (p: { x: number; y: number }) => `${Math.floor(p.x)},${Math.floor(p.y)}`;
+    const huttes = new Set(etat.batiments.filter((b) => b.type === 'hutte').map((b) => caseDe(b.case)));
+    const precedente = new Map(etat.habitants.map((h) => [h.id, caseDe(h.position)]));
+    let entrees = 0;
+    for (let pas = 0; pas < 5 * PAS_PAR_MINUTE; pas++) {
+      moteur.simuler(1);
+      for (const h of etat.habitants) {
+        const ici = caseDe(h.position);
+        // Aucune hutte n'est une destination : y entrer depuis une autre case est une traversée.
+        if (ici !== precedente.get(h.id) && huttes.has(ici)) entrees++;
+        precedente.set(h.id, ici);
+      }
+    }
+    expect(etat.stocks.baies).toBeGreaterThan(100);
+    expect(entrees).toBe(0);
+  });
+});

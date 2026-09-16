@@ -89,10 +89,10 @@ function Cadre(props: { titre: string; fermer: () => void; position: 'haut' | 'b
 function Ecriteau({ instantane }: { instantane: Instantane }) {
   const { temps } = instantane;
   return (
-    <div class="ecriteau" title={t(`meteo.${temps.meteo}`)}>
+    <Survol classe="ecriteau" detail={t(`meteo.${temps.meteo}`)}>
       <span class="meteo">{ICONES_METEO[temps.meteo]}</span>
       {t('temps.annee', { saison: t(`saison.${temps.saison}`), annee: temps.annee })}
-    </div>
+    </Survol>
   );
 }
 
@@ -106,14 +106,14 @@ function Population({ controleur, instantane }: Props & { instantane: Instantane
     ? t('palier.prochain', { palier: nomPalier(contenu, instantane.palier + 1), population: suivant.population })
     : t('palier.dernier');
   return (
-    <div class="ecriteau population" title={`${t('habitants.detail', { nombre: habitants, places })} · ${prochain}`}>
+    <Survol classe="ecriteau population" detail={`${t('habitants.detail', { nombre: habitants, places })} · ${prochain}`}>
       <span class="palier">{nomPalier(contenu, instantane.palier)}</span>
       <span class="pastille chapeau" />
       <span>
         {nombre(habitants)}
         <span class="places">/{nombre(places)}</span>
       </span>
-    </div>
+    </Survol>
   );
 }
 
@@ -138,6 +138,20 @@ function Rangee({ instantane }: { instantane: Instantane }) {
         );
       })}
     </ul>
+  );
+}
+
+/**
+ * Écriteau avec une infobulle dessinée par l'interface : l'infobulle native (`title`) de la vue web
+ * remplace le curseur pixel par celui du système et le fait clignoter.
+ */
+function Survol(props: { classe: string; detail: string; children: ComponentChildren }) {
+  const [survol, setSurvol] = useState(false);
+  return (
+    <div class={`${props.classe} survolable`} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}>
+      {props.children}
+      {survol && <span class="infobulle">{props.detail}</span>}
+    </div>
   );
 }
 

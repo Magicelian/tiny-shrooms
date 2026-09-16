@@ -46,7 +46,7 @@
 .interface.active .commande {
   opacity: 1;
 }
-.interface.active :is(button, .planche) {
+.interface.active :is(button, .planche, .survolable) {
   pointer-events: auto;
 }
 
@@ -472,4 +472,14 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 8px;
+}
+/* Infobulle des écriteaux du haut : sous l'écriteau, alignée sur son bord extérieur */
+.ecriteau .infobulle {
+  top: calc(100% + 4px);
+  bottom: auto;
+  font-weight: 500;
+}
+.population .infobulle {
+  left: auto;
+  right: 0;
 }

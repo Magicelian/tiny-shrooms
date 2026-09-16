@@ -93,10 +93,13 @@ export function ajouterHabitant(etat: Etat): HabitantEtat {
   const id = etat.prochainIdHabitant++;
   const centre = centreSouche(etat.ile);
   const angle = id * 2.4;
-  const rayon = etat.ile.tailleSouche / 2 + 0.4;
+  // Sur le pourtour carré de l'emprise, pour ne jamais apparaître dans la souche, même en diagonale.
+  const ecart = etat.ile.tailleSouche / 2 + 0.4;
+  const [dx, dy] = [Math.cos(angle), Math.sin(angle)];
+  const echelle = ecart / Math.max(Math.abs(dx), Math.abs(dy));
   const habitant: HabitantEtat = {
     id,
-    position: { x: centre.x + Math.cos(angle) * rayon, y: centre.y + Math.sin(angle) * rayon },
+    position: { x: centre.x + dx * echelle, y: centre.y + dy * echelle },
     direction: angle,
     activite: 'attend',
     tache: null,

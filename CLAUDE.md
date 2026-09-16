@@ -82,6 +82,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `AidesConstruction.montrerPortee`. Critère : `packages/content/src/bourg.test.ts`. Sauvegarde en version 7.
   Livraisons : une charge déposée passe par `etat.arrivages`, rangés dans le stock au rythme de la production
   (6/min → +1 toutes les 10 s).
+- **Chemins** : `packages/engine/src/chemins.ts` (A* sur la grille, caches hors sauvegarde) ; bâtiments, souche,
+  eau et rochers sont infranchissables, la forêt non. Sans chemin possible, l'habitant marche droit.
 - **Nuit** (2 min sur un jour de 10) : `temps.nuit` dans l'instantané ; les habitants rentrent dormir au pied de leur
   logement, l'éclairage baisse (`Ambiance.eclairer`) et des « z » montent (`entites.ts`). Pour la voir dans le
   navigateur : envelopper `moteur.onmessage` et forcer `instantane.temps.nuit = true`.

@@ -7,6 +7,7 @@ import { majBonusVoisinage } from './grille';
 import { centreSouche } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
 import { effetAmelioration } from './ameliorations';
+import { etapeVers, preparerGrille } from './chemins';
 import { besoinsManquants, evaluerBesoins, placesLogement, rangLogement } from './logements';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -28,6 +29,7 @@ export function estLaNuit(etat: Etat, contenu: Contenu): boolean {
 
 export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evenement[]): void {
   const nourri = nourrir(etat, contenu);
+  preparerGrille(etat);
   evaluerBesoins(etat, contenu, nourri, emploisTenus(etat));
   const { loges, capacite } = logements(etat, contenu);
   const nuit = estLaNuit(etat, contenu);
@@ -352,15 +354,18 @@ function destination(etat: Etat, m: Mission): [Position, number] {
   return [centreCase(trouver(etat, m.batiment)!), RAYON_BATIMENT];
 }
 
-/** Rapproche l'habitant de sa cible ; renvoie vrai une fois arrivé. */
+/** Rapproche l'habitant de sa cible en contournant les obstacles ; renvoie vrai une fois arrivé. */
 function marcherVers(etat: Etat, h: HabitantEtat, cible: Position, rayon: number, contenu: Contenu): boolean {
-  const dx = cible.x - h.position.x;
-  const dy = cible.y - h.position.y;
-  const reste = Math.hypot(dx, dy) - rayon;
-  if (reste <= 1e-6) return true;
+  if (distance(h.position, cible) - rayon <= 1e-6) return true;
+  const etape = etapeVers(etat, h, cible, rayon);
+  // Point de passage : on le rejoint exactement ; cible : on s'arrête à `rayon`.
+  const marge = etape === cible ? rayon : 0;
+  const dx = etape.x - h.position.x;
+  const dy = etape.y - h.position.y;
+  const d = Math.hypot(dx, dy);
+  const reste = d - marge;
   const vitesse = contenu.habitants.vitesseCasesParSeconde * effetAmelioration(etat, contenu, 'vitesse');
   const pas = Math.min(reste, (vitesse * PAS_DE_SIMULATION_MS) / 1000);
-  const d = Math.hypot(dx, dy);
   h.position = { x: h.position.x + (dx / d) * pas, y: h.position.y + (dy / d) * pas };
   h.direction = Math.atan2(dy, dx);
   h.activite = h.charge ? 'porte' : 'marche';
