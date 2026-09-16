@@ -4,6 +4,7 @@
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use tauri::{AppHandle, Manager};
 
@@ -48,4 +49,29 @@ pub fn ecrire_sauvegarde(app: AppHandle, contenu: String) -> Result<(), String> 
         }
     }
     fs::rename(&temporaire, fichier(&dossier, 0)).map_err(|e| e.to_string())
+}
+
+/// Met de côté les fichiers d'une partie d'avant la réorientation (`partie.v3.json`, `partie.v3.1.json`…),
+/// pour que la nouvelle partie ne les écrase pas. Rien n'est supprimé : une archive déjà présente
+/// fait prendre au fichier un nom horodaté.
+#[tauri::command]
+pub fn archiver_sauvegardes(app: AppHandle) -> Result<(), String> {
+    let dossier = dossier(&app)?;
+    for rang in 0..=COPIES_DE_SECOURS {
+        let source = fichier(&dossier, rang);
+        if !source.exists() {
+            continue;
+        }
+        let nom = match rang {
+            0 => "partie.v3".to_string(),
+            n => format!("partie.v3.{n}"),
+        };
+        let mut archive = dossier.join(format!("{nom}.json"));
+        if archive.exists() {
+            let secondes = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
+            archive = dossier.join(format!("{nom}.{secondes}.json"));
+        }
+        fs::rename(&source, &archive).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }

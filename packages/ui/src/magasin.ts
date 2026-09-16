@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 
-export type Panneau = 'construire' | 'habitants' | 'arbre' | 'reglages' | 'visiteurs' | { batiment: IdBatiment };
+export type Panneau = 'construire' | 'reglages' | { batiment: IdBatiment };
 
 export interface Message {
   id: number;
@@ -21,8 +21,6 @@ export interface EtatInterface {
   /** Bonus de voisinage à l'emplacement visé, pendant le placement. */
   bonusVise: number | null;
   messages: Message[];
-  /** Séquence de floraison : envol des spores, puis écran « nouvelle île à venir ». */
-  floraison: 'envol' | 'ecran' | null;
 }
 
 type Abonne = () => void;
@@ -36,7 +34,6 @@ export class Magasin {
     placement: null,
     bonusVise: null,
     messages: [],
-    floraison: null,
   };
   private readonly abonnes = new Set<Abonne>();
   private prochainMessage = 0;

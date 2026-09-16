@@ -31,13 +31,14 @@ export class Moteur {
     switch (message.type) {
       case 'demarrer': {
         const reprise = chargerPremiereValide(message.sauvegardes);
-        this.etat = reprise?.etat ?? creerEtat(this.contenu);
+        this.etat = reprise && 'etat' in reprise ? reprise.etat : creerEtat(this.contenu);
         this.evenements = [];
         // Le temps passé jeu fermé ne compte pas : l'horloge repart d'ici.
         this.horloge.reveil(maintenantMs);
         const origine =
           message.sauvegardes.length === 0 ? 'nouvelle'
           : reprise === null ? 'illisible'
+          : 'ancienne' in reprise ? 'ancienne'
           : reprise.rang === 0 ? 'sauvegarde'
           : 'secours';
         return [{ type: 'ile', ile: this.etat.ile }, { type: 'partieChargee', origine }, this.publier()];
@@ -74,7 +75,7 @@ export class Moteur {
     return evenements;
   }
 
-  /** Cases constructibles, de la plus proche à la plus lointaine de l'arbre-mère. */
+  /** Cases constructibles, de la plus proche à la plus lointaine de la souche-dépôt. */
   casesLibres() {
     return casesLibres(this.etat);
   }

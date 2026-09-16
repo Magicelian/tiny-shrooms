@@ -9,7 +9,6 @@ import { construireIle } from './ile';
 import { Pixelisation } from './pixelisation';
 
 export { CHAPEAUX, COULEURS_BATIMENT } from './palette';
-export { DUREE_ENVOL_MS } from './arbre';
 
 export const IMAGES_PAR_SECONDE = 30;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
@@ -110,11 +109,6 @@ export class Rendu {
     this.vue.tourner(sens);
   }
 
-  /** Séquence de floraison : les spores quittent l'arbre-mère. */
-  lancerFloraison(): void {
-    this.entites.arbre.lancerEnvol(performance.now());
-  }
-
   basculerZoom(): void {
     this.vue.basculerZoom();
   }
@@ -150,7 +144,7 @@ export class Rendu {
     this.vue.animer(dt);
     this.entites.animer(performance.now());
     this.ambiance.animer(dt);
-    const superpositions = [this.ambiance.scene, this.entites.arbre.superposition];
+    const superpositions = [this.ambiance.scene];
     if (this.aides.actives) superpositions.push(this.aides.scene);
     this.pixelisation.rendre(this.scene, this.vue.camera, superpositions);
     this.images++;

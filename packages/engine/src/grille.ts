@@ -3,7 +3,7 @@
 import type { Batiment, Case, IdBatiment, Ile, RaisonRefus, TypeBatiment } from './contrat';
 import type { Contenu } from './contenu';
 import type { Etat } from './etat';
-import { dansLArbre, terrainEn } from './ile';
+import { dansLaSouche, terrainEn } from './ile';
 
 type Emprise = Pick<Batiment, 'id' | 'type' | 'case' | 'chantier'>;
 
@@ -11,7 +11,7 @@ type Emprise = Pick<Batiment, 'id' | 'type' | 'case' | 'chantier'>;
 export function emplacementRefuse(ile: Ile, batiments: readonly Emprise[], c: Case, ignorer?: IdBatiment): RaisonRefus | null {
   const terrain = terrainEn(ile, c.x, c.y);
   if (terrain === 'vide') return 'horsIle';
-  if (terrain !== 'herbe' || dansLArbre(ile, c.x, c.y)) return 'emplacementOccupe';
+  if (terrain !== 'herbe' || dansLaSouche(ile, c.x, c.y)) return 'emplacementOccupe';
   if (batiments.some((b) => b.id !== ignorer && b.case.x === c.x && b.case.y === c.y)) return 'emplacementOccupe';
   return null;
 }
@@ -29,7 +29,7 @@ export function verifierEmplacement(etat: Etat, c: Case, ignorer?: IdBatiment): 
   return emplacementRefuse(etat.ile, etat.batiments, c, ignorer);
 }
 
-/** Cases où l'on peut bâtir, de la plus proche à la plus lointaine de l'arbre-mère. */
+/** Cases où l'on peut bâtir, de la plus proche à la plus lointaine de la souche-dépôt. */
 export function casesLibres(etat: Etat): Case[] {
   const { ile } = etat;
   const cases: Case[] = [];
@@ -38,8 +38,8 @@ export function casesLibres(etat: Etat): Case[] {
       if (verifierEmplacement(etat, { x, y }) === null) cases.push({ x, y });
     }
   }
-  const cx = ile.arbreMere.x + ile.tailleArbreMere / 2 - 0.5;
-  const cy = ile.arbreMere.y + ile.tailleArbreMere / 2 - 0.5;
+  const cx = ile.souche.x + ile.tailleSouche / 2 - 0.5;
+  const cy = ile.souche.y + ile.tailleSouche / 2 - 0.5;
   return cases.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
 }
 

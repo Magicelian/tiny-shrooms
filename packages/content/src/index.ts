@@ -1,4 +1,4 @@
-// Valeurs d'équilibrage de la V1 : premier jet, à régler à l'étape 10.
+// Valeurs d'équilibrage de la V1 : premier jet, à régler à l'étape 16.
 import type { Contenu } from '@tiny-shrooms/engine';
 
 export const contenu: Contenu = {
@@ -29,10 +29,9 @@ export const contenu: Contenu = {
     },
     feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20 },
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
-    relais: { cout: { boisMort: 30, mousse: 15 }, constructionSecondes: 60 },
   },
-  // Les autres bâtiments viennent avec les stades de l'arbre-mère.
-  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'],
+  // Tout est disponible d'emblée en attendant les paliers de population (étape 13).
+  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp', 'sechoir', 'atelier'],
   habitants: {
     auDepart: 2,
     logementDeBase: 2,
@@ -45,17 +44,11 @@ export const contenu: Contenu = {
     seuilArrivee: 0.5,
     seuilBonheur: 0.7,
     sporesParHabitantHeureux: 0.2,
-    sporesParSoigneur: 1,
     reevaluationSecondes: 30,
     nuit: { debut: 0.85, fin: 0.05 },
     travailAffame: 0.5,
     valeurBaieSechee: 3,
     bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.2, feuDeCamp: 0.1, minutesPourSeStabiliser: 3 },
-  },
-  arbreMere: {
-    sporesParMinute: { pousse: 1, arbuste: 1.5, arbre: 2, floraison: 2 },
-    sporesParStade: { pousse: 200, arbuste: 2500, arbre: 12000 },
-    deblocages: { arbuste: ['sechoir', 'relais'], arbre: ['atelier'] },
   },
   ameliorations: {
     vitesse: { cout: { boisMort: 50, mousse: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
@@ -87,13 +80,5 @@ export const contenu: Contenu = {
       vent: { boisMort: 1.2 },
       neige: { mousse: 0.8 },
     },
-  },
-  visiteurs: {
-    capaciteParRelais: 2,
-    minutesEntreArrivees: { min: 3, max: 8 },
-    poids: { herisson: 3, escargot: 2, luciole: 2 },
-    herisson: { ressources: ['baies', 'boisMort', 'mousse'], lot: 20, taux: { min: 0.6, max: 1.4 } },
-    escargot: { ressources: ['baies', 'boisMort', 'mousse'], quantite: { min: 15, max: 35 }, sporesParUnite: 0.5, chancePlan: 0.3, plans: ['atelier'] },
-    luciole: { multiplicateur: { min: 1.25, max: 1.5 }, minutes: { min: 3, max: 6 } },
   },
 };

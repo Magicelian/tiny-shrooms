@@ -1,41 +1,29 @@
 // Règles du jeu : un pas de simulation, les commandes et la vue publiée de l'état.
-import type { Commande, Evenement, Instantane, Priorites, Quantites, RaisonRefus, Ressource, Stock } from './contrat';
-import { RESSOURCES, TACHES } from './contrat';
-import { coutAmelioration, donnerSpores, effetAmelioration, fleurir, mycelium, sporesRestantes } from './arbre';
+import type { Commande, Evenement, Instantane, Quantites, RaisonRefus, Ressource, Stock } from './contrat';
+import { RESSOURCES } from './contrat';
+import { coutAmelioration, effetAmelioration, payer } from './ameliorations';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants } from './habitants';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_PAR_MINUTE } from './temps';
-import { avancerVisiteurs, multiplicateurBonus, payer, repondreVisiteur } from './visiteurs';
 
 type Flux = Record<Ressource, number>;
 
-/**
- * Variations de stock qui ne passent pas par un transport : spores, repas, récoltes en cours (estimées).
- * `soins` : spores que les soigneurs donnent directement à l'arbre-mère.
- */
-function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Flux; soins: number } {
+/** Variations de stock qui ne passent pas par un transport : spores, repas, récoltes en cours (estimées). */
+function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Flux } {
   const direct: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
   const h = contenu.habitants;
-  direct.spores += contenu.arbreMere.sporesParMinute[etat.arbreMere.stade];
-  let soins = 0;
   for (const habitant of etat.habitants) {
     if (habitant.bienEtre >= h.seuilBonheur) direct.spores += h.sporesParHabitantHeureux;
-    if (habitant.mission?.tache === 'soignerArbre' && habitant.activite === 'recolte') soins += h.sporesParSoigneur;
-  }
-  // Un arbre en fleur n'absorbe plus rien : les soins remplissent le stock.
-  if (etat.arbreMere.stade === 'floraison') {
-    direct.spores += soins;
-    soins = 0;
   }
 
   const estime = { ...direct };
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
   const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
-  const bonus = multiplicateurBonus(etat.bonus) * effetAmelioration(etat, contenu, 'outils');
+  const bonus = effetAmelioration(etat, contenu, 'outils');
   for (const habitant of etat.habitants) {
     const m = habitant.mission;
     if (m?.tache !== 'recolter' || habitant.activite !== 'recolte') continue;
@@ -48,7 +36,7 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Fl
     }
     for (const r of cles(def.consommation ?? {})) estime[r] -= (def.consommation![r] ?? 0) * cadence;
   }
-  return { direct, estime, soins };
+  return { direct, estime };
 }
 
 export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
@@ -58,21 +46,15 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const saison = calendrier(etat.pas, contenu);
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
-  avancerVisiteurs(etat, contenu, evenements);
 
   const max = plafonds(etat, contenu);
-  const { direct, soins } = fluxParMinute(etat, contenu);
-  // Les soigneurs nourrissent l'arbre ; ce qu'il ne peut plus absorber rejoint le stock.
-  const soinsDuPas = soins / PAS_PAR_MINUTE;
-  direct.spores += (soinsDuPas - donnerSpores(etat, contenu, soinsDuPas, evenements)) * PAS_PAR_MINUTE;
+  const { direct } = fluxParMinute(etat, contenu);
   const pleins: Ressource[] = [];
   for (const r of RESSOURCES) {
     const avant = etat.stocks[r];
     const apres = avant + direct[r] / PAS_PAR_MINUTE;
     // Un plafond abaissé (démolition) ne retire rien : il bloque seulement les gains.
     etat.stocks[r] = direct[r] >= 0 ? Math.min(apres, Math.max(max[r], avant)) : Math.max(0, apres);
-    // Un stock de spores plein déborde dans l'arbre-mère : rien ne se perd fenêtre cachée.
-    if (r === 'spores' && apres > etat.stocks[r]) donnerSpores(etat, contenu, apres - etat.stocks[r], evenements);
     if (etat.stocks[r] >= max[r]) {
       pleins.push(r);
       if (!etat.stocksPleins.includes(r)) evenements.push({ type: 'stockPlein', ressource: r });
@@ -126,25 +108,9 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       majBonusVoisinage(etat, contenu);
       return [];
     }
-    case 'reglerPriorites': {
-      const priorites = {} as Priorites;
-      for (const t of TACHES) priorites[t] = Math.min(1, Math.max(0, commande.priorites[t]));
-      etat.priorites = priorites;
-      return [];
-    }
-    case 'epinglerHabitant': {
-      const h = etat.habitants.find((x) => x.id === commande.id);
-      if (!h) return refus('introuvable');
-      h.epingle = commande.tache;
-      return [];
-    }
     case 'modifierReglage': {
       (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
       return [];
-    }
-    case 'repondreVisiteur': {
-      const raison = repondreVisiteur(etat, commande.id, commande.accepte);
-      return raison ? refus(raison) : [];
     }
     case 'ameliorer': {
       // Les améliorations propres à un bâtiment ne sont pas au programme de la V1.
@@ -159,24 +125,12 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       etat.ameliorations[amelioration]++;
       return [];
     }
-    case 'nourrirArbre': {
-      if (etat.arbreMere.stade === 'floraison') return refus('indisponible');
-      const quantite = Math.min(Math.max(0, commande.spores), etat.stocks.spores);
-      if (!(quantite > 0)) return refus('ressourcesInsuffisantes');
-      const evenements: Evenement[] = [];
-      etat.stocks.spores -= donnerSpores(etat, contenu, quantite, evenements);
-      return evenements;
-    }
-    case 'fleurir': {
-      const raison = fleurir(etat);
-      return raison ? refus(raison) : [{ type: 'floraison' }];
-    }
   }
 }
 
 export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Instantane {
   const max = plafonds(etat, contenu);
-  const { estime, soins } = fluxParMinute(etat, contenu);
+  const { estime } = fluxParMinute(etat, contenu);
   const stocks = {} as Record<Ressource, Stock>;
   for (const r of RESSOURCES) {
     stocks[r] = { quantite: etat.stocks[r], plafond: max[r], productionParMinute: estime[r] };
@@ -198,16 +152,6 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
       ...h,
       position: { ...h.position },
     })),
-    priorites: { ...etat.priorites },
-    arbreMere: {
-      ...etat.arbreMere,
-      mycelium: mycelium(etat.arbreMere, contenu),
-      // Le débordement ne compte que si le stock de spores est plein et continue de grossir.
-      sporesParMinute: soins + (etat.stocks.spores >= max.spores && etat.arbreMere.stade !== 'floraison' ? Math.max(0, estime.spores) : 0),
-      sporesRestantes: sporesRestantes(etat.arbreMere, contenu),
-    },
-    visiteurs: structuredClone(etat.visiteurs),
-    bonus: etat.bonus.map((b) => ({ ...b })),
     batimentsDebloques: [...etat.batimentsDebloques],
     ameliorations: { ...etat.ameliorations },
     reglages: { ...etat.reglages },

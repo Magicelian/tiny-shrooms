@@ -1,11 +1,10 @@
-// Bâtiments, habitants et arbre-mère en formes provisoires, synchronisés sur les instantanés.
+// Bâtiments, habitants et souche-dépôt en formes provisoires, synchronisés sur les instantanés.
 import * as THREE from 'three';
 import type { Batiment, Habitant, IdBatiment, IdHabitant, Ile, Instantane } from '@tiny-shrooms/engine';
 import { PAS_DE_SIMULATION_MS } from '@tiny-shrooms/engine';
-import { ArbreRendu } from './arbre';
 import { CHAPEAUX, COULEURS, COULEURS_BATIMENT, HAUTEURS_BATIMENT, materiau } from './palette';
 import { versMonde } from './repere';
-import { Accueil } from './visiteurs';
+import { SoucheRendu } from './souche';
 
 const CUBE = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const PIED = new THREE.CylinderGeometry(0.08, 0.1, 0.22, 6).translate(0, 0.11, 0);
@@ -26,13 +25,11 @@ export class Entites {
   readonly groupe = new THREE.Group();
   private readonly batiments = new Map<IdBatiment, THREE.Mesh>();
   private readonly habitants = new Map<IdHabitant, HabitantAffiche>();
-  readonly arbre = new ArbreRendu();
-  private readonly accueil = new Accueil();
+  private readonly souche = new SoucheRendu();
   private ile: Ile | null = null;
 
   constructor() {
-    this.arbre.attacher(this.groupe);
-    this.groupe.add(this.accueil.groupe);
+    this.groupe.add(this.souche.groupe);
   }
 
   changerIle(ile: Ile): void {
@@ -41,8 +38,7 @@ export class Entites {
     for (const h of this.habitants.values()) this.groupe.remove(h.objet);
     this.batiments.clear();
     this.habitants.clear();
-    this.accueil.vider();
-    this.arbre.changerIle(ile);
+    this.souche.changerIle(ile);
   }
 
   appliquer(instantane: Instantane, maintenant: number): void {
@@ -50,8 +46,6 @@ export class Entites {
     if (!ile) return;
     this.synchroniserBatiments(instantane.batiments, ile);
     this.synchroniserHabitants(instantane.habitants, ile, maintenant);
-    this.arbre.appliquer(instantane.arbreMere);
-    this.accueil.appliquer(instantane.batiments, instantane.visiteurs, ile);
   }
 
   /** Maillages des bâtiments, pour savoir lequel est sous la souris. */
@@ -61,8 +55,6 @@ export class Entites {
 
   /** Mouvements entre deux instantanés et petites animations. */
   animer(maintenant: number): void {
-    this.accueil.animer(maintenant);
-    this.arbre.animer(maintenant);
     for (const h of this.habitants.values()) {
       const t = Math.min(1, (maintenant - h.debut) / PAS_DE_SIMULATION_MS);
       h.objet.position.lerpVectors(h.depuis, h.vers, t);

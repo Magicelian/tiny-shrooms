@@ -1,19 +1,20 @@
-// Vie des habitants : choix de tâche par priorités, déplacement, travail, bien-être, arrivées.
+// Vie des habitants : choix de tâche automatique, déplacement, travail, bien-être, arrivées.
 import type { Evenement, Position, Ressource, Tache } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantEtat, type Mission } from './etat';
 import { majBonusVoisinage } from './grille';
-import { centreArbre } from './ile';
+import { centreSouche } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
-import { multiplicateurBonus } from './visiteurs';
-import { effetAmelioration } from './arbre';
+import { effetAmelioration } from './ameliorations';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 /** Distance à laquelle un habitant est arrivé devant un bâtiment. */
 const RAYON_BATIMENT = 0.6;
 /** Poids d'une case de trajet dans le choix d'une mission. */
 const COUT_DISTANCE = 0.01;
+// Poids commun à toutes les tâches (ancien réglage des priorités, laissé à mi-course).
+const POIDS_TACHE = 0.5;
 
 export function estLaNuit(etat: Etat, contenu: Contenu): boolean {
   const heure = heureDuJour(etat.pas, contenu.temps);
@@ -55,7 +56,7 @@ function nourrir(etat: Etat, contenu: Contenu): boolean {
   return besoin <= 1e-9;
 }
 
-/** Logement de chaque habitant logé (`true` pour l'arbre-mère, sinon la hutte) et nombre total de places. */
+/** Logement de chaque habitant logé (`true` pour la souche-dépôt, sinon la hutte) et nombre total de places. */
 function logements(etat: Etat, contenu: Contenu): { loges: Map<number, BatimentEtat | true>; capacite: number } {
   const places: (BatimentEtat | true)[] = Array.from({ length: contenu.habitants.logementDeBase }, () => true);
   for (const b of etat.batiments) {
@@ -97,7 +98,6 @@ function missionValide(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
   const m = h.mission;
   if (h.charge && (!m || m.tache !== 'stocker' || m.etape !== 'deposer')) return false;
   if (!m) return false;
-  if (h.epingle && m.tache !== h.epingle && !h.charge) return false;
   const reevaluer = h.pasDepuisChoix >= (contenu.habitants.reevaluationSecondes * 1000) / PAS_DE_SIMULATION_MS;
   switch (m.tache) {
     case 'recolter': {
@@ -109,8 +109,6 @@ function missionValide(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
     case 'stocker':
       if (m.etape === 'deposer') return true;
       return transportable(etat, contenu, trouver(etat, m.batiment)) > 0;
-    case 'soignerArbre':
-      return !reevaluer;
   }
 }
 
@@ -128,9 +126,7 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
   }
   let meilleur = null as Candidat | null;
   const proposer = (mission: Mission, besoin: number, cible: Position) => {
-    const poids = h.epingle ? (h.epingle === mission.tache ? 1 : 0) : etat.priorites[mission.tache];
-    if (poids <= 0) return;
-    const score = poids * besoin - distance(h.position, cible) * COUT_DISTANCE;
+    const score = POIDS_TACHE * besoin - distance(h.position, cible) * COUT_DISTANCE;
     if (!meilleur || score > meilleur.score) meilleur = { mission, score };
   };
 
@@ -156,8 +152,6 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
       proposer({ tache: 'stocker', etape: 'prendre', batiment: b.id }, Math.min(1, reserve / contenu.habitants.capaciteTransport), cible);
     }
   }
-  // Soigner l'arbre reste un recours quand rien d'autre ne presse.
-  proposer({ tache: 'soignerArbre' }, 0.5, centreArbre(etat.ile));
 
   h.mission = meilleur?.mission ?? null;
   h.tache = h.mission?.tache ?? null;
@@ -215,16 +209,13 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
       if (m.etape === 'prendre') prendre(etat, contenu, h, trouver(etat, m.batiment)!);
       else deposer(etat, contenu, h);
       return;
-    case 'soignerArbre':
-      h.activite = 'recolte';
-      return;
   }
 }
 
 function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat, nourri: boolean): void {
   const def = contenu.batiments[b.type];
   const cadence =
-    cadenceTravail(etat, contenu, centreCase(b), nourri) * multiplicateurBonus(etat.bonus) * effetAmelioration(etat, contenu, 'outils');
+    cadenceTravail(etat, contenu, centreCase(b), nourri) * effetAmelioration(etat, contenu, 'outils');
   // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {
@@ -297,9 +288,9 @@ function transportable(etat: Etat, contenu: Contenu, b: BatimentEtat | undefined
   return cles(b.reserve).reduce((s, r) => s + Math.min(b.reserve[r] ?? 0, place[r]), 0);
 }
 
-/** Dépôt le plus proche : l'arbre-mère ou un bâtiment de stockage achevé. */
+/** Dépôt le plus proche : la souche ou un bâtiment de stockage achevé. */
 function versDepot(etat: Etat, contenu: Contenu, depuis: Position): Mission {
-  let meilleur: Mission = { tache: 'stocker', etape: 'deposer', destination: centreArbre(etat.ile), rayon: rayonArbre(etat) };
+  let meilleur: Mission = { tache: 'stocker', etape: 'deposer', destination: centreSouche(etat.ile), rayon: rayonSouche(etat) };
   let d = distance(depuis, meilleur.destination) - meilleur.rayon;
   for (const b of etat.batiments) {
     if (b.chantier !== null || !contenu.batiments[b.type].stockage) continue;
@@ -313,7 +304,6 @@ function versDepot(etat: Etat, contenu: Contenu, depuis: Position): Mission {
 }
 
 function destination(etat: Etat, m: Mission): [Position, number] {
-  if (m.tache === 'soignerArbre') return [centreArbre(etat.ile), rayonArbre(etat)];
   if (m.tache === 'stocker' && m.etape === 'deposer') return [m.destination, m.rayon];
   return [centreCase(trouver(etat, m.batiment)!), RAYON_BATIMENT];
 }
@@ -343,8 +333,8 @@ function centreCase(b: BatimentEtat): Position {
   return { x: b.case.x + 0.5, y: b.case.y + 0.5 };
 }
 
-function rayonArbre(etat: Etat): number {
-  return etat.ile.tailleArbreMere / 2 + 0.3;
+function rayonSouche(etat: Etat): number {
+  return etat.ile.tailleSouche / 2 + 0.3;
 }
 
 function distance(a: Position, b: Position): number {

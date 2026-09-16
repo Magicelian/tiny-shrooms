@@ -2,7 +2,17 @@
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
 import type { Etat } from './etat';
 
-export const VERSION_SAUVEGARDE = 3;
+export const VERSION_SAUVEGARDE = 4;
+
+/** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
+export const PREMIERE_VERSION_LISIBLE = 4;
+
+/** Sauvegarde valide mais antérieure à la réorientation : on repart de zéro après l'avoir archivée. */
+export class SauvegardeAncienne extends Error {
+  constructor(readonly version: number) {
+    super(`sauvegarde d'avant la réorientation (version ${version})`);
+  }
+}
 
 interface FichierSauvegarde {
   version: number;
@@ -13,22 +23,7 @@ interface FichierSauvegarde {
  * Migrations successives : `MIGRATIONS[v]` convertit une sauvegarde de la version `v`
  * vers la version `v + 1`. Toute évolution du format ajoute une entrée ici.
  */
-const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {
-  // Étape 7 : visiteurs et bonus ; le relais rejoint les bâtiments disponibles.
-  1: (etat) => ({
-    ...etat,
-    visiteurs: [],
-    prochainIdVisiteur: 1,
-    pasAvantVisiteur: 0,
-    bonus: [],
-    batimentsDebloques: [...new Set([...(etat.batimentsDebloques as string[]), 'relais'])],
-  }),
-  // Étape 8 : l'arbre-mère grandit et l'atelier vend des améliorations. Les bâtiments déjà débloqués le restent.
-  2: (etat) => {
-    const { mycelium: _mycelium, ...arbre } = etat.arbreMere as Record<string, unknown>;
-    return { ...etat, arbreMere: { ...arbre, floraisons: 0 }, ameliorations: { vitesse: 0, outils: 0 } };
-  },
-};
+const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {};
 
 export function serialiser(etat: Etat): string {
   const fichier: FichierSauvegarde = { version: VERSION_SAUVEGARDE, etat };
@@ -42,6 +37,7 @@ export function charger(texte: string): Etat {
   let etat = fichier.etat;
   if (typeof version !== 'number' || !estObjet(etat)) throw new Error('sauvegarde sans version ni état');
   if (version > VERSION_SAUVEGARDE) throw new Error(`sauvegarde trop récente (version ${version})`);
+  if (version < PREMIERE_VERSION_LISIBLE) throw new SauvegardeAncienne(version);
   for (; version < VERSION_SAUVEGARDE; version++) {
     const migrer = MIGRATIONS[version];
     if (!migrer) throw new Error(`aucune migration depuis la version ${version}`);
@@ -51,16 +47,21 @@ export function charger(texte: string): Etat {
   return etat as Etat;
 }
 
-/** Prend la première sauvegarde lisible, par ordre de préférence ; `null` s'il n'y en a aucune. */
-export function chargerPremiereValide(textes: readonly string[]): { etat: Etat; rang: number } | null {
+/**
+ * Prend la première sauvegarde lisible, par ordre de préférence ; `null` s'il n'y en a aucune.
+ * `ancienne` : au moins un fichier date d'avant la réorientation.
+ */
+export function chargerPremiereValide(textes: readonly string[]): { etat: Etat; rang: number } | { ancienne: true } | null {
+  let ancienne = false;
   for (const [rang, texte] of textes.entries()) {
     try {
       return { etat: charger(texte), rang };
-    } catch {
+    } catch (erreur) {
       // Fichier tronqué ou abîmé : on passe à la copie suivante.
+      if (erreur instanceof SauvegardeAncienne) ancienne = true;
     }
   }
-  return null;
+  return ancienne ? { ancienne: true } : null;
 }
 
 function estObjet(valeur: unknown): valeur is Record<string, unknown> {
@@ -69,9 +70,9 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
-  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'prochainIdVisiteur', 'pasAvantVisiteur'];
-  const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins', 'visiteurs', 'bonus'];
-  const objets = ['ile', 'stocks', 'priorites', 'arbreMere', 'reglages', 'ameliorations'];
+  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee'];
+  const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins'];
+  const objets = ['ile', 'stocks', 'reglages', 'ameliorations'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??
     tableaux.find((cle) => !Array.isArray(etat[cle])) ??

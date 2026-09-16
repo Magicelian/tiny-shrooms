@@ -8,20 +8,13 @@ export const COULEURS = {
   roche: 0x6b6f7a,
   eau: 0x4fa3d9,
   feuillage: 0x3f8f3a,
-  /** Couronne de l'arbre-mère : distincte du feuillage pour ne pas suivre les saisons. */
-  couronne: 0x3f8f3b,
   tronc: 0x6b4226,
   buisson: 0x2f7d4a,
   caillou: 0x9a9ea8,
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
-  floraison: 0xf29ac2,
-  mycelium: 0xf4ecd8,
-  herisson: 0x7a5236,
-  museau: 0xe0c29a,
-  coquille: 0xd9822b,
-  escargot: 0xc9d67a,
-  luciole: 0xfff27a,
+  /** Dessus de la souche-dépôt. */
+  cerne: 0xc9a06a,
 } as const;
 
 export const CHAPEAUX = [0xd8423a, 0xe8a33d, 0x9b59d0, 0x3d8fe8, 0xf2f2e8] as const;
@@ -36,7 +29,6 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   sechoir: 0xe38a3a,
   feuDeCamp: 0xf2612d,
   atelier: 0x5b7fb8,
-  relais: 0x8e6cc4,
 };
 
 /** Hauteur provisoire de chaque bâtiment, en unités de case. */
@@ -50,7 +42,6 @@ export const HAUTEURS_BATIMENT: Record<TypeBatiment, number> = {
   sechoir: 0.8,
   feuDeCamp: 0.35,
   atelier: 1.35,
-  relais: 1.5,
 };
 
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {

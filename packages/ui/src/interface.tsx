@@ -2,12 +2,11 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
-import { multiplicateurBonus, PAS_PAR_MINUTE } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, listeQuantites, nomBatiment, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Panneau } from './magasin';
-import { ICONES_VISITEUR, PanneauArbre, PanneauBatiment, PanneauConstruire, PanneauHabitants, PanneauReglages, PanneauVisiteurs } from './panneaux';
+import { PanneauBatiment, PanneauConstruire, PanneauReglages } from './panneaux';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -31,28 +30,16 @@ export function Interface({ controleur }: Props) {
     controleur.magasin.modifier({ panneau: memePanneau(panneau, p) ? null : p, placement: null });
 
   return (
-    <div class={`interface ${etat.survol || placement || etat.floraison === 'ecran' ? 'visible' : ''}`}>
+    <div class={`interface ${etat.survol || placement ? 'visible' : ''}`}>
       <div class="haut">
         <div class="infos">
           <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
             {ICONES_METEO[instantane.temps.meteo]}{' '}
             {t('temps.annee', { saison: t(`saison.${instantane.temps.saison}`), annee: instantane.temps.annee })}
           </span>
-          {instantane.bonus.length > 0 && <EtiquetteBonus instantane={instantane} />}
         </div>
         <nav class="outils">
-          {instantane.visiteurs.length > 0 && (
-            <Outil
-              icone={ICONES_VISITEUR[instantane.visiteurs[0]!.type]}
-              titre={t('outil.visiteurs', { nombre: instantane.visiteurs.length })}
-              actif={panneau === 'visiteurs'}
-              alerte={panneau !== 'visiteurs'}
-              onClick={() => ouvrir('visiteurs')}
-            />
-          )}
           <Outil icone="🔨" titre={t('outil.construire')} actif={panneau === 'construire' || !!placement} onClick={() => (placement ? controleur.finirPlacement() : ouvrir('construire'))} />
-          <Outil icone="🍄" titre={t('outil.habitants')} actif={panneau === 'habitants'} onClick={() => ouvrir('habitants')} />
-          <Outil icone="🌳" titre={t('outil.arbre')} actif={panneau === 'arbre'} onClick={() => ouvrir('arbre')} />
           <Outil icone="⚙" titre={t('outil.reglages')} actif={panneau === 'reglages'} onClick={() => ouvrir('reglages')} />
         </nav>
       </div>
@@ -69,29 +56,12 @@ export function Interface({ controleur }: Props) {
 
       {panneau && <ContenuPanneau controleur={controleur} panneau={panneau} instantane={instantane} />}
 
-      {etat.floraison === 'ecran' && <EcranFloraison controleur={controleur} />}
-
       <div class="messages">
         {etat.messages.map((m) => (
           <div key={m.id} class="message">
             {m.texte}
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function EcranFloraison({ controleur }: Props) {
-  return (
-    <div class="ecran-floraison">
-      <div>
-        <h2>{t('floraison.titre')}</h2>
-        <p>{t('floraison.texte')}</p>
-        <p class="discret">{t('floraison.suite')}</p>
-        <button class="bouton large actif" onClick={() => controleur.fermerFloraison()}>
-          {t('floraison.fermer')}
-        </button>
       </div>
     </div>
   );
@@ -108,24 +78,6 @@ function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: 
     return (
       <Cadre titre={t('outil.construire')} fermer={fermer}>
         <PanneauConstruire controleur={controleur} instantane={instantane} />
-      </Cadre>
-    );
-  if (panneau === 'habitants')
-    return (
-      <Cadre titre={t('outil.habitants')} fermer={fermer}>
-        <PanneauHabitants controleur={controleur} instantane={instantane} />
-      </Cadre>
-    );
-  if (panneau === 'arbre')
-    return (
-      <Cadre titre={t('outil.arbre')} fermer={fermer}>
-        <PanneauArbre controleur={controleur} instantane={instantane} />
-      </Cadre>
-    );
-  if (panneau === 'visiteurs')
-    return (
-      <Cadre titre={t('outil.visiteurs', { nombre: instantane.visiteurs.length })} fermer={fermer}>
-        <PanneauVisiteurs controleur={controleur} instantane={instantane} />
       </Cadre>
     );
   if (panneau === 'reglages')
@@ -157,29 +109,16 @@ function Cadre({ titre, fermer, bas, children }: { titre: string; fermer: () => 
   );
 }
 
-function Outil(props: { icone: string; titre: string; actif?: boolean; petit?: boolean; alerte?: boolean; onClick: () => void }) {
+function Outil(props: { icone: string; titre: string; actif?: boolean; petit?: boolean; onClick: () => void }) {
   return (
     <button
-      class={`bouton outil ${props.actif ? 'actif' : ''} ${props.petit ? 'petit' : ''} ${props.alerte ? 'alerte' : ''}`}
+      class={`bouton outil ${props.actif ? 'actif' : ''} ${props.petit ? 'petit' : ''}`}
       title={props.titre}
       aria-label={props.titre}
       onClick={props.onClick}
     >
       {props.icone}
     </button>
-  );
-}
-
-function EtiquetteBonus({ instantane }: { instantane: Instantane }) {
-  const pas = Math.max(...instantane.bonus.map((b) => b.pasRestants));
-  const texte = t('bonus.actif', {
-    multiplicateur: nombre(multiplicateurBonus(instantane.bonus), 2),
-    minutes: nombre(Math.ceil(pas / PAS_PAR_MINUTE)),
-  });
-  return (
-    <span class="etiquette bonus" title={t('bonus.titre')}>
-      ✨ {texte}
-    </span>
   );
 }
 

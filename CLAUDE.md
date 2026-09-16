@@ -58,6 +58,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   durée de jeu). Pour inspecter un stade dans le navigateur : modifier `etat.arbreMere` dans
   `localStorage['tiny-shrooms.partie']` puis recharger.
 - **Réorientation (16/09/2026)** : city-builder sur île extensible (cahier des charges §1-3, 6.2, étapes 9-16).
-  Arbre-mère, visiteurs, priorités et interface au survol sont abandonnés ; les notes des étapes 7-8 ci-dessus
-  décrivent du code à retirer.
-- **Prochaine étape : 9** (retrait des systèmes abandonnés, souche-dépôt, sauvegarde en version 4).
+  Les notes des étapes 7-8 ci-dessus décrivent du code **retiré** à l'étape 9 (seul le pouls reste, `src-tauri/src/pouls.rs`).
+- **Étape 9 validée**. Souche-dépôt au centre (`ile.souche`, rendu `packages/renderer/src/souche.ts`) ; améliorations dans
+  `packages/engine/src/ameliorations.ts`. Sauvegarde en version 4 : une plus ancienne donne l'origine `ancienne`, le
+  frontend archive (`archiver_sauvegardes` → `partie.v3*.json` ; `tiny-shrooms.partie.v3` dans le navigateur).
+- **Prochaine étape : 10** (glisser la vue, ⌘ + glisser la fenêtre, verrouillage, curseur, focus).

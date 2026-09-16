@@ -335,48 +335,6 @@
   border-top: 2px dashed var(--papier-fonce);
 }
 
-.curseur {
-  display: grid;
-  grid-template-columns: 7.5em 1fr;
-  align-items: center;
-  font-size: 12px;
-}
-.curseur input {
-  width: 100%;
-  accent-color: var(--accent);
-}
-.habitants {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.habitants li {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 0;
-}
-.habitants .nom {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 700;
-}
-.habitants small {
-  display: block;
-  font-weight: 500;
-  font-size: 10px;
-  color: var(--discret);
-}
-.habitants select {
-  font: inherit;
-  font-size: 11px;
-  max-width: 96px;
-  border: var(--trait);
-  border-radius: 4px;
-  background: #fff;
-}
-
 .jauge {
   height: 8px;
   border: var(--trait);
@@ -407,56 +365,11 @@
   font-size: 11px;
 }
 
-/* Visiteurs */
-.visiteurs {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.visiteur {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  border-bottom: 1px dashed var(--discret);
-}
-.visiteur .icone {
-  font-size: 20px;
-}
-.visiteur .texte {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-}
-.visiteur small {
-  display: block;
-  font-size: 10px;
-}
-.visiteur small:not(.manque) {
-  color: var(--discret);
-}
-.visiteur .actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.visiteur .actions .bouton {
-  font-size: 11px;
-}
 .bouton.manque {
   background: #eee4d8;
 }
 .bouton.discret {
   box-shadow: none;
-}
-.bouton.alerte {
-  background: var(--accent);
-  animation: appel 1.2s ease-in-out infinite;
-}
-@keyframes appel {
-  50% {
-    transform: translateY(-2px);
-  }
 }
 
 /* Atelier */
@@ -471,33 +384,3 @@
   border-top: 1px dashed var(--papier-fonce);
 }
 
-/* Floraison */
-.ecran-floraison {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgb(27 19 32 / 0.55);
-  pointer-events: auto;
-  animation: apparition 0.8s ease-out;
-}
-.ecran-floraison > div {
-  max-width: 260px;
-  padding: 10px 12px;
-  text-align: center;
-  background: var(--papier);
-  border: var(--trait);
-  border-radius: 8px;
-  box-shadow: 0 3px 0 var(--encre);
-}
-.ecran-floraison h2 {
-  margin: 0 0 6px;
-  font-size: 1.2em;
-  color: #c2357a;
-}
-@keyframes apparition {
-  from {
-    opacity: 0;
-  }
-}

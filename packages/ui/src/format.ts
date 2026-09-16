@@ -36,7 +36,6 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   if (def.logement) lignes.push(t('effet.logement', { nombre: def.logement }));
   if (def.stockage) lignes.push(t('effet.stockage', { liste: listeQuantites(def.stockage).replace(/^|, /g, '$&+') }));
   if (type === 'feuDeCamp') lignes.push(t('effet.feuDeCamp'));
-  if (type === 'relais') lignes.push(t('effet.relais', { nombre: contenu.visiteurs.capaciteParRelais }));
   if (lignes.length === 0) lignes.push(t('effet.aVenir'));
   for (const regle of def.voisinage ?? []) {
     const voisin = (TYPES_BATIMENT as readonly string[]).includes(regle.voisin)

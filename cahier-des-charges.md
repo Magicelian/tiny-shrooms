@@ -441,6 +441,14 @@ son critère n'est pas rempli.
 - Souche-dépôt à la place de l'arbre-mère comme dépôt de départ.
 - Sauvegarde en version 4 : une partie plus ancienne est archivée (`partie.v3.json`) et on repart de zéro.
 - **Critère** : tests et types verts ; le jeu se lance sur une partie neuve sans trace des systèmes retirés.
+- **Résultat (16/09/2026)** : validé (38 tests moteur, 7 contenu). Retirés : `arbre.ts` et `visiteurs.ts` (moteur et
+  rendu), le relais, les priorités, l'épinglage, les panneaux Habitants, Arbre-mère et Visiteurs, l'écran de floraison,
+  l'alerte d'icône (le pouls reste, dans `pouls.rs`). Les habitants choisissent leur tâche avec un poids commun ; sans
+  rien à faire, ils attendent. Améliorations de l'atelier dans `ameliorations.ts`, toujours payées en bois et mousse.
+  Tous les bâtiments sont disponibles d'emblée en attendant les paliers. Sauvegarde en version 4 : le moteur répond
+  `partieChargee` avec l'origine `ancienne`, le frontend appelle `archiver_sauvegardes` (Rust renomme en
+  `partie.v3*.json`, sans jamais rien supprimer) avant la première écriture. Vérifié dans le navigateur : ancienne
+  partie archivée, nouvelle écrite en version 4, souche au centre.
 
 ### Étape 10 — Commandes à la souris et fenêtre
 - Glisser au clic maintenu pour déplacer la vue, dans toutes les directions ; molette pour le zoom.

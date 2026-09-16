@@ -5,10 +5,8 @@ import type {
   Quantites,
   Ressource,
   Saison,
-  StadeArbre,
   Terrain,
   TypeBatiment,
-  TypeVisiteur,
 } from './contrat';
 
 export interface RegleVoisinage {
@@ -35,7 +33,7 @@ export interface DefinitionBatiment {
 
 export interface ContenuHabitants {
   auDepart: number;
-  /** Places offertes par l'arbre-mère. */
+  /** Places offertes par la souche-dépôt. */
   logementDeBase: number;
   vitesseCasesParSeconde: number;
   /** Quantité portée par voyage. */
@@ -50,7 +48,6 @@ export interface ContenuHabitants {
   /** Au-delà, un habitant compte comme heureux et produit des spores. */
   seuilBonheur: number;
   sporesParHabitantHeureux: number;
-  sporesParSoigneur: number;
   /** Durée entre deux remises en question de la tâche en cours. */
   reevaluationSecondes: number;
   /** Heures du jour (entre 0 et 1) où tout le monde dort. */
@@ -80,35 +77,6 @@ export interface ContenuMeteo {
   production: Record<Meteo, Quantites>;
 }
 
-/** Intervalle dans lequel une valeur est tirée au sort. */
-export interface Fourchette {
-  min: number;
-  max: number;
-}
-
-export interface ContenuVisiteurs {
-  /** Visiteurs accueillis en même temps par chaque relais construit. */
-  capaciteParRelais: number;
-  /** Attente entre deux arrivées, décomptée seulement quand un relais a de la place. */
-  minutesEntreArrivees: Fourchette;
-  /** Poids relatifs des visiteurs au tirage. */
-  poids: Record<TypeVisiteur, number>;
-  /** Le hérisson donne `lot` d'une ressource contre `lot × taux` d'une autre. */
-  herisson: { ressources: Ressource[]; lot: number; taux: Fourchette };
-  /** L'escargot demande une ressource ; il offre des spores, ou parfois un plan encore verrouillé. */
-  escargot: { ressources: Ressource[]; quantite: Fourchette; sporesParUnite: number; chancePlan: number; plans: TypeBatiment[] };
-  luciole: { multiplicateur: Fourchette; minutes: Fourchette };
-}
-
-export interface ContenuArbreMere {
-  /** Spores données par les racines, par minute, selon le stade. */
-  sporesParMinute: Record<StadeArbre, number>;
-  /** Spores à apporter pour quitter chaque stade. */
-  sporesParStade: Record<Exclude<StadeArbre, 'floraison'>, number>;
-  /** Bâtiments débloqués en atteignant chaque stade (ceux du départ sont dans `batimentsDeDepart`). */
-  deblocages: Partial<Record<StadeArbre, TypeBatiment[]>>;
-}
-
 export interface DefinitionAmelioration {
   /** Coût du premier niveau, multiplié par `hausseCout` à chaque niveau suivant. */
   cout: Quantites;
@@ -125,7 +93,6 @@ export interface Contenu {
   batiments: Record<TypeBatiment, DefinitionBatiment>;
   batimentsDeDepart: TypeBatiment[];
   habitants: ContenuHabitants;
-  arbreMere: ContenuArbreMere;
   /** Améliorations du village, achetées à l'atelier. */
   ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;
   /** Part du coût rendue à la démolition, entre 0 et 1. */
@@ -134,5 +101,4 @@ export interface Contenu {
   temps: { minutesParSaison: number; minutesParJour: number; heureDeDepart: number };
   saisons: ContenuSaisons;
   meteo: ContenuMeteo;
-  visiteurs: ContenuVisiteurs;
 }
