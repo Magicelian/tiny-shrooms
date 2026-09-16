@@ -46,7 +46,7 @@ avec des boutons colorés cerclés de noir.
 | Habitants | Automatiques, guidés par des priorités réglables ; affectation manuelle possible |
 | Long terme | Floraison de l'arbre-mère → nouvelle île + bonus permanents (prestige) |
 | Son | Ambiances douces liées à la météo + petits sons d'interface, **coupé par défaut** |
-| Langue | Jeu en FR (défaut) + EN ; code en anglais ; documentation en français |
+| Langue | Jeu en FR (défaut) + EN ; code et documentation en français |
 | Diffusion | Celian d'abord, amis ensuite : installeurs .dmg/.exe via GitHub Actions + mises à jour automatiques, sans signature payante au départ |
 | Interface | Au repos, l'îlot seul ; au survol, ressources et barre d'outils ; panneaux par-dessus l'îlot |
 | Contenu V1 | Une île complète (voir §3.8) |
@@ -222,10 +222,11 @@ tiny_shrooms/
   à partir de sa seule durée.
 - **Systèmes** : ressources, production, habitants (choix de tâche par priorités), construction,
   bien-être, saisons et météo, visiteurs, arbre-mère.
-- **Commandes** (frontend → moteur) : `placeBuilding`, `moveBuilding`, `demolish`, `upgrade`,
-  `setPriorities`, `pinVillager`, `acceptVisitor`, `feedMotherTree`, `bloom`, `setSetting`.
+- **Commandes** (frontend → moteur) : `poserBatiment`, `deplacerBatiment`, `demolir`, `ameliorer`,
+  `reglerPriorites`, `epinglerHabitant`, `repondreVisiteur`, `nourrirArbre`, `fleurir`, `modifierReglage`.
 - **Événements** (moteur → frontend) : instantané léger toutes les 250 ms + événements ponctuels
-  (`visitorArrived`, `seasonChanged`, `stageReached`, `storageFull`…).
+  (`visiteurArrive`, `saisonChangee`, `stadeAtteint`, `stockPlein`…). Le contrat complet est dans
+  `packages/engine/src/contrat.ts`.
 - Toutes les valeurs d'équilibrage viennent de `packages/content` : on n'écrit aucun chiffre en dur
   dans le moteur.
 
