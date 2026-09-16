@@ -15,6 +15,9 @@ export const IMAGES_PAR_SECONDE = 30;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
 export const REDUCTION = 2;
 
+/** Ce qu'on surligne : un bâtiment posé, ou une emprise carrée de `taille` cases à partir de `case`. */
+export type Surlignage = { batiment: IdBatiment } | { case: Case; taille: number; hauteur: number };
+
 /** Ce qui se trouve sous un point de la fenêtre. */
 export interface Visee {
   case: Case | null;
@@ -73,8 +76,11 @@ export class Rendu {
     this.elements.changerIle(ile);
     this.aides.changerIle(ile);
     this.ambiance.changerIle(ile);
+    // Une case défrichée change l'île sans en changer la taille : la vue ne bouge pas.
+    if (!this.ile || this.ile.largeur !== ile.largeur || this.ile.profondeur !== ile.profondeur) {
+      this.vue.cadrer(ile.largeur, ile.profondeur);
+    }
     this.ile = ile;
-    this.vue.cadrer(ile.largeur, ile.profondeur);
   }
 
   appliquerInstantane(instantane: Instantane): void {
@@ -109,6 +115,13 @@ export class Rendu {
 
   cacherFantome(): void {
     this.aides.cacherFantome();
+  }
+
+  /** Boîte translucide par-dessus ce qui est visé ; `null` l'efface. */
+  surligner(cible: Surlignage | null): void {
+    if (!cible || 'case' in cible) return this.aides.surligner(cible);
+    const zone = this.entites.emprise(cible.batiment);
+    this.aides.surligner(zone);
   }
 
   montrerPortee(cases: readonly Case[]): void {

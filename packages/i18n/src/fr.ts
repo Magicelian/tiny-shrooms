@@ -47,6 +47,21 @@ export const fr = {
 
   'panneau.fermer': 'Fermer',
 
+  // Nature : souche-dépôt, arbres, buissons, plantes
+  'nature.souche': 'Souche-dépôt',
+  'nature.soucheDetail': 'Les porteurs y déposent les récoltes, tant qu’elle est là.',
+  'nature.arbre': 'Arbre',
+  'nature.buisson': 'Buisson sauvage',
+  'nature.plante': 'Plante',
+  'element.buisson': 'Buisson',
+  'element.boisMort': 'Bois mort',
+  'element.mousse': 'Mousse',
+  'nature.repousse': 'Repousse : {pourcent} %',
+  'nature.arrachage': 'Arrachage : {pourcent} %',
+  'nature.gain': 'Rapporte {liste}',
+  'nature.retirer': 'Retirer la souche : {liste}',
+  'nature.arracher': 'Arracher : {liste}',
+
   // Construction
   'construction.titre': 'Construire ici',
   'construction.choisir': 'Choisis un bâtiment.',
@@ -114,9 +129,11 @@ export const fr = {
   'refus.pasPret': 'Pas encore repoussé',
   'refus.stockPlein': 'Stock plein',
   'refus.besoinsManquants': 'Il manque encore quelque chose',
+  'refus.depotRequis': 'Il faut d’abord un garde-manger ou une remise',
   'message.palierAtteint': '{palier} ! Nouveaux plans : {liste}',
   'message.palierAtteintSeul': 'Le village devient {palier} !',
   'message.logementAmeliore': '{rang} achevé',
+  'message.soucheRetiree': 'Souche arrachée : la place est libre',
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.stockPlein': 'Stock plein : {ressource}',

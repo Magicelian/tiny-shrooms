@@ -7,7 +7,7 @@ import { nombre, t } from '@tiny-shrooms/i18n';
 import { nomPalier, nomPose, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
-import { BulleBatiment, BulleConstruire } from './panneaux';
+import { BulleBatiment, BulleConstruire, BulleNature, titreNature } from './panneaux';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -62,6 +62,15 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
         <BulleConstruire controleur={controleur} instantane={instantane} bulle={bulle} />
       </Cadre>
     );
+  if (bulle.type === 'nature') {
+    const { ile } = controleur.magasin.valeur;
+    if (!ile) return null;
+    return (
+      <Cadre titre={titreNature(ile, instantane, bulle.case)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+        <BulleNature controleur={controleur} instantane={instantane} ile={ile} case={bulle.case} />
+      </Cadre>
+    );
+  }
   const batiment = controleur.batiment(bulle.id);
   if (!batiment) return null;
   return (
@@ -99,7 +108,7 @@ function Ecriteau({ instantane }: { instantane: Instantane }) {
 /** Palier, habitants et places libres, sur une planche en haut à droite. */
 function Population({ controleur, instantane }: Props & { instantane: Instantane }) {
   const { contenu } = controleur;
-  const places = capaciteLogement(contenu, instantane.batiments);
+  const places = capaciteLogement(contenu, instantane.batiments, controleur.magasin.valeur.ile?.soucheEnPlace);
   const habitants = instantane.habitants.length;
   const suivant = contenu.paliers[instantane.palier + 1];
   const prochain = suivant

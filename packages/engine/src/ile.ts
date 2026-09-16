@@ -32,7 +32,7 @@ export function genererIle(taille: number, graine: number): Ile {
       terrain.push(t);
     }
   }
-  const ile: Ile = { biome: 'foret', largeur: taille, profondeur: taille, terrain, souche, tailleSouche: TAILLE_SOUCHE, elements: [] };
+  const ile: Ile = { biome: 'foret', largeur: taille, profondeur: taille, terrain, souche, tailleSouche: TAILLE_SOUCHE, soucheEnPlace: true, elements: [] };
   ile.elements = placerElements(ile, graine, []);
   return ile;
 }
@@ -73,6 +73,7 @@ export function terrainEn(ile: Pick<Ile, 'largeur' | 'profondeur' | 'terrain'>, 
 }
 
 export function dansLaSouche(ile: Ile, x: number, y: number): boolean {
+  if (!ile.soucheEnPlace) return false;
   const { souche: a, tailleSouche: t } = ile;
   return x >= a.x && x < a.x + t && y >= a.y && y < a.y + t;
 }

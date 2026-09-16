@@ -8,6 +8,7 @@ export { bonusVoisinage, casesLibres, emplacementRefuse, verifierEmplacement } f
 export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
 export { coutAmelioration, effetAmelioration } from './ameliorations';
+export { demanderDefrichage, natureEn } from './defrichage';
 export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutTotal, placesLogement, rangLogement, refusMontee } from './logements';
 export type { Contenu, ContenuLogement, DefinitionPalier, DefinitionRang, DefinitionAmelioration, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, DefinitionRecolte, RegleVoisinage } from './contenu';
 

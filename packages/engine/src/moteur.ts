@@ -46,14 +46,14 @@ export class Moteur {
       case 'commande':
         this.rattraper(this.horloge.pasARattraper(maintenantMs));
         this.evenements.push(...appliquerCommande(this.etat, this.contenu, message.commande));
-        return [this.publier()];
+        return this.publierAvecIle();
       case 'veille':
         // Le Worker a pu geler avant de lire ce message : on s'arrête à l'instant signalé par Rust.
         this.rattraper(this.horloge.veille(Math.min(message.momentMs, maintenantMs)));
-        return [this.publier()];
+        return this.publierAvecIle();
       case 'reveil':
         this.horloge.reveil(maintenantMs);
-        return [this.publier()];
+        return this.publierAvecIle();
       case 'battre':
         return this.battre(maintenantMs);
       case 'sauvegarder':
@@ -64,7 +64,14 @@ export class Moteur {
   /** Appelé régulièrement : simule tout le temps écoulé puis publie un seul instantané. */
   battre(maintenantMs: number): MessageDepuisMoteur[] {
     this.rattraper(this.horloge.pasARattraper(maintenantMs));
-    return [this.publier()];
+    return this.publierAvecIle();
+  }
+
+  /** Instantané, précédé de la nouvelle île si elle a changé depuis le dernier envoi (souche ou case défrichée). */
+  private publierAvecIle(): MessageDepuisMoteur[] {
+    const changee = this.evenements.some((e) => e.type === 'soucheRetiree' || e.type === 'defriche');
+    const instantane = this.publier();
+    return changee ? [{ type: 'ile', ile: this.etat.ile }, instantane] : [instantane];
   }
 
   /** Avance d'un nombre de pas donné, sans horloge : pour les simulations sans affichage. */

@@ -1,6 +1,7 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
 import type {
   AmeliorationVillage,
+  Defrichable,
   Besoin,
   Meteo,
   Quantites,
@@ -133,6 +134,10 @@ export interface Contenu {
   plafondsDeBase: Record<Ressource, number>;
   batiments: Record<TypeBatiment, DefinitionBatiment>;
   logement: ContenuLogement;
+  /** Retrait de la souche-dépôt : prix, puis durée pour un seul travailleur. */
+  souche: { coutRetrait: Quantites; retraitSecondes: number };
+  /** Arrachage : prix, durée pour un seul travailleur et ce que ça rapporte. */
+  defrichage: Record<Defrichable, { cout: Quantites; secondes: number; gain?: Quantites }>;
   /** Paliers de population dans l'ordre ; le premier, à 0 habitant, donne les bâtiments de départ. */
   paliers: DefinitionPalier[];
   recolte: Record<TypeElement, DefinitionRecolte>;

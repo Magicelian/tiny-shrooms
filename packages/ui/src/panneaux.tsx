@@ -1,10 +1,11 @@
 // Contenu des bulles ouvertes au clic.
 import { useState } from 'preact/hooks';
-import type { Batiment, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Batiment, Case, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import { elementEn } from '@tiny-shrooms/engine';
 import { AMELIORATIONS_VILLAGE, besoinsSuivis, coutAmelioration, coutTotal, rangLogement, refusMontee } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, pourcent } from './format';
-import type { ControleurInterface } from './index';
+import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 
 interface Props {
@@ -123,7 +124,7 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
   const rang = rangLogement(contenu, batiment);
   const suivant = contenu.logement.rangs[batiment.niveau];
   // Les places vont aux habitants dans l'ordre des bâtiments, la souche-dépôt d'abord.
-  let avant = contenu.habitants.logementDeBase;
+  let avant = controleur.magasin.valeur.ile?.soucheEnPlace === false ? 0 : contenu.habitants.logementDeBase;
   for (const b of instantane.batiments) {
     if (b.id === batiment.id) break;
     avant += b.chantier === null ? (rangLogement(contenu, b)?.places ?? 0) : 0;
@@ -167,6 +168,58 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
         </>
       ) : (
         <p class="bonus">{t('logement.rangMax')}</p>
+      )}
+    </>
+  );
+}
+
+export function titreNature(ile: Ile, instantane: Instantane, c: Case): string {
+  const nature = natureVisee(ile, c);
+  if (nature === 'souche') return t('nature.souche');
+  const element = elementEn(ile, c.x, c.y);
+  if (nature === 'plante' && element >= 0) return t(`element.${ile.elements[element]!.type}`);
+  return nature ? t(`nature.${nature}`) : '';
+}
+
+/** Souche-dépôt, arbre, buisson ou plante : repousse, puis arrachage payant et son avancement. */
+export function BulleNature({ controleur, instantane, ile, case: c }: Props & { ile: Ile; case: Case }) {
+  const { contenu } = controleur;
+  const nature = natureVisee(ile, c);
+  if (!nature) return null;
+  const element = elementEn(ile, c.x, c.y);
+  const pousse = element >= 0 ? (instantane.pousses[element] ?? 1) : 1;
+  const souche = nature === 'souche';
+  const avancement = souche ? instantane.retraitSouche : (instantane.defrichages.find((d) => d.case.x === c.x && d.case.y === c.y)?.avancement ?? null);
+  const def = souche ? { cout: contenu.souche.coutRetrait, gain: undefined } : contenu.defrichage[nature];
+  const depot = instantane.batiments.some((b) => b.chantier === null && contenu.batiments[b.type].stockage);
+  const possible = !souche || depot;
+  const payable = abordable(def.cout, instantane.stocks);
+  return (
+    <>
+      {souche && <p>{t('nature.soucheDetail')}</p>}
+      {pousse < 1 && (
+        <>
+          <p>{t('nature.repousse', { pourcent: pourcent(pousse) })}</p>
+          <Jauge valeur={pousse} />
+        </>
+      )}
+      {avancement !== null ? (
+        <>
+          <p>{t('nature.arrachage', { pourcent: pourcent(avancement) })}</p>
+          <Jauge valeur={avancement} />
+        </>
+      ) : (
+        <>
+          {def.gain && <p class="bonus">{t('nature.gain', { liste: listeQuantites(def.gain) })}</p>}
+          {!possible && <p class="manque">{t('refus.depotRequis')}</p>}
+          <button
+            class={`bouton large ${possible && payable ? 'valider' : 'manque'}`}
+            disabled={!possible}
+            onClick={() => controleur.envoyer(souche ? { type: 'retirerSouche' } : { type: 'defricher', case: c })}
+          >
+            {t(souche ? 'nature.retirer' : 'nature.arracher', { liste: listeQuantites(def.cout) || t('construction.gratuit') })}
+          </button>
+        </>
       )}
     </>
   );

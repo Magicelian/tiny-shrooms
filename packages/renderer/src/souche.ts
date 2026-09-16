@@ -36,7 +36,13 @@ export class SoucheRendu {
   }
 
   changerIle(ile: Ile): void {
+    this.groupe.visible = ile.soucheEnPlace;
     const milieu = ile.tailleSouche / 2;
     versMonde({ x: ile.souche.x + milieu, y: ile.souche.y + milieu }, ile, this.groupe.position);
+  }
+
+  /** Pendant l'arrachage, la souche s'affaisse. */
+  appliquer(retrait: number | null): void {
+    this.groupe.scale.y = 1 - 0.7 * (retrait ?? 0);
   }
 }

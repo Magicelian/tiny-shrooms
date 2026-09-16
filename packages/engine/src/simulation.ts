@@ -7,6 +7,8 @@ import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
+import { demanderDefrichage } from './defrichage';
+import type { BatimentEtat } from './etat';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -151,6 +153,10 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
     case 'demolir': {
       const i = etat.batiments.findIndex((x) => x.id === commande.id);
       if (i < 0) return refus('introuvable');
+      const soucheQuiPart = !etat.ile.soucheEnPlace || etat.retraitSouche !== null;
+      if (soucheQuiPart && estDepot(contenu, etat.batiments[i]!) && !etat.batiments.some((b, j) => j !== i && estDepot(contenu, b))) {
+        return refus('depotRequis');
+      }
       const [b] = etat.batiments.splice(i, 1);
       const cout = coutTotal(contenu, b!);
       for (const r of cles(cout)) etat.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
@@ -170,6 +176,17 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       etat.stocks[ressource] += gain;
       etat.pousses[commande.element] = 0;
       return [{ type: 'recolte', element: commande.element, ressource, quantite: gain }];
+    }
+    case 'retirerSouche': {
+      if (!etat.ile.soucheEnPlace || etat.retraitSouche !== null) return refus('indisponible');
+      if (!etat.batiments.some((b) => estDepot(contenu, b))) return refus('depotRequis');
+      if (!payer(etat, contenu.souche.coutRetrait)) return refus('ressourcesInsuffisantes');
+      etat.retraitSouche = 0;
+      return [];
+    }
+    case 'defricher': {
+      const raison = demanderDefrichage(etat, contenu, commande.case);
+      return raison ? refus(raison) : [];
     }
     case 'modifierReglage': {
       (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
@@ -220,14 +237,21 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     habitants: etat.habitants.map(({ mission, charge: _c, pasDepuisChoix: _p, ...h }) => ({
       ...h,
       position: { ...h.position },
-      lieu: mission && mission.tache !== 'stocker' ? mission.batiment : null,
+      lieu: mission && 'batiment' in mission && mission.tache !== 'stocker' ? mission.batiment : null,
     })),
     pousses: [...etat.pousses],
     batimentsDebloques: [...etat.batimentsDebloques],
+    retraitSouche: etat.retraitSouche,
+    defrichages: etat.defrichages.map((d) => ({ ...d, case: { ...d.case } })),
     palier: etat.palier,
     ameliorations: { ...etat.ameliorations },
     reglages: { ...etat.reglages },
   };
+}
+
+/** Bâtiment de stockage achevé : les porteurs peuvent y déposer. */
+function estDepot(contenu: Contenu, b: BatimentEtat): boolean {
+  return b.chantier === null && !!contenu.batiments[b.type].stockage;
 }
 
 function cles(quantites: Quantites): Ressource[] {

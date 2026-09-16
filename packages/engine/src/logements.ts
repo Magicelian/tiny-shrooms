@@ -21,9 +21,9 @@ export function placesLogement(contenu: Contenu, b: Pick<Batiment, 'type' | 'niv
   return b.chantier === null ? (rangLogement(contenu, b)?.places ?? 0) : 0;
 }
 
-/** Places de toute la ville, souche-dépôt comprise. */
-export function capaciteLogement(contenu: Contenu, batiments: readonly Batiment[]): number {
-  return batiments.reduce((n, b) => n + placesLogement(contenu, b), contenu.habitants.logementDeBase);
+/** Places de toute la ville, souche-dépôt comprise tant qu'elle est en place. */
+export function capaciteLogement(contenu: Contenu, batiments: readonly Batiment[], soucheEnPlace = true): number {
+  return batiments.reduce((n, b) => n + placesLogement(contenu, b), soucheEnPlace ? contenu.habitants.logementDeBase : 0);
 }
 
 /** Vrai si la case `c` est à portée d'un bâtiment de ce type posé sur `source`. */

@@ -47,6 +47,17 @@ export type Biome = 'foret';
 export const TYPES_ELEMENT = ['buisson', 'boisMort', 'mousse'] as const;
 export type TypeElement = (typeof TYPES_ELEMENT)[number];
 
+/** Ce qu'on peut faire arracher : un arbre de la forêt, un buisson sauvage, une plante semée sur l'herbe. */
+export type Defrichable = 'arbre' | 'buisson' | 'plante';
+
+/** Case en cours de défrichage. */
+export interface Defrichage {
+  case: Case;
+  nature: Defrichable;
+  /** Entre 0 et 1. */
+  avancement: number;
+}
+
 /** Indice de l'élément dans `Ile.elements`. */
 export type IdElement = number;
 
@@ -67,6 +78,8 @@ export interface Ile {
   souche: Case;
   /** Côté de l'emprise carrée de la souche, en cases. */
   tailleSouche: number;
+  /** Faux une fois la souche arrachée : ses cases deviennent constructibles. */
+  soucheEnPlace: boolean;
   /** Éléments naturels récoltables, placés d'après la graine. */
   elements: ElementNaturel[];
 }
@@ -121,7 +134,8 @@ export type AmeliorationVillage = (typeof AMELIORATIONS_VILLAGE)[number];
 // ─── Habitants ───────────────────────────────────────────────────────────────
 
 /** `tenir` : occuper un emploi sans production (marché). */
-export const TACHES = ['recolter', 'construire', 'stocker', 'tenir'] as const;
+/** `arracher` : travailler au retrait de la souche-dépôt. */
+export const TACHES = ['recolter', 'construire', 'stocker', 'tenir', 'arracher'] as const;
 export type Tache = (typeof TACHES)[number];
 
 /** Ce que l'habitant fait en ce moment, pour choisir l'animation. */
@@ -191,6 +205,9 @@ export interface Instantane {
   /** Repousse de chaque élément naturel (même ordre que `Ile.elements`), entre 0 et 1 : 1 = récoltable. */
   pousses: number[];
   batimentsDebloques: TypeBatiment[];
+  /** Avancement du retrait de la souche entre 0 et 1, ou `null` s'il n'est pas en cours. */
+  retraitSouche: number | null;
+  defrichages: Defrichage[];
   /** Indice du palier de population atteint dans `contenu.paliers` ; ne redescend jamais. */
   palier: number;
   ameliorations: Record<AmeliorationVillage, number>;
@@ -208,6 +225,10 @@ export type Commande =
   | { type: 'deplacerBatiment'; id: IdBatiment; case: Case; orientation: Orientation }
   | { type: 'demolir'; id: IdBatiment }
   | { type: 'recolter'; element: IdElement }
+  /** Paie le retrait de la souche-dépôt ; les habitants l'arrachent ensuite comme un chantier. */
+  | { type: 'retirerSouche' }
+  /** Paie l'arrachage de l'arbre, du buisson ou de la plante de cette case. */
+  | { type: 'defricher'; case: Case }
   /** Sur un logement, la montée au rang suivant ; sur le village, un niveau d'amélioration de l'atelier. */
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
   | CommandeReglage;
@@ -227,6 +248,8 @@ export type RaisonRefus =
   | 'stockPlein'
   /** Montée en gamme : un besoin du rang suivant n'est pas satisfait. */
   | 'besoinsManquants'
+  /** Il faut garder au moins un dépôt achevé (garde-manger, remise) une fois la souche partie. */
+  | 'depotRequis'
   /** L'action n'est pas possible pour l'instant (fonction à venir…). */
   | 'indisponible';
 
@@ -237,6 +260,8 @@ export type Evenement =
   | { type: 'constructionTerminee'; id: IdBatiment }
   | { type: 'palierAtteint'; palier: number; debloques: TypeBatiment[] }
   | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }
+  | { type: 'soucheRetiree' }
+  | { type: 'defriche'; case: Case; nature: Defrichable }
   | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
   | { type: 'commandeRefusee'; commande: Commande; raison: RaisonRefus };
 

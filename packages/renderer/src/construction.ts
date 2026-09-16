@@ -3,13 +3,16 @@
 import * as THREE from 'three';
 import type { Case, Ile, TypeBatiment } from '@tiny-shrooms/engine';
 import { HAUTEURS_BATIMENT } from './palette';
-import { centreCase } from './repere';
+import { centreCase, versMonde } from './repere';
 
 const VERT = 0xb6ff5c;
 const ROUGE = 0xff4a4a;
 /** Cases à portée d'un feu, d'un puits ou d'un marché. */
 const BLEU = 0x7fd4ff;
 const SOL = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+const BOITE = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+/** Surlignage d'un bâtiment ou d'un élément du décor : clair, pour trancher sur toutes les saisons. */
+const CLAIR = 0xfff6c8;
 
 export class AidesConstruction {
   readonly scene = new THREE.Scene();
@@ -22,15 +25,34 @@ export class AidesConstruction {
   /** Cases de portée, réutilisées d'un affichage à l'autre. */
   private readonly portee: THREE.Mesh[] = [];
   private ile: Ile | null = null;
+  /** Boîte dessinée par-dessus ce qu'on vise : arêtes franches et fond léger. */
+  private readonly surlignage = new THREE.Group();
 
   constructor() {
     this.fantome.visible = this.sol.visible = false;
     this.sol.position.y = 0.02;
     this.scene.add(this.fantome, this.sol);
+    const fond = new THREE.Mesh(BOITE, new THREE.MeshBasicMaterial({ color: CLAIR, transparent: true, opacity: 0.18, depthWrite: false }));
+    const aretes = new THREE.LineSegments(
+      new THREE.EdgesGeometry(BOITE),
+      new THREE.LineBasicMaterial({ color: CLAIR, transparent: true, opacity: 0.9, depthWrite: false }),
+    );
+    this.surlignage.add(fond, aretes);
+    this.surlignage.visible = false;
+    this.scene.add(this.surlignage);
+  }
+
+  /** Encadre une emprise carrée de `taille` cases depuis `case`, sur `hauteur` ; `null` l'efface. */
+  surligner(zone: { case: Case; taille: number; hauteur: number } | null): void {
+    this.surlignage.visible = !!zone && !!this.ile;
+    if (!zone || !this.ile) return;
+    const milieu = zone.taille / 2;
+    versMonde({ x: zone.case.x + milieu, y: zone.case.y + milieu }, this.ile, this.surlignage.position);
+    this.surlignage.scale.set(zone.taille, zone.hauteur + 0.05, zone.taille);
   }
 
   get actives(): boolean {
-    return this.grille?.visible === true || this.sol.visible || this.portee.some((m) => m.visible);
+    return this.grille?.visible === true || this.sol.visible || this.surlignage.visible || this.portee.some((m) => m.visible);
   }
 
   /** Surligne les cases à portée ; une liste vide efface la zone. */

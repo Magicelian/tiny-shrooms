@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
-import type { Batiment, Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, casesCouvertes, elementEn, emplacementRefuse } from '@tiny-shrooms/engine';
+import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
+import { bonusVoisinage, casesCouvertes, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
@@ -15,6 +15,8 @@ export interface SceneInteractive {
   afficherGrille(visible: boolean): void;
   montrerFantome(c: Case, type: TypeBatiment | null, valide: boolean): void;
   cacherFantome(): void;
+  /** Boîte par-dessus un bâtiment ou une emprise du décor ; `null` l'efface. */
+  surligner(cible: { batiment: IdBatiment } | { case: Case; taille: number; hauteur: number } | null): void;
   /** Surligne les cases à portée d'un service ; une liste vide efface la zone. */
   montrerPortee(cases: readonly Case[]): void;
   tourner(sens: 1 | -1): void;
@@ -31,6 +33,20 @@ export interface OptionsInterface {
   couleurs: { batiments: Record<TypeBatiment, number>; chapeaux: readonly number[] };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
+}
+
+/** Hauteur du surlignage de ce qu'on peut faire arracher. */
+const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, buisson: 0.6, plante: 0.35 };
+
+/** Ce qu'on peut faire arracher sur une case : la souche-dépôt, ou un arbre, un buisson, une plante. */
+export function natureVisee(ile: Ile, c: Case): Defrichable | 'souche' | null {
+  return dansLaSouche(ile, c.x, c.y) ? 'souche' : natureEn(ile, c);
+}
+
+/** Emprise à surligner pour la nature d'une case. */
+function zoneNature(ile: Ile, c: Case, nature: Defrichable | 'souche') {
+  if (nature === 'souche') return { case: ile.souche, taille: ile.tailleSouche, hauteur: 0.8 };
+  return { case: c, taille: 1, hauteur: HAUTEURS_NATURE[nature] };
 }
 
 /** Distance en pixels au-delà de laquelle un appui devient un glisser et non plus un clic. */
@@ -90,6 +106,9 @@ export class ControleurInterface {
     const { bulle, deplacement } = this.magasin.valeur;
     const vise = bulle?.type === 'batiment' ? bulle.id : deplacement;
     if (vise !== null && !this.batiment(vise)) this.fermer();
+    // Plus rien à arracher sur la case de la bulle : elle se referme.
+    const { ile } = this.magasin.valeur;
+    if (bulle?.type === 'nature' && ile && !natureVisee(ile, bulle.case)) this.fermer();
     for (const e of message.evenements) {
       if (e.type === 'recolte') {
         const point = this.recoltes.get(e.element);
@@ -104,6 +123,8 @@ export class ControleurInterface {
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
         if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
+      } else if (e.type === 'soucheRetiree') {
+        this.magasin.annoncer(t('message.soucheRetiree'));
       } else if (e.type === 'palierAtteint') {
         const palier = nomPalier(this.contenu, e.palier);
         const liste = e.debloques.map((type) => nomBatiment(type)).join(', ');
@@ -278,11 +299,13 @@ export class ControleurInterface {
     const haut = y > window.innerHeight / 2;
     const id = visee.batiment ?? this.batimentSur(visee.case);
     const element = visee.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
+    const nature = visee.case ? natureVisee(ile, visee.case) : null;
     if (id !== null) this.ouvrir({ type: 'batiment', id, haut });
-    else if (element >= 0) {
+    // Un élément prêt se récolte d'un clic ; épuisé, il ouvre sa bulle comme un arbre.
+    else if (element >= 0 && (instantane.pousses[element] ?? 0) >= 1) {
       this.recoltes.set(element, { x, y });
       this.envoyer({ type: 'recolter', element });
-    }
+    } else if (nature) this.ouvrir({ type: 'nature', case: visee.case!, haut });
     else if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case) === null) {
       this.ouvrir({ type: 'construire', case: visee.case, choix: null, haut });
     }
@@ -305,6 +328,7 @@ export class ControleurInterface {
       const { choix } = bulle;
       scene.montrerFantome(bulle.case, choix, !choix || abordable(this.contenu.batiments[choix].cout, instantane.stocks));
       scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
+      scene.surligner(null);
       this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });
       return this.majCurseur('fleche');
     }
@@ -316,6 +340,7 @@ export class ControleurInterface {
       if (visee?.case) scene.montrerFantome(visee.case, deplace.type, libre);
       else scene.cacherFantome();
       scene.montrerPortee(visee?.case ? casesCouvertes(ile, this.contenu, { type: deplace.type, case: visee.case }) : []);
+      scene.surligner(null);
       this.magasin.modifier({ bonusVise: libre ? bonusVoisinage(ile, autres, this.contenu, deplace.type, visee!.case!) : null });
       return this.majCurseur('marteau');
     }
@@ -324,13 +349,19 @@ export class ControleurInterface {
     const libre = !survole && !!visee?.case && emplacementRefuse(ile, batiments, visee.case) === null;
     const element = !survole && visee?.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
     const recoltable = element >= 0 && (instantane.pousses[element] ?? 0) >= 1;
-    // Le bâtiment de la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
-    const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : survole;
+    const nature = !survole && visee?.case ? natureVisee(ile, visee.case) : null;
+    // Ce que vise la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
+    const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : bulle ? undefined : survole;
+    const caseNature = bulle?.type === 'nature' ? bulle.case : !bulle && nature ? visee!.case! : null;
+    const natureCible = caseNature && natureVisee(ile, caseNature);
     scene.montrerPortee(cible ? casesCouvertes(ile, this.contenu, cible) : []);
-    if (cible) scene.montrerFantome(cible.case, null, true);
-    else if ((libre || element >= 0) && !bulle) scene.montrerFantome(visee!.case!, null, libre || recoltable);
+    if (cible) scene.surligner({ batiment: cible.id });
+    else if (caseNature && natureCible) scene.surligner(zoneNature(ile, caseNature, natureCible));
+    else scene.surligner(null);
+    // Le carré au sol ne sert plus qu'aux cases libres, là où rien ne le cache.
+    if (libre && !bulle) scene.montrerFantome(visee!.case!, null, true);
     else scene.cacherFantome();
-    this.majCurseur(bulle ? 'fleche' : survole || recoltable ? 'main' : libre ? 'marteau' : 'fleche');
+    this.majCurseur(bulle ? 'fleche' : survole || recoltable || nature ? 'main' : libre ? 'marteau' : 'fleche');
   }
 
   /** Main fermée pendant un glisser, sinon la variante choisie selon ce qui est visé. */

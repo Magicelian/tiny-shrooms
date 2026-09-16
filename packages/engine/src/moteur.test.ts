@@ -32,6 +32,12 @@ function contenuDeTest(
       ],
       sources: { eau: 'puits' },
     },
+    souche: { coutRetrait: { spores: 0 }, retraitSecondes: 10 },
+    defrichage: {
+      arbre: { cout: { boisMort: 5 }, secondes: 10, gain: { baies: 3 } },
+      buisson: { cout: {}, secondes: 10 },
+      plante: { cout: {}, secondes: 5 },
+    },
     paliers: [
       { nom: 'hameau', population: 0, debloque: [...TYPES_BATIMENT] },
       { nom: 'village', population: 4, debloque: [] },
@@ -691,5 +697,105 @@ describe('Chemins', () => {
     }
     expect(etat.stocks.baies).toBeGreaterThan(100);
     expect(entrees).toBe(0);
+  });
+});
+
+describe('Retrait de la souche', () => {
+  const contenuRetrait = () => {
+    const contenu = contenuDeTest({ remise: { stockage: { boisMort: 50 } } });
+    contenu.souche = { coutRetrait: { spores: 20 }, retraitSecondes: 30 };
+    contenu.stocksDeDepart.spores = 30;
+    return contenu;
+  };
+
+  it('exige un autre dépôt, se paie, puis les habitants arrachent la souche', () => {
+    const moteur = new Moteur(contenuRetrait(), 0);
+    const retirer = () => commander(moteur, { type: 'retirerSouche' });
+    expect(retirer()[0]).toMatchObject({ raison: 'depotRequis' });
+    commander(moteur, poser('remise', caseLibre(moteur)));
+    const etat = moteur.etatCourant;
+    const souche = etat.ile.souche;
+    expect(retirer()).toEqual([]);
+    expect(etat.stocks.spores).toBe(10);
+    expect(retirer()[0]).toMatchObject({ raison: 'indisponible' });
+    // La remise est désormais le seul dépôt : on ne peut plus la démolir.
+    expect(commander(moteur, { type: 'demolir', id: etat.batiments[0]!.id })[0]).toMatchObject({ raison: 'depotRequis' });
+
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    expect(etat.retraitSouche).toBeGreaterThan(0);
+    expect(etat.habitants.some((h) => h.mission?.tache === 'arracher')).toBe(true);
+    const messages: MessageDepuisMoteur[] = [];
+    // Le temps passe par l'horloge, comme dans le jeu : l'île changée part avec l'instantané.
+    for (let seconde = 1; seconde <= 60 && etat.ile.soucheEnPlace; seconde++) {
+      messages.push(...moteur.recevoir({ type: 'battre' }, seconde * 1000));
+    }
+    expect(etat.ile.soucheEnPlace).toBe(false);
+    expect(etat.retraitSouche).toBeNull();
+    // Deux ouvriers : environ deux fois plus vite que les 30 s d'un seul.
+    expect(etat.pas).toBeLessThan((PAS_PAR_MINUTE / 60) * 25 + PAS_PAR_MINUTE / 6);
+    expect(messages.some((m) => m.type === 'ile' && !m.ile.soucheEnPlace)).toBe(true);
+    expect(commander(moteur, poser('hutte', souche))).toEqual([]);
+  });
+
+  it('les récoltes vont au dépôt restant, et les places de la souche disparaissent', () => {
+    const contenu = contenuRetrait();
+    contenu.batiments.cueillette = { ...contenu.batiments.cueillette, production: { baies: 6 } };
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('remise', caseLibre(moteur)));
+    commander(moteur, poser('cueillette', moteur.casesLibres()[5]!));
+    commander(moteur, { type: 'retirerSouche' });
+    moteur.simuler(PAS_PAR_MINUTE);
+    const etat = moteur.etatCourant;
+    expect(etat.ile.soucheEnPlace).toBe(false);
+    const baies = etat.stocks.baies + etat.arrivages.baies;
+    moteur.simuler(3 * PAS_PAR_MINUTE);
+    expect(etat.stocks.baies + etat.arrivages.baies).toBeGreaterThan(baies + 5);
+    // Les deux habitants restent, sans logement.
+    expect(etat.habitants).toHaveLength(2);
+  });
+
+  it('migre une sauvegarde de version 7 avec la souche en place', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const { retraitSouche: _r, defrichages: _d, ile, ...reste } = moteur.etatCourant;
+    const { soucheEnPlace: _s, ...ileV7 } = ile;
+    const etat = charger(JSON.stringify({ version: 7, etat: { ...reste, ile: ileV7 } }));
+    expect(etat.ile.soucheEnPlace).toBe(true);
+    expect(etat.retraitSouche).toBeNull();
+  });
+});
+
+describe('Défrichage', () => {
+  it('un arbre se paie, s’abat, rapporte, et laisse une case constructible', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const etat = moteur.etatCourant;
+    const { ile } = etat;
+    const arbre = ile.terrain.findIndex((t, i) => t === 'foret' && terrainEn(ile, (i % ile.largeur) + 1, Math.floor(i / ile.largeur)) === 'herbe');
+    const c = { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) };
+    expect(commander(moteur, poser('hutte', c))[0]).toMatchObject({ raison: 'emplacementOccupe' });
+    expect(commander(moteur, { type: 'defricher', case: c })).toEqual([]);
+    expect(etat.stocks.boisMort).toBe(95);
+    expect(commander(moteur, { type: 'defricher', case: c })[0]).toMatchObject({ raison: 'indisponible' });
+    const messages: MessageDepuisMoteur[] = [];
+    for (let seconde = 1; seconde <= 40 && etat.defrichages.length > 0; seconde++) {
+      messages.push(...moteur.recevoir({ type: 'battre' }, seconde * 1000));
+    }
+    expect(etat.defrichages).toHaveLength(0);
+    expect(terrainEn(ile, c.x, c.y)).toBe('herbe');
+    expect(etat.stocks.baies).toBe(103);
+    expect(messages.some((m) => m.type === 'ile')).toBe(true);
+    expect(commander(moteur, poser('hutte', c))).toEqual([]);
+  });
+
+  it('une plante disparaît avec sa repousse', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const etat = moteur.etatCourant;
+    const i = etat.ile.elements.findIndex((e) => e.type !== 'buisson');
+    const { case: c } = etat.ile.elements[i]!;
+    const nombre = etat.ile.elements.length;
+    commander(moteur, { type: 'defricher', case: c });
+    moteur.simuler(PAS_PAR_MINUTE / 2);
+    expect(etat.ile.elements).toHaveLength(nombre - 1);
+    expect(etat.pousses).toHaveLength(nombre - 1);
+    expect(commander(moteur, { type: 'defricher', case: c })[0]).toMatchObject({ raison: 'introuvable' });
   });
 });

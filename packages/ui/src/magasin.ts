@@ -9,7 +9,9 @@ import type { Case, IdBatiment, Ile, Instantane, Ressource, TypeBatiment } from 
  */
 export type Bulle =
   | { type: 'construire'; case: Case; choix: TypeBatiment | null; haut: boolean }
-  | { type: 'batiment'; id: IdBatiment; haut: boolean };
+  | { type: 'batiment'; id: IdBatiment; haut: boolean }
+  /** Souche-dépôt, arbre, buisson ou plante : ce qu'on peut faire arracher. */
+  | { type: 'nature'; case: Case; haut: boolean };
 
 /** Petit chiffre qui s'envole d'un élément récolté, en pixels de la fenêtre. */
 export interface Envol {

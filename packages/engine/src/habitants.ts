@@ -1,5 +1,5 @@
 // Vie des habitants : choix de tâche automatique, déplacement, travail, bien-être, arrivées.
-import type { Evenement, Position, Ressource, Tache } from './contrat';
+import type { Case, Evenement, Position, Ressource, Tache } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantEtat, type Mission } from './etat';
@@ -8,6 +8,7 @@ import { centreSouche } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
 import { effetAmelioration } from './ameliorations';
 import { etapeVers, preparerGrille } from './chemins';
+import { avancerDefrichage, memeCase } from './defrichage';
 import { besoinsManquants, evaluerBesoins, placesLogement, rangLogement } from './logements';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -49,6 +50,8 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   // Village encore vide : les chantiers avancent seuls, au rythme d'un bâtisseur.
   if (etat.habitants.length === 0) {
     for (const b of etat.batiments) if (b.chantier !== null) avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements);
+    if (etat.retraitSouche !== null) avancerRetrait(etat, contenu, cadenceTravail(etat, contenu, centreSouche(etat.ile), nourri), evenements);
+    for (const d of [...etat.defrichages]) avancerDefrichage(etat, contenu, d.case, cadenceTravail(etat, contenu, centre(d.case), nourri), evenements);
   }
   arrivees(etat, contenu, capacite, evenements);
 }
@@ -61,6 +64,17 @@ function dormir(etat: Etat, contenu: Contenu, h: HabitantEtat, logement: Batimen
       ? marcherVers(etat, h, centreSouche(etat.ile), rayonSouche(etat), contenu)
       : marcherVers(etat, h, centreCase(logement), RAYON_BATIMENT, contenu));
   if (arrive) h.activite = 'dort';
+}
+
+/** Fait avancer le retrait de la souche d'un pas ; une fois arrachée, ses cases se libèrent. */
+function avancerRetrait(etat: Etat, contenu: Contenu, cadence: number, evenements: Evenement[]): void {
+  const pasNecessaires = (contenu.souche.retraitSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  etat.retraitSouche = pasNecessaires > 0 ? etat.retraitSouche! + cadence / pasNecessaires : 1;
+  if (etat.retraitSouche < 1 - 1e-9) return;
+  etat.retraitSouche = null;
+  etat.ile.soucheEnPlace = false;
+  majBonusVoisinage(etat, contenu);
+  evenements.push({ type: 'soucheRetiree' });
 }
 
 /** Fait avancer un chantier d'un pas ; renvoie vrai s'il vient de se terminer. */
@@ -97,7 +111,7 @@ function emploisTenus(etat: Etat): Set<number> {
 
 /** Logement de chaque habitant logé (`true` pour la souche-dépôt, sinon la hutte) et nombre total de places. */
 export function logements(etat: Etat, contenu: Contenu): { loges: Map<number, BatimentEtat | true>; capacite: number } {
-  const places: (BatimentEtat | true)[] = Array.from({ length: contenu.habitants.logementDeBase }, () => true);
+  const places: (BatimentEtat | true)[] = Array.from({ length: etat.ile.soucheEnPlace ? contenu.habitants.logementDeBase : 0 }, () => true);
   for (const b of etat.batiments) {
     if (b.chantier !== null) continue;
     for (let i = 0; i < placesLogement(contenu, b); i++) places.push(b);
@@ -153,8 +167,11 @@ function missionValide(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
       return trouver(etat, m.batiment)?.chantier != null;
     case 'tenir':
       return !reevaluer && trouver(etat, m.batiment)?.chantier === null;
+    case 'arracher':
+      return m.case === null ? etat.retraitSouche !== null : etat.defrichages.some((d) => memeCase(d.case, m.case!));
     case 'stocker':
-      if (m.etape === 'deposer') return true;
+      // Dépôt à la souche entre-temps arrachée : on cherche un autre dépôt.
+      if (m.etape === 'deposer') return etat.ile.soucheEnPlace || distance(m.destination, centreSouche(etat.ile)) > 1e-9;
       return transportable(etat, contenu, trouver(etat, m.batiment)) > 0;
   }
 }
@@ -178,6 +195,12 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
     if (!meilleur || score > meilleur.score) meilleur = { mission, score };
   };
 
+  if (etat.retraitSouche !== null && arracheurs(etat, h, null) < contenu.habitants.ouvriersParChantier) {
+    proposer({ tache: 'arracher', case: null }, 1, centreSouche(etat.ile));
+  }
+  for (const d of etat.defrichages) {
+    if (arracheurs(etat, h, d.case) < contenu.habitants.ouvriersParChantier) proposer({ tache: 'arracher', case: d.case }, 1, centre(d.case));
+  }
   for (const b of etat.batiments) {
     const def = contenu.batiments[b.type];
     const cible = centreCase(b);
@@ -206,6 +229,14 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
 
   h.mission = meilleur?.mission ?? null;
   h.tache = h.mission?.tache ?? null;
+}
+
+function arracheurs(etat: Etat, moi: HabitantEtat, c: Case | null): number {
+  return etat.habitants.filter((h) => {
+    const m = h.mission;
+    if (h === moi || m?.tache !== 'arracher') return false;
+    return m.case === null || c === null ? m.case === c : memeCase(m.case, c);
+  }).length;
 }
 
 function occupants(etat: Etat, moi: HabitantEtat, tache: Tache, batiment: number): number {
@@ -250,6 +281,11 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
     }
     case 'tenir':
       h.activite = 'tient';
+      return;
+    case 'arracher':
+      h.activite = 'construit';
+      if (m.case === null) avancerRetrait(etat, contenu, cadenceTravail(etat, contenu, centreSouche(etat.ile), nourri), evenements);
+      else avancerDefrichage(etat, contenu, m.case, cadenceTravail(etat, contenu, centre(m.case), nourri), evenements);
       return;
     case 'stocker':
       if (m.etape === 'prendre') prendre(etat, contenu, h, trouver(etat, m.batiment)!);
@@ -337,7 +373,8 @@ function transportable(etat: Etat, contenu: Contenu, b: BatimentEtat | undefined
 /** Dépôt le plus proche : la souche ou un bâtiment de stockage achevé. */
 function versDepot(etat: Etat, contenu: Contenu, depuis: Position): Mission {
   let meilleur: Mission = { tache: 'stocker', etape: 'deposer', destination: centreSouche(etat.ile), rayon: rayonSouche(etat) };
-  let d = distance(depuis, meilleur.destination) - meilleur.rayon;
+  // Sans la souche, le premier dépôt venu l'emporte ; la simulation en garde toujours un.
+  let d = etat.ile.soucheEnPlace ? distance(depuis, meilleur.destination) - meilleur.rayon : Infinity;
   for (const b of etat.batiments) {
     if (b.chantier !== null || !contenu.batiments[b.type].stockage) continue;
     const c = centreCase(b);
@@ -351,6 +388,7 @@ function versDepot(etat: Etat, contenu: Contenu, depuis: Position): Mission {
 
 function destination(etat: Etat, m: Mission): [Position, number] {
   if (m.tache === 'stocker' && m.etape === 'deposer') return [m.destination, m.rayon];
+  if (m.tache === 'arracher') return m.case === null ? [centreSouche(etat.ile), rayonSouche(etat)] : [centre(m.case), RAYON_BATIMENT];
   return [centreCase(trouver(etat, m.batiment)!), RAYON_BATIMENT];
 }
 
@@ -379,7 +417,11 @@ function trouver(etat: Etat, id: number): BatimentEtat | undefined {
 }
 
 function centreCase(b: BatimentEtat): Position {
-  return { x: b.case.x + 0.5, y: b.case.y + 0.5 };
+  return centre(b.case);
+}
+
+function centre(c: Case): Position {
+  return { x: c.x + 0.5, y: c.y + 0.5 };
 }
 
 function rayonSouche(etat: Etat): number {

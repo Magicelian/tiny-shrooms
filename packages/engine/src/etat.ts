@@ -2,6 +2,8 @@
 import type {
   AmeliorationVillage,
   Batiment,
+  Case,
+  Defrichage,
   Habitant,
   IdBatiment,
   Ile,
@@ -25,6 +27,8 @@ export type Mission =
   | { tache: 'recolter'; batiment: IdBatiment }
   | { tache: 'construire'; batiment: IdBatiment }
   | { tache: 'tenir'; batiment: IdBatiment }
+  /** `case` nulle : la souche-dépôt. */
+  | { tache: 'arracher'; case: Case | null }
   | { tache: 'stocker'; etape: 'prendre'; batiment: IdBatiment }
   | { tache: 'stocker'; etape: 'deposer'; destination: Position; rayon: number };
 
@@ -49,6 +53,10 @@ export interface Etat {
   batimentsDebloques: TypeBatiment[];
   /** Indice du palier de population atteint. */
   palier: number;
+  /** Avancement du retrait de la souche entre 0 et 1, ou `null` s'il n'est pas en cours. */
+  retraitSouche: number | null;
+  /** Cases en cours de défrichage, dans l'ordre des commandes. */
+  defrichages: Defrichage[];
   ameliorations: Record<AmeliorationVillage, number>;
   reglages: Reglages;
   /** Ressources dont le stock était plein au pas précédent, pour n'annoncer `stockPlein` qu'une fois. */
@@ -72,6 +80,8 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
     pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * (PAS_PAR_MINUTE / 60),
     batimentsDebloques: [...(contenu.paliers[0]?.debloque ?? [])],
     palier: 0,
+    retraitSouche: null,
+    defrichages: [],
     ameliorations: { vitesse: 0, outils: 0 },
     reglages: {
       langue: 'fr',

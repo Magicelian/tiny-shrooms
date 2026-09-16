@@ -4,7 +4,7 @@ import type { Case, Ile } from './contrat';
 import type { Etat } from './etat';
 import { placerElements } from './ile';
 
-export const VERSION_SAUVEGARDE = 7;
+export const VERSION_SAUVEGARDE = 9;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -46,6 +46,10 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
   },
   // Version 7 : livraisons rangées peu à peu dans les stocks.
   6: (etat) => ({ ...etat, arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 } }),
+  // Version 8 : souche-dépôt amovible.
+  7: (etat) => ({ ...etat, ile: { ...(etat.ile as object), soucheEnPlace: true }, retraitSouche: null }),
+  // Version 9 : défrichage des arbres, buissons et plantes.
+  8: (etat) => ({ ...etat, defrichages: [] }),
 };
 
 export function serialiser(etat: Etat): string {
@@ -94,7 +98,7 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
   const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier'];
-  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins'];
+  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins', 'defrichages'];
   const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??

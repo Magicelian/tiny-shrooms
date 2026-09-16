@@ -48,6 +48,12 @@ export const contenu: Contenu = {
     ],
     sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche' },
   },
+  souche: { coutRetrait: { spores: 20 }, retraitSecondes: 45 },
+  defrichage: {
+    arbre: { cout: { spores: 2 }, secondes: 20, gain: { boisMort: 4 } },
+    buisson: { cout: { spores: 1 }, secondes: 10 },
+    plante: { cout: { spores: 1 }, secondes: 6 },
+  },
   paliers: [
     { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },

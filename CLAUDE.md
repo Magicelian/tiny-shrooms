@@ -79,11 +79,16 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   Menu Réglages retiré : habitants/places en haut à droite, ressources en rangée discrète en bas (plafond au survol).
 - **Étape 13 implémentée, à valider**. Logements, besoins, montée en gamme et paliers : `packages/engine/src/logements.ts`
   (fonctions pures réutilisées par l'interface). Chiffres : `contenu.logement` et `contenu.paliers`. Zone de portée :
-  `AidesConstruction.montrerPortee`. Critère : `packages/content/src/bourg.test.ts`. Sauvegarde en version 7.
+  `AidesConstruction.montrerPortee`. Critère : `packages/content/src/bourg.test.ts`.
   Livraisons : une charge déposée passe par `etat.arrivages`, rangés dans le stock au rythme de la production
   (6/min → +1 toutes les 10 s).
 - **Chemins** : `packages/engine/src/chemins.ts` (A* sur la grille, caches hors sauvegarde) ; bâtiments, souche,
   eau et rochers sont infranchissables, la forêt non. Sans chemin possible, l'habitant marche droit.
+- **Souche et défrichage** : `retirerSouche` (20 spores, exige un garde-manger ou une remise ; le dernier dépôt ne se
+  démolit plus ensuite) et `defricher` (arbre, buisson sauvage, plante : `packages/engine/src/defrichage.ts`). Les
+  habitants y travaillent (tâche `arracher`) ; une fois fini, le moteur renvoie l'île (`publierAvecIle`). Chiffres :
+  `contenu.souche`, `contenu.defrichage`. Clic sur un élément épuisé, un arbre ou la souche → bulle `nature`.
+  Survol : boîte claire par-dessus le bâtiment ou le décor (`AidesConstruction.surligner`). Sauvegarde en version 9.
 - **Nuit** (2 min sur un jour de 10) : `temps.nuit` dans l'instantané ; les habitants rentrent dormir au pied de leur
   logement, l'éclairage baisse (`Ambiance.eclairer`) et des « z » montent (`entites.ts`). Pour la voir dans le
   navigateur : envelopper `moteur.onmessage` et forcer `instantane.temps.nuit = true`.
