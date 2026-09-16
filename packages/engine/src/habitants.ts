@@ -6,6 +6,7 @@ import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantE
 import { majBonusVoisinage } from './grille';
 import { centreArbre } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
+import { multiplicateurBonus } from './visiteurs';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 /** Distance à laquelle un habitant est arrivé devant un bâtiment. */
@@ -221,7 +222,7 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
 
 function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat, nourri: boolean): void {
   const def = contenu.batiments[b.type];
-  const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri);
+  const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri) * multiplicateurBonus(etat.bonus);
   // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {

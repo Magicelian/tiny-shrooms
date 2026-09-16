@@ -2,11 +2,12 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
+import { multiplicateurBonus, PAS_PAR_MINUTE } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, listeQuantites, nomBatiment, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
 import { useMagasin, type Panneau } from './magasin';
-import { PanneauArbre, PanneauBatiment, PanneauConstruire, PanneauHabitants, PanneauReglages } from './panneaux';
+import { ICONES_VISITEUR, PanneauArbre, PanneauBatiment, PanneauConstruire, PanneauHabitants, PanneauReglages, PanneauVisiteurs } from './panneaux';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -32,11 +33,23 @@ export function Interface({ controleur }: Props) {
   return (
     <div class={`interface ${etat.survol || placement ? 'visible' : ''}`}>
       <div class="haut">
-        <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
-          {ICONES_METEO[instantane.temps.meteo]}{' '}
-          {t('temps.annee', { saison: t(`saison.${instantane.temps.saison}`), annee: instantane.temps.annee })}
-        </span>
+        <div class="infos">
+          <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
+            {ICONES_METEO[instantane.temps.meteo]}{' '}
+            {t('temps.annee', { saison: t(`saison.${instantane.temps.saison}`), annee: instantane.temps.annee })}
+          </span>
+          {instantane.bonus.length > 0 && <EtiquetteBonus instantane={instantane} />}
+        </div>
         <nav class="outils">
+          {instantane.visiteurs.length > 0 && (
+            <Outil
+              icone={ICONES_VISITEUR[instantane.visiteurs[0]!.type]}
+              titre={t('outil.visiteurs', { nombre: instantane.visiteurs.length })}
+              actif={panneau === 'visiteurs'}
+              alerte={panneau !== 'visiteurs'}
+              onClick={() => ouvrir('visiteurs')}
+            />
+          )}
           <Outil icone="🔨" titre={t('outil.construire')} actif={panneau === 'construire' || !!placement} onClick={() => (placement ? controleur.finirPlacement() : ouvrir('construire'))} />
           <Outil icone="🍄" titre={t('outil.habitants')} actif={panneau === 'habitants'} onClick={() => ouvrir('habitants')} />
           <Outil icone="🌳" titre={t('outil.arbre')} actif={panneau === 'arbre'} onClick={() => ouvrir('arbre')} />
@@ -92,6 +105,12 @@ function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: 
         <PanneauArbre instantane={instantane} />
       </Cadre>
     );
+  if (panneau === 'visiteurs')
+    return (
+      <Cadre titre={t('outil.visiteurs', { nombre: instantane.visiteurs.length })} fermer={fermer}>
+        <PanneauVisiteurs controleur={controleur} instantane={instantane} />
+      </Cadre>
+    );
   if (panneau === 'reglages')
     return (
       <Cadre titre={t('outil.reglages')} fermer={fermer}>
@@ -102,7 +121,7 @@ function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: 
   if (!batiment) return null;
   return (
     <Cadre titre={nomBatiment(batiment.type)} fermer={fermer} bas>
-      <PanneauBatiment key={batiment.id} controleur={controleur} batiment={batiment} />
+      <PanneauBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
     </Cadre>
   );
 }
@@ -121,16 +140,29 @@ function Cadre({ titre, fermer, bas, children }: { titre: string; fermer: () => 
   );
 }
 
-function Outil(props: { icone: string; titre: string; actif?: boolean; petit?: boolean; onClick: () => void }) {
+function Outil(props: { icone: string; titre: string; actif?: boolean; petit?: boolean; alerte?: boolean; onClick: () => void }) {
   return (
     <button
-      class={`bouton outil ${props.actif ? 'actif' : ''} ${props.petit ? 'petit' : ''}`}
+      class={`bouton outil ${props.actif ? 'actif' : ''} ${props.petit ? 'petit' : ''} ${props.alerte ? 'alerte' : ''}`}
       title={props.titre}
       aria-label={props.titre}
       onClick={props.onClick}
     >
       {props.icone}
     </button>
+  );
+}
+
+function EtiquetteBonus({ instantane }: { instantane: Instantane }) {
+  const pas = Math.max(...instantane.bonus.map((b) => b.pasRestants));
+  const texte = t('bonus.actif', {
+    multiplicateur: nombre(multiplicateurBonus(instantane.bonus), 2),
+    minutes: nombre(Math.ceil(pas / PAS_PAR_MINUTE)),
+  });
+  return (
+    <span class="etiquette bonus" title={t('bonus.titre')}>
+      ✨ {texte}
+    </span>
   );
 }
 

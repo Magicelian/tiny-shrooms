@@ -7,7 +7,8 @@ export { dansLArbre, genererIle, terrainEn } from './ile';
 export { bonusVoisinage, casesLibres, emplacementRefuse, verifierEmplacement } from './grille';
 export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
-export type { Contenu, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, RegleVoisinage } from './contenu';
+export { capaciteAccueil, multiplicateurBonus } from './visiteurs';
+export type { Contenu, ContenuHabitants, ContenuVisiteurs, Fourchette, ContenuMeteo, ContenuSaisons, DefinitionBatiment, RegleVoisinage } from './contenu';
 
 export type * from './contrat';
 export { AMELIORATIONS_VILLAGE, RESSOURCES, SAISONS, STADES_ARBRE, TACHES, TYPES_BATIMENT } from './contrat';

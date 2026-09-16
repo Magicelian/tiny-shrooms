@@ -2,7 +2,7 @@
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
 import type { Etat } from './etat';
 
-export const VERSION_SAUVEGARDE = 1;
+export const VERSION_SAUVEGARDE = 2;
 
 interface FichierSauvegarde {
   version: number;
@@ -13,7 +13,17 @@ interface FichierSauvegarde {
  * Migrations successives : `MIGRATIONS[v]` convertit une sauvegarde de la version `v`
  * vers la version `v + 1`. Toute évolution du format ajoute une entrée ici.
  */
-const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {};
+const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<string, unknown>> = {
+  // Étape 7 : visiteurs et bonus ; le relais rejoint les bâtiments disponibles.
+  1: (etat) => ({
+    ...etat,
+    visiteurs: [],
+    prochainIdVisiteur: 1,
+    pasAvantVisiteur: 0,
+    bonus: [],
+    batimentsDebloques: [...new Set([...(etat.batimentsDebloques as string[]), 'relais'])],
+  }),
+};
 
 export function serialiser(etat: Etat): string {
   const fichier: FichierSauvegarde = { version: VERSION_SAUVEGARDE, etat };
@@ -54,8 +64,8 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
-  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee'];
-  const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins'];
+  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'prochainIdVisiteur', 'pasAvantVisiteur'];
+  const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins', 'visiteurs', 'bonus'];
   const objets = ['ile', 'stocks', 'priorites', 'arbreMere', 'reglages'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??

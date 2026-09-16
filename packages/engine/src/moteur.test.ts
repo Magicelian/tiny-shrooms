@@ -8,6 +8,7 @@ import { creerEtat } from './etat';
 import { Moteur } from './moteur';
 import { meteoAu } from './saisons';
 import { charger, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
+import type { Etat } from './etat';
 import { PAS_PAR_MINUTE } from './temps';
 
 const MINUTE_MS = 60_000;
@@ -53,6 +54,14 @@ function contenuDeTest(
       minutesParPeriode: 5,
       probabilites: { printemps: { soleil: 1 }, ete: { soleil: 1 }, automne: { soleil: 1 }, hiver: { soleil: 1 } },
       production: { soleil: {}, pluie: {}, vent: {}, neige: {} },
+    },
+    visiteurs: {
+      capaciteParRelais: 2,
+      minutesEntreArrivees: { min: 1, max: 1 },
+      poids: { herisson: 1, escargot: 1, luciole: 1 },
+      herisson: { ressources: ['baies', 'boisMort'], lot: 10, taux: { min: 1, max: 2 } },
+      escargot: { ressources: ['boisMort'], quantite: { min: 20, max: 20 }, sporesParUnite: 0.5, chancePlan: 0, plans: [] },
+      luciole: { multiplicateur: { min: 2, max: 2 }, minutes: { min: 1, max: 1 } },
     },
     ...autres,
   };
@@ -445,5 +454,126 @@ describe('Saisons et météo', () => {
     const moteur = new Moteur(contenu, 0);
     moteur.simuler(MIN);
     expect(moteur.etatCourant.stocks.baiesSechees).toBeCloseTo(8);
+  });
+});
+
+describe('Visiteurs', () => {
+  const MIN = PAS_PAR_MINUTE;
+
+  function contenuVisiteur(type: 'herisson' | 'escargot' | 'luciole', autres: Partial<Contenu> = {}): Contenu {
+    const contenu = contenuDeTest({}, {}, autres);
+    contenu.visiteurs.poids = { herisson: 0, escargot: 0, luciole: 0, [type]: 1 };
+    return contenu;
+  }
+
+  /** Moteur avec un relais construit et, après un pas, son premier visiteur. */
+  function avecVisiteur(contenu: Contenu): Moteur {
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('relais', caseLibre(moteur)));
+    moteur.simuler(1);
+    return moteur;
+  }
+
+  it('n’arrive qu’une fois un relais construit, puis attend indéfiniment', () => {
+    const contenu = contenuDeTest({ relais: { constructionSecondes: 10 } });
+    const moteur = new Moteur(contenu, 0);
+    expect(moteur.simuler(5 * MIN).some((e) => e.type === 'visiteurArrive')).toBe(false);
+    commander(moteur, poser('relais', caseLibre(moteur)));
+    const evenements = moteur.simuler(MIN);
+    expect(evenements.filter((e) => e.type === 'visiteurArrive')).toHaveLength(1);
+    expect(moteur.etatCourant.visiteurs).toHaveLength(1);
+    // Trois heures plus tard : deux visiteurs (la capacité du relais), toujours là.
+    moteur.simuler(180 * MIN);
+    expect(moteur.etatCourant.visiteurs.map((v) => v.id)).toEqual([1, 2]);
+  });
+
+  it('arrive pendant un rattrapage, fenêtre cachée', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    commander(moteur, poser('relais', caseLibre(moteur)));
+    const [message] = moteur.battre(20 * MINUTE_MS);
+    expect(message?.type === 'instantane' && message.evenements.filter((e) => e.type === 'visiteurArrive')).toHaveLength(2);
+  });
+
+  it('tire les mêmes visiteurs pour la même graine', () => {
+    const tirer = () => {
+      const moteur = new Moteur(contenuDeTest(), 0);
+      commander(moteur, poser('relais', caseLibre(moteur)));
+      moteur.simuler(3 * MIN);
+      return moteur.etatCourant.visiteurs;
+    };
+    expect(tirer()).toEqual(tirer());
+  });
+
+  it('échange avec le hérisson, ou attend qu’on puisse payer', () => {
+    const moteur = avecVisiteur(contenuVisiteur('herisson'));
+    const visiteur = moteur.etatCourant.visiteurs[0]!;
+    if (visiteur.type !== 'herisson') throw new Error('hérisson attendu');
+    const [demandee, prix] = Object.entries(visiteur.demande)[0]! as ['baies' | 'boisMort', number];
+    const [donnee, lot] = Object.entries(visiteur.donne)[0]! as ['baies' | 'boisMort', number];
+    expect(donnee).not.toBe(demandee);
+    expect(prix).toBeGreaterThanOrEqual(10);
+    const stocks = moteur.etatCourant.stocks;
+    const avant = { ...stocks };
+    stocks[demandee] = prix - 1;
+    const repondre: Commande = { type: 'repondreVisiteur', id: visiteur.id, accepte: true };
+    expect(commander(moteur, repondre)[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
+    expect(moteur.etatCourant.visiteurs).toHaveLength(1);
+    stocks[demandee] = prix;
+    expect(commander(moteur, repondre)).toEqual([]);
+    expect(stocks[demandee]).toBe(0);
+    expect(stocks[donnee]).toBe(avant[donnee] + lot);
+    expect(moteur.etatCourant.visiteurs).toEqual([]);
+  });
+
+  it('renvoie un visiteur refusé sans rien coûter', () => {
+    const moteur = avecVisiteur(contenuVisiteur('herisson'));
+    const stocks = { ...moteur.etatCourant.stocks };
+    expect(commander(moteur, { type: 'repondreVisiteur', id: 1, accepte: false })).toEqual([]);
+    expect(moteur.etatCourant.visiteurs).toEqual([]);
+    expect(moteur.etatCourant.stocks).toEqual(stocks);
+    expect(commander(moteur, { type: 'repondreVisiteur', id: 1, accepte: false })[0]).toMatchObject({ raison: 'introuvable' });
+  });
+
+  it('récompense l’escargot en spores, ou par un plan encore verrouillé', () => {
+    const moteur = avecVisiteur(contenuVisiteur('escargot'));
+    commander(moteur, { type: 'repondreVisiteur', id: 1, accepte: true });
+    expect(moteur.etatCourant.stocks).toMatchObject({ boisMort: 80, spores: 10 });
+
+    const contenu = contenuVisiteur('escargot');
+    contenu.batimentsDeDepart = ['relais'];
+    contenu.visiteurs.escargot = { ...contenu.visiteurs.escargot, chancePlan: 1, plans: ['atelier'] };
+    const avecPlan = avecVisiteur(contenu);
+    expect(avecPlan.etatCourant.visiteurs[0]).toMatchObject({ recompense: { plan: 'atelier' } });
+    commander(avecPlan, { type: 'repondreVisiteur', id: 1, accepte: true });
+    expect(avecPlan.etatCourant.batimentsDebloques).toEqual(['relais', 'atelier']);
+    // Plus aucun plan à offrir : retour aux spores.
+    avecPlan.simuler(MIN + 1);
+    expect(avecPlan.etatCourant.visiteurs[0]).toMatchObject({ recompense: { spores: 10 } });
+  });
+
+  it('double la production le temps du bonus de la luciole', () => {
+    const contenu = contenuVisiteur('luciole', {});
+    contenu.batiments.tasDeBois.production = { boisMort: 6 };
+    contenu.habitants.reserveMax = 1000;
+    const recolte = (accepte: boolean) => {
+      const moteur = avecVisiteur(contenu);
+      commander(moteur, { type: 'reglerPriorites', priorites: { ...PRIORITES_NULLES, recolter: 1 } });
+      commander(moteur, poser('tasDeBois', caseLibre(moteur)));
+      commander(moteur, { type: 'repondreVisiteur', id: 1, accepte });
+      moteur.simuler(2 * MIN);
+      expect(moteur.etatCourant.bonus).toEqual([]);
+      return moteur.etatCourant.batiments[1]!.reserve.boisMort ?? 0;
+    };
+    const sans = recolte(false);
+    expect(sans).toBeGreaterThan(5);
+    // Le bonus dure une minute sur les deux simulées : trois moitiés de plus, moins le trajet.
+    expect(recolte(true)).toBeGreaterThan(sans * 1.3);
+  });
+
+  it('migre une sauvegarde de la version 1', () => {
+    const etat = new Moteur(contenuDeTest(), 0).etatCourant as Partial<Etat>;
+    const { visiteurs: _v, prochainIdVisiteur: _p, pasAvantVisiteur: _a, bonus: _b, ...v1 } = etat;
+    const migre = charger(JSON.stringify({ version: 1, etat: { ...v1, batimentsDebloques: ['hutte'] } }));
+    expect(migre).toMatchObject({ visiteurs: [], bonus: [], pasAvantVisiteur: 0, batimentsDebloques: ['hutte', 'relais'] });
   });
 });

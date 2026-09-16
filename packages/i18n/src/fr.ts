@@ -25,6 +25,7 @@ export const fr = {
   'effet.logement': 'Loge {nombre} habitants',
   'effet.stockage': 'Stock : {liste}',
   'effet.feuDeCamp': 'Bien-être alentour',
+  'effet.relais': 'Accueille {nombre} visiteurs à la fois',
   'effet.aVenir': 'Utile dans une prochaine version',
   'effet.voisinage': '+{pourcent} % à côté : {voisin}',
   'effet.bonusActuel': 'Bonus de voisinage : +{pourcent} %',
@@ -46,6 +47,7 @@ export const fr = {
   'outil.tournerGauche': 'Tourner à gauche',
   'outil.tournerDroite': 'Tourner à droite',
   'outil.zoom': 'Zoom',
+  'outil.visiteurs': 'Visiteurs ({nombre})',
   'panneau.fermer': 'Fermer',
 
   // Construction
@@ -82,6 +84,28 @@ export const fr = {
   'stade.arbre': 'arbre',
   'stade.floraison': 'floraison',
 
+  // Visiteurs
+  'visiteur.herisson': 'Hérisson marchand',
+  'visiteur.escargot': 'Escargot voyageur',
+  'visiteur.luciole': 'Luciole',
+  'visiteur.echange': 'Donne {donne} contre {demande}',
+  'visiteur.quete': '« Apporte-moi {demande} »',
+  'visiteur.recompense': 'Récompense : {recompense}',
+  'visiteur.plan': 'plan : {batiment}',
+  'visiteur.bonus': 'Production ×{multiplicateur} pendant {minutes} min',
+  'visiteur.echanger': 'Échanger',
+  'visiteur.donner': 'Donner',
+  'visiteur.accepter': 'Accepter',
+  'visiteur.renvoyer': 'Renvoyer',
+  'visiteur.aucun': 'Personne au relais pour l’instant.',
+  'visiteur.sansRelais': 'Construisez un relais pour accueillir des visiteurs.',
+  'visiteur.attente': 'Ils attendent aussi longtemps qu’il faut.',
+  'bonus.actif': '×{multiplicateur} · {minutes} min',
+  'bonus.titre': 'Bonus de production de la luciole',
+
+  'alerte.visiteurs': 'Tiny Shrooms · visiteurs au relais : {nombre}',
+  'alerte.aucune': 'Tiny Shrooms',
+
   // Réglages
   'reglages.camera': 'Caméra : ←/→ pour tourner, molette pour zoomer.',
   'reglages.aVenir': 'Son, opacité et langue arriveront bientôt.',
@@ -104,6 +128,8 @@ export const fr = {
   'refus.nonDebloque': 'Pas encore débloqué',
   'refus.introuvable': 'Introuvable',
   'refus.indisponible': 'Pas encore possible',
+  'message.visiteurArrive': '{visiteur} arrive au relais',
+  'message.planObtenu': 'Nouveau plan : {batiment}',
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.stockPlein': 'Stock plein : {ressource}',

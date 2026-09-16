@@ -1,5 +1,5 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
-import type { Meteo, Quantites, Ressource, Saison, Terrain, TypeBatiment } from './contrat';
+import type { Meteo, Quantites, Ressource, Saison, Terrain, TypeBatiment, TypeVisiteur } from './contrat';
 
 export interface RegleVoisinage {
   /** Terrain ou bâtiment à chercher dans les 8 cases voisines. */
@@ -70,6 +70,26 @@ export interface ContenuMeteo {
   production: Record<Meteo, Quantites>;
 }
 
+/** Intervalle dans lequel une valeur est tirée au sort. */
+export interface Fourchette {
+  min: number;
+  max: number;
+}
+
+export interface ContenuVisiteurs {
+  /** Visiteurs accueillis en même temps par chaque relais construit. */
+  capaciteParRelais: number;
+  /** Attente entre deux arrivées, décomptée seulement quand un relais a de la place. */
+  minutesEntreArrivees: Fourchette;
+  /** Poids relatifs des visiteurs au tirage. */
+  poids: Record<TypeVisiteur, number>;
+  /** Le hérisson donne `lot` d'une ressource contre `lot × taux` d'une autre. */
+  herisson: { ressources: Ressource[]; lot: number; taux: Fourchette };
+  /** L'escargot demande une ressource ; il offre des spores, ou parfois un plan encore verrouillé. */
+  escargot: { ressources: Ressource[]; quantite: Fourchette; sporesParUnite: number; chancePlan: number; plans: TypeBatiment[] };
+  luciole: { multiplicateur: Fourchette; minutes: Fourchette };
+}
+
 export interface Contenu {
   ile: { taille: number };
   stocksDeDepart: Record<Ressource, number>;
@@ -85,4 +105,5 @@ export interface Contenu {
   temps: { minutesParSaison: number; minutesParJour: number; heureDeDepart: number };
   saisons: ContenuSaisons;
   meteo: ContenuMeteo;
+  visiteurs: ContenuVisiteurs;
 }

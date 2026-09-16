@@ -31,8 +31,8 @@ export const contenu: Contenu = {
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
     relais: { cout: { boisMort: 30, mousse: 15 }, constructionSecondes: 60 },
   },
-  // Le séchoir est disponible d'emblée tant que les déblocages de l'arbre-mère (étape 8) n'existent pas.
-  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'sechoir', 'feuDeCamp'],
+  // Séchoir et relais sont disponibles d'emblée tant que les déblocages de l'arbre-mère (étape 8) n'existent pas.
+  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'sechoir', 'feuDeCamp', 'relais'],
   habitants: {
     auDepart: 2,
     logementDeBase: 2,
@@ -79,5 +79,12 @@ export const contenu: Contenu = {
       vent: { boisMort: 1.2 },
       neige: { mousse: 0.8 },
     },
+  },  visiteurs: {
+    capaciteParRelais: 2,
+    minutesEntreArrivees: { min: 3, max: 8 },
+    poids: { herisson: 3, escargot: 2, luciole: 2 },
+    herisson: { ressources: ['baies', 'boisMort', 'mousse'], lot: 20, taux: { min: 0.6, max: 1.4 } },
+    escargot: { ressources: ['baies', 'boisMort', 'mousse'], quantite: { min: 15, max: 35 }, sporesParUnite: 0.5, chancePlan: 0.3, plans: ['atelier'] },
+    luciole: { multiplicateur: { min: 1.25, max: 1.5 }, minutes: { min: 3, max: 6 } },
   },
 };

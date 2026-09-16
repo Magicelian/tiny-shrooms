@@ -28,6 +28,11 @@ export interface OptionsInterface {
   deplacerFenetre?: () => void;
 }
 
+/** Infobulle de l'icône de barre des menus, selon le nombre de visiteurs qui attendent. */
+export function infobulleAlerte(visiteurs: number): string {
+  return visiteurs > 0 ? t('alerte.visiteurs', { nombre: visiteurs }) : t('alerte.aucune');
+}
+
 /** Distance en pixels au-delà de laquelle un appui devient un déplacement de fenêtre. */
 const SEUIL_GLISSER = 4;
 
@@ -59,9 +64,14 @@ export class ControleurInterface {
       if (message.origine === 'illisible') this.magasin.annoncer(t('message.partieIllisible'));
     }
     if (message.type !== 'instantane') return;
+    const avant = this.magasin.valeur.instantane?.batimentsDebloques;
+    for (const type of avant ? message.instantane.batimentsDebloques : []) {
+      if (!avant!.includes(type)) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
+    }
     this.magasin.modifier({ instantane: message.instantane });
     for (const e of message.evenements) {
       if (e.type === 'commandeRefusee') this.magasin.annoncer(t(`refus.${e.raison}`));
+      else if (e.type === 'visiteurArrive') this.magasin.annoncer(t('message.visiteurArrive', { visiteur: t(`visiteur.${e.visiteur.type}`) }));
       else if (e.type === 'habitantArrive') this.magasin.annoncer(t('message.habitantArrive'));
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {

@@ -5,7 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { contenu } from '@tiny-shrooms/content';
 import type { MessageDepuisMoteur, MessageVersMoteur } from '@tiny-shrooms/engine';
 import { CHAPEAUX, COULEURS_BATIMENT, Rendu } from '@tiny-shrooms/renderer';
-import { ControleurInterface } from '@tiny-shrooms/ui';
+import { ControleurInterface, infobulleAlerte } from '@tiny-shrooms/ui';
 
 const dansTauri = '__TAURI_INTERNALS__' in window;
 const SAUVEGARDE_AUTO_MS = 30_000;
@@ -39,6 +39,14 @@ let ecritures = Promise.resolve();
 let fermetureDemandee = false;
 const sauvegarder = () => envoyer({ type: 'sauvegarder' });
 
+// Point sur l'icône de la barre des menus tant qu'un visiteur attend.
+let visiteursSignales = 0;
+function signalerVisiteurs(nombre: number) {
+  if (!dansTauri || nombre === visiteursSignales) return;
+  visiteursSignales = nombre;
+  invoke('signaler_alerte', { alerte: nombre > 0, infobulle: infobulleAlerte(nombre) }).catch((erreur) => console.error('alerte impossible', erreur));
+}
+
 moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'sauvegarde') {
     ecritures = ecritures
@@ -50,7 +58,10 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   // Rien n'est écrit avant que la partie soit chargée : une partie neuve n'écrase pas un fichier en attente.
   if (data.type === 'partieChargee') setInterval(sauvegarder, SAUVEGARDE_AUTO_MS);
   if (data.type === 'ile') rendu.appliquerIle(data.ile);
-  else if (data.type === 'instantane') rendu.appliquerInstantane(data.instantane);
+  else if (data.type === 'instantane') {
+    rendu.appliquerInstantane(data.instantane);
+    signalerVisiteurs(data.instantane.visiteurs.length);
+  }
   ui.recevoir(data);
 };
 envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []) });
@@ -67,6 +78,7 @@ if (dansTauri) {
     sauvegarder();
   });
   await listen('reveil', () => envoyer({ type: 'reveil' }));
+  await listen('pouls', () => envoyer({ type: 'battre' }));
   await listen('fermeture-demandee', () => {
     fermetureDemandee = true;
     sauvegarder();

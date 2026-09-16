@@ -2,6 +2,7 @@
 import type {
   ArbreMere,
   Batiment,
+  BonusActif,
   Habitant,
   IdBatiment,
   Ile,
@@ -11,6 +12,7 @@ import type {
   Reglages,
   Ressource,
   TypeBatiment,
+  Visiteur,
 } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
@@ -49,6 +51,11 @@ export interface Etat {
   priorites: Priorites;
   arbreMere: ArbreMere;
   reglages: Reglages;
+  visiteurs: Visiteur[];
+  prochainIdVisiteur: number;
+  /** Pas restant avant le prochain visiteur, décomptés seulement quand un relais a de la place. */
+  pasAvantVisiteur: number;
+  bonus: BonusActif[];
   /** Ressources dont le stock était plein au pas précédent, pour n'annoncer `stockPlein` qu'une fois. */
   stocksPleins: Ressource[];
 }
@@ -76,6 +83,11 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
       lancementAuDemarrage: false,
     },
     stocksPleins: [],
+    // Le premier visiteur arrive dès que le premier relais est construit.
+    visiteurs: [],
+    prochainIdVisiteur: 1,
+    pasAvantVisiteur: 0,
+    bonus: [],
   };
   for (let i = 0; i < contenu.habitants.auDepart; i++) ajouterHabitant(etat);
   return etat;

@@ -253,6 +253,8 @@ export type MessageVersMoteur =
   /** `momentMs` : instant de l'endormissement vu par Rust, le Worker a pu geler avant de lire ce message. */
   | { type: 'veille'; momentMs: number }
   | { type: 'reveil' }
+  /** Pouls envoyé par Rust fenêtre cachée : le Worker a pu geler, on rattrape le temps écoulé tout de suite. */
+  | { type: 'battre' }
   | { type: 'sauvegarder' };
 
 export type MessageDepuisMoteur =

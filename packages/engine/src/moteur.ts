@@ -53,6 +53,8 @@ export class Moteur {
       case 'reveil':
         this.horloge.reveil(maintenantMs);
         return [this.publier()];
+      case 'battre':
+        return this.battre(maintenantMs);
       case 'sauvegarder':
         return [{ type: 'sauvegarde', contenu: serialiser(this.etat) }];
     }

@@ -47,4 +47,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   feu l'hiver). Rendu : `packages/renderer/src/ambiance.ts` (teinte des matériaux partagés, particules
   dessinées en superposition). En dev, `moteur.onmessage = null` puis `rendu.ambiance.appliquer(...)`
   fige une saison pour l'inspecter. Séchoir disponible d'emblée en attendant les déblocages (étape 8).
-- **Prochaine étape : 7** (visiteurs et alertes).
+- **Étape 7 validée**. Moteur : `packages/engine/src/visiteurs.ts` (tirage par visiteur à partir de la graine,
+  le premier arrive dès qu'un relais est construit ; sauvegarde en version 2). Rendu : `packages/renderer/src/visiteurs.ts`.
+  Alerte : `src-tauri/src/alertes.rs` (point dessiné sur l'icône ; pouls toutes les 20 s fenêtre cachée → message
+  `battre` au Worker, qui ne gèle plus). En dev, le terminal affiche `alerte true/false`.
+- **Prochaine étape : 8** (arbre-mère et floraison).

@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod alertes;
 mod sauvegarde;
 mod veille;
 
@@ -107,11 +108,13 @@ fn main() {
             });
             surveiller_survol(app.handle().clone());
             veille::surveiller(app.handle().clone());
+            alertes::battre_le_pouls(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             sauvegarde::lire_sauvegardes,
             sauvegarde::ecrire_sauvegarde,
+            alertes::signaler_alerte,
             quitter
         ])
         .run(tauri::generate_context!())

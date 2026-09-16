@@ -371,6 +371,12 @@ son critère n'est pas rempli.
 - Relais des visiteurs, hérisson marchand, escargot voyageur, luciole.
 - Point sur l'icône de la barre des menus + habitant qui fait signe.
 - **Critère** : un visiteur arrivé fenêtre cachée est signalé dans la barre des menus et attend indéfiniment.
+- **Résultat (16/09/2026)** : validé sur Mac. Relais à 2 places ; premier visiteur dès la fin du chantier, puis
+  un toutes les 3 à 8 min, tiré au sort à partir de la graine (sauvegarde en version 2). Hérisson : échange à taux
+  variable ; escargot : spores ou plan encore verrouillé ; luciole : production ×1,25 à ×1,5 pendant 3 à 6 min.
+  Fenêtre cachée, Rust envoie un **pouls** toutes les 20 s et le Worker rattrape aussitôt : mesuré 18 min sans
+  gel, réponse en moins de 100 ms, donc aucune alerte à produire côté Rust. Le point rouge est dessiné sur
+  l'icône ; son allumage a été vu fenêtre visible, l'arrivée pendant un rattrapage est couverte par les tests.
 
 ### Étape 8 — Arbre-mère et floraison
 - Stades de croissance, déblocages, mycélium dans la coupe, séquence de floraison, écran « nouvelle île à venir ».
@@ -400,7 +406,7 @@ son critère n'est pas rempli.
 
 | Risque | Parade |
 |---|---|
-| macOS gèle le Worker quand la fenêtre est cachée (**confirmé** à l'étape 0) | Rattrapage du temps écoulé ; alertes fenêtre cachée (étape 7) : mesurer si un réveil envoyé par Rust suffit, sinon les générer côté Rust |
+| macOS gèle le Worker quand la fenêtre est cachée (**confirmé** à l'étape 0) | Rattrapage du temps écoulé ; fenêtre cachée, un pouls envoyé par Rust toutes les 20 s suffit à réveiller le Worker (mesuré à l'étape 7) |
 | Fenêtre transparente capricieuse selon la version de macOS ou de Windows | Validée à l'étape 0 ; repli sur une fenêtre à fond coloré arrondi |
 | Consommation batterie d'un rendu 3D permanent | 30 i/s maximum, 0 caché, rendu à la demande quand rien ne bouge |
 | Interface illisible en 320 px | Test systématique à la taille minimale dès l'étape 4 |

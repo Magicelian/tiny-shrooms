@@ -114,6 +114,12 @@
   display: flex;
   gap: 4px;
 }
+.infos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
 .etiquette {
   background: var(--papier);
   border: var(--trait);
@@ -399,4 +405,56 @@
   border-radius: 5px;
   padding: 2px 6px;
   font-size: 11px;
+}
+
+/* Visiteurs */
+.visiteurs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.visiteur {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--discret);
+}
+.visiteur .icone {
+  font-size: 20px;
+}
+.visiteur .texte {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+.visiteur small {
+  display: block;
+  font-size: 10px;
+}
+.visiteur small:not(.manque) {
+  color: var(--discret);
+}
+.visiteur .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.visiteur .actions .bouton {
+  font-size: 11px;
+}
+.bouton.manque {
+  background: #eee4d8;
+}
+.bouton.discret {
+  box-shadow: none;
+}
+.bouton.alerte {
+  background: var(--accent);
+  animation: appel 1.2s ease-in-out infinite;
+}
+@keyframes appel {
+  50% {
+    transform: translateY(-2px);
+  }
 }

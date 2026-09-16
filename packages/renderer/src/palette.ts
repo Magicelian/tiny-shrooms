@@ -16,6 +16,11 @@ export const COULEURS = {
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
   floraison: 0xf29ac2,
+  herisson: 0x7a5236,
+  museau: 0xe0c29a,
+  coquille: 0xd9822b,
+  escargot: 0xc9d67a,
+  luciole: 0xfff27a,
 } as const;
 
 export const CHAPEAUX = [0xd8423a, 0xe8a33d, 0x9b59d0, 0x3d8fe8, 0xf2f2e8] as const;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 
-export type Panneau = 'construire' | 'habitants' | 'arbre' | 'reglages' | { batiment: IdBatiment };
+export type Panneau = 'construire' | 'habitants' | 'arbre' | 'reglages' | 'visiteurs' | { batiment: IdBatiment };
 
 export interface Message {
   id: number;

@@ -4,6 +4,7 @@ import type { ArbreMere, Batiment, Habitant, IdBatiment, IdHabitant, Ile, Instan
 import { PAS_DE_SIMULATION_MS } from '@tiny-shrooms/engine';
 import { CHAPEAUX, COULEURS, COULEURS_BATIMENT, HAUTEURS_BATIMENT, materiau } from './palette';
 import { versMonde } from './repere';
+import { Accueil } from './visiteurs';
 
 const CUBE = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const PIED = new THREE.CylinderGeometry(0.08, 0.1, 0.22, 6).translate(0, 0.11, 0);
@@ -30,6 +31,7 @@ export class Entites {
   private readonly habitants = new Map<IdHabitant, HabitantAffiche>();
   private readonly arbre = new THREE.Group();
   private readonly couronne = new THREE.Mesh(COURONNE, materiau(COULEURS.couronne));
+  private readonly accueil = new Accueil();
   private ile: Ile | null = null;
 
   constructor() {
@@ -37,7 +39,7 @@ export class Entites {
     this.couronne.position.y = 1;
     for (const m of [tronc, this.couronne]) m.castShadow = m.receiveShadow = true;
     this.arbre.add(tronc, this.couronne);
-    this.groupe.add(this.arbre);
+    this.groupe.add(this.arbre, this.accueil.groupe);
   }
 
   changerIle(ile: Ile): void {
@@ -46,6 +48,7 @@ export class Entites {
     for (const h of this.habitants.values()) this.groupe.remove(h.objet);
     this.batiments.clear();
     this.habitants.clear();
+    this.accueil.vider();
     const milieu = ile.tailleArbreMere / 2;
     versMonde({ x: ile.arbreMere.x + milieu, y: ile.arbreMere.y + milieu }, ile, this.arbre.position);
   }
@@ -56,6 +59,7 @@ export class Entites {
     this.synchroniserBatiments(instantane.batiments, ile);
     this.synchroniserHabitants(instantane.habitants, ile, maintenant);
     this.appliquerArbre(instantane.arbreMere);
+    this.accueil.appliquer(instantane.batiments, instantane.visiteurs, ile);
   }
 
   /** Maillages des bâtiments, pour savoir lequel est sous la souris. */
@@ -65,6 +69,7 @@ export class Entites {
 
   /** Mouvements entre deux instantanés et petites animations. */
   animer(maintenant: number): void {
+    this.accueil.animer(maintenant);
     for (const h of this.habitants.values()) {
       const t = Math.min(1, (maintenant - h.debut) / PAS_DE_SIMULATION_MS);
       h.objet.position.lerpVectors(h.depuis, h.vers, t);

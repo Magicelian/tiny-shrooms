@@ -7,6 +7,7 @@ import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants } from './habitants';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_PAR_MINUTE } from './temps';
+import { avancerVisiteurs, multiplicateurBonus, payer, repondreVisiteur } from './visiteurs';
 
 type Flux = Record<Ressource, number>;
 
@@ -24,13 +25,14 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Fl
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
   const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
+  const bonus = multiplicateurBonus(etat.bonus);
   for (const habitant of etat.habitants) {
     const m = habitant.mission;
     if (m?.tache !== 'recolter' || habitant.activite !== 'recolte') continue;
     const b = etat.batiments.find((x) => x.id === m.batiment);
     if (!b) continue;
     const def = contenu.batiments[b.type];
-    const cadence = cadenceTravail(etat, contenu, { x: b.case.x + 0.5, y: b.case.y + 0.5 }, nourri);
+    const cadence = cadenceTravail(etat, contenu, { x: b.case.x + 0.5, y: b.case.y + 0.5 }, nourri) * bonus;
     for (const r of cles(def.production ?? {})) {
       estime[r] += (def.production![r] ?? 0) * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence;
     }
@@ -46,6 +48,7 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const saison = calendrier(etat.pas, contenu);
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
+  avancerVisiteurs(etat, contenu, evenements);
 
   const max = plafonds(etat, contenu);
   const { direct } = fluxParMinute(etat, contenu);
@@ -124,20 +127,16 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
       return [];
     }
-    // Visiteurs, arbre-mère et améliorations arrivent aux étapes suivantes.
+    case 'repondreVisiteur': {
+      const raison = repondreVisiteur(etat, commande.id, commande.accepte);
+      return raison ? refus(raison) : [];
+    }
+    // Arbre-mère et améliorations arrivent aux étapes suivantes.
     case 'ameliorer':
-    case 'repondreVisiteur':
     case 'nourrirArbre':
     case 'fleurir':
       return refus('indisponible');
   }
-}
-
-function payer(etat: Etat, cout: Quantites): boolean {
-  const ressources = cles(cout);
-  if (ressources.some((r) => etat.stocks[r] < (cout[r] ?? 0))) return false;
-  for (const r of ressources) etat.stocks[r] -= cout[r] ?? 0;
-  return true;
 }
 
 export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Instantane {
@@ -166,8 +165,8 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     })),
     priorites: { ...etat.priorites },
     arbreMere: { ...etat.arbreMere },
-    visiteurs: [],
-    bonus: [],
+    visiteurs: structuredClone(etat.visiteurs),
+    bonus: etat.bonus.map((b) => ({ ...b })),
     batimentsDebloques: [...etat.batimentsDebloques],
     ameliorations: { vitesse: 0, outils: 0 },
     reglages: { ...etat.reglages },
