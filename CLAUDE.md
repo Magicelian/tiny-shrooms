@@ -16,7 +16,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `src/contenu.ts` la forme des données d'équilibrage, dont les valeurs vivent dans `packages/content`.
 - `packages/content` : chiffres de la V1 et test d'une heure simulée.
 - `packages/renderer` : îlot Three.js pixelisé (rendu à ½, passe de contours, toon, caméra iso).
-- Les autres paquets du cahier (`ui`, `i18n`) sont à créer.
+- `packages/ui` : interface Preact au survol ; `ControleurInterface` reçoit les messages du moteur et
+  traduit la souris en commandes. `packages/i18n` : chaînes FR, `t('cle', { variables })`.
 
 ## Conventions
 
@@ -30,8 +31,10 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   veille** : à faire à l'étape 5, le Worker n'a qu'à relayer `veille` / `reveil` au moteur.
 - **Contrat** : `packages/engine/src/contrat.ts` (grille carrée, repère en tête de fichier).
 - **Étape 3 validée** : rendu à ½ de la fenêtre (⅓ était illisible à 320 px), 2,9 ms par image.
-  Caméra provisoire : ←/→ ou Q/E tournent, Z ou molette zooment.
-- **Étapes 1 et 2 validées** : moteur complet jusqu'aux habitants, branché dans
-  `apps/desktop/src/moteur-worker.ts` (en dev, une partie neuve pose 3 bâtiments pour voir le village vivre).
-- **Prochaine étape : 4** (interface au survol → premier jouable).
+  Caméra : boutons en bas à droite, ←/→ ou Q/E, Z ou molette.
+- **Étapes 1 et 2 validées** : moteur complet jusqu'aux habitants, branché dans `apps/desktop/src/moteur-worker.ts`.
+- **Étape 4 validée**. Fenêtre sans le focus :
+  la vue web ne reçoit pas la souris, Rust surveille le curseur et émet `survol` (vrai/faux). L'aperçu fantôme utilise
+  `emplacementRefuse` / `bonusVoisinage`, fonctions pures du moteur. JSX : `oxc.jsx` dans `vite.config.ts`.
+- **Prochaine étape : 5** (sauvegarde et pause).
 - `pnpm --filter desktop vite` + `.claude/launch.json` : aperçu dans le navigateur, sans Tauri.

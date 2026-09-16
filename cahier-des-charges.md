@@ -343,6 +343,10 @@ son critère n'est pas rempli.
 - i18n branchée (FR seulement pour l'instant).
 - **Critère** : on peut jouer la boucle récolte → construction → nouveaux habitants uniquement à la souris,
   dans une fenêtre de 320 px.
+- **Résultat (16/09/2026)** : validé sur Mac ; boucle jouée à la souris à 320 × 320 (3 bâtiments posés,
+  3ᵉ habitant arrivé). Clic court = poser ou sélectionner, appui glissé = déplacer la fenêtre (remplace la
+  zone de glisser plein écran). Clic droit ou Échap annule. Fenêtre sans le focus : Rust surveille le
+  curseur pour révéler l'interface. Chiffres en Jersey 10, plus lisibles que ceux de Pixelify Sans.
 
 ### Étape 5 — Sauvegarde et pause
 - Écriture fichier via Tauri, versions et migrations, 3 copies de secours, sauvegarde à la fermeture et à la veille.

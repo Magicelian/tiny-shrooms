@@ -88,7 +88,8 @@ export class Pixelisation {
     this.passe.uniforms.taille!.value.set(largeur, hauteur);
   }
 
-  rendre(scene: THREE.Scene, camera: THREE.OrthographicCamera): void {
+  /** `superposition` est dessinée en dernier, à pleine couleur, sans contours. */
+  rendre(scene: THREE.Scene, camera: THREE.OrthographicCamera, superposition?: THREE.Scene): void {
     this.passe.uniforms.profondeurMonde!.value = camera.far - camera.near;
     const moteur = this.moteur;
 
@@ -102,5 +103,9 @@ export class Pixelisation {
 
     moteur.setRenderTarget(null);
     moteur.render(this.scenePasse, this.cameraPasse);
+    if (!superposition) return;
+    moteur.autoClear = false;
+    moteur.render(superposition, camera);
+    moteur.autoClear = true;
   }
 }

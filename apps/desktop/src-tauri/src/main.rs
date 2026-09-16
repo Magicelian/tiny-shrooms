@@ -21,6 +21,34 @@ fn basculer_fenetre(app: &AppHandle) {
     }
 }
 
+/// Une fenêtre sans le focus ne reçoit pas les mouvements de souris sous macOS :
+/// on surveille donc le curseur ici et on signale au frontend quand il entre ou sort.
+fn surveiller_survol(app: AppHandle) {
+    std::thread::spawn(move || {
+        let mut dedans = false;
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            let Some(fenetre) = app.get_webview_window("main") else {
+                continue;
+            };
+            let maintenant = fenetre.is_visible().unwrap_or(false) && curseur_dans(&app, &fenetre);
+            if maintenant != dedans {
+                dedans = maintenant;
+                let _ = fenetre.emit("survol", dedans);
+            }
+        }
+    });
+}
+
+fn curseur_dans(app: &AppHandle, fenetre: &tauri::WebviewWindow) -> bool {
+    let (Ok(curseur), Ok(position), Ok(taille)) = (app.cursor_position(), fenetre.outer_position(), fenetre.outer_size())
+    else {
+        return false;
+    };
+    let (x, y) = (curseur.x - position.x as f64, curseur.y - position.y as f64);
+    x >= 0.0 && y >= 0.0 && x < taille.width as f64 && y < taille.height as f64
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -52,6 +80,7 @@ fn main() {
                     basculer_fenetre(icone.app_handle());
                 }
             });
+            surveiller_survol(app.handle().clone());
             Ok(())
         })
         .run(tauri::generate_context!())

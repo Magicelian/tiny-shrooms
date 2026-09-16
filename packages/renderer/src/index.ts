@@ -1,14 +1,23 @@
 // Rendu de l'îlot : scène Three.js pixelisée, nourrie par les messages du moteur.
 import * as THREE from 'three';
-import type { Ile, Instantane } from '@tiny-shrooms/engine';
+import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 import { CameraIso } from './camera';
+import { AidesConstruction } from './construction';
 import { Entites } from './entites';
 import { construireIle } from './ile';
 import { Pixelisation } from './pixelisation';
 
+export { CHAPEAUX, COULEURS_BATIMENT } from './palette';
+
 export const IMAGES_PAR_SECONDE = 30;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
 export const REDUCTION = 2;
+
+/** Ce qui se trouve sous un point de la fenêtre. */
+export interface Visee {
+  case: Case | null;
+  batiment: IdBatiment | null;
+}
 
 export class Rendu {
   readonly canevas: HTMLCanvasElement;
@@ -20,6 +29,10 @@ export class Rendu {
   private readonly vue = new CameraIso();
   private readonly pixelisation: Pixelisation;
   private readonly entites = new Entites();
+  private readonly aides = new AidesConstruction();
+  private readonly rayon = new THREE.Raycaster();
+  private readonly sol = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private ile: Ile | null = null;
   private decor: THREE.Group | null = null;
   private actif = false;
   private derniereImage = 0;
@@ -50,11 +63,41 @@ export class Rendu {
     this.decor = construireIle(ile);
     this.scene.add(this.decor);
     this.entites.changerIle(ile);
+    this.aides.changerIle(ile);
+    this.ile = ile;
     this.vue.cadrer(Math.max(ile.largeur, ile.profondeur));
   }
 
   appliquerInstantane(instantane: Instantane): void {
     this.entites.appliquer(instantane, performance.now());
+  }
+
+  /** Case et bâtiment sous un point de la fenêtre, en pixels CSS. */
+  viser(xEcran: number, yEcran: number): Visee {
+    const ile = this.ile;
+    if (!ile) return { case: null, batiment: null };
+    const ndc = new THREE.Vector2((xEcran / window.innerWidth) * 2 - 1, -(yEcran / window.innerHeight) * 2 + 1);
+    this.rayon.setFromCamera(ndc, this.vue.camera);
+    const touche = this.rayon.intersectObjects(this.entites.maillagesBatiments(), false)[0];
+    const batiment = touche ? (touche.object.userData.id as IdBatiment) : null;
+    const point = this.rayon.ray.intersectPlane(this.sol, new THREE.Vector3());
+    if (!point) return { case: null, batiment };
+    const x = Math.floor(point.x + ile.largeur / 2);
+    const y = Math.floor(point.z + ile.profondeur / 2);
+    const dedans = x >= 0 && y >= 0 && x < ile.largeur && y < ile.profondeur;
+    return { case: dedans ? { x, y } : null, batiment };
+  }
+
+  afficherGrille(visible: boolean): void {
+    this.aides.afficherGrille(visible);
+  }
+
+  montrerFantome(c: Case, type: TypeBatiment | null, valide: boolean): void {
+    this.aides.montrerFantome(c, type, valide);
+  }
+
+  cacherFantome(): void {
+    this.aides.cacherFantome();
   }
 
   tourner(sens: 1 | -1): void {
@@ -95,7 +138,7 @@ export class Rendu {
     this.derniereImage = instant;
     this.vue.animer(dt);
     this.entites.animer(performance.now());
-    this.pixelisation.rendre(this.scene, this.vue.camera);
+    this.pixelisation.rendre(this.scene, this.vue.camera, this.aides.actives ? this.aides.scene : undefined);
     this.images++;
   };
 }

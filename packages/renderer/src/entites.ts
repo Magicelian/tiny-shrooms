@@ -58,6 +58,11 @@ export class Entites {
     this.appliquerArbre(instantane.arbreMere);
   }
 
+  /** Maillages des bâtiments, pour savoir lequel est sous la souris. */
+  maillagesBatiments(): THREE.Object3D[] {
+    return [...this.batiments.values()];
+  }
+
   /** Mouvements entre deux instantanés et petites animations. */
   animer(maintenant: number): void {
     for (const h of this.habitants.values()) {
@@ -82,6 +87,7 @@ export class Entites {
       if (!maillage) {
         maillage = new THREE.Mesh(CUBE);
         maillage.castShadow = maillage.receiveShadow = true;
+        maillage.userData.id = b.id;
         this.batiments.set(b.id, maillage);
         this.groupe.add(maillage);
       }

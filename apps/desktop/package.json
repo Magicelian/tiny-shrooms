@@ -12,6 +12,7 @@
     "@tiny-shrooms/content": "workspace:*",
     "@tiny-shrooms/engine": "workspace:*",
     "@tiny-shrooms/renderer": "workspace:*",
+    "@tiny-shrooms/ui": "workspace:*",
     "three": "^0.186.0"
   },
   "devDependencies": {

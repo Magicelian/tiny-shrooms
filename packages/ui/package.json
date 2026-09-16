@@ -1,0 +1,23 @@
+{
+  "name": "@tiny-shrooms/ui",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./interface.css": "./src/interface.css"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@fontsource/jersey-10": "^5.3.0",
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@tiny-shrooms/content": "workspace:*",
+    "@tiny-shrooms/engine": "workspace:*",
+    "@tiny-shrooms/i18n": "workspace:*",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

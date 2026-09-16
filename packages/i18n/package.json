@@ -1,0 +1,12 @@
+{
+  "name": "@tiny-shrooms/i18n",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

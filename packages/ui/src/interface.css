@@ -1,0 +1,402 @@
+/* Interface au survol : police pixel épaisse, aplats cerclés de noir, lisible à 320 px. */
+@import '@fontsource/pixelify-sans/latin-500.css';
+@import '@fontsource/pixelify-sans/latin-700.css';
+
+/* Les chiffres de Pixelify Sans se confondent (5 et S, 8 et 6) : Jersey 10 les remplace,
+   agrandie pour que 14 px d'interface tombent sur sa grille de 20 px. */
+@font-face {
+  font-family: 'Chiffres';
+  src: url('@fontsource/jersey-10/files/jersey-10-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  size-adjust: 143%;
+  font-display: block;
+}
+
+:root {
+  --encre: #1b1320;
+  --papier: #fbf3dc;
+  --papier-fonce: #eadcb5;
+  --accent: #f2b53a;
+  --vert: #6fc25a;
+  --rouge: #e0503f;
+  --discret: #6d5f73;
+  --trait: 2px solid var(--encre);
+  --ombre: 0 2px 0 var(--encre);
+}
+
+#interface {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font: 500 13px/1.25 'Chiffres', 'Pixelify Sans', ui-monospace, monospace;
+  color: var(--encre);
+  -webkit-font-smoothing: none;
+  font-synthesis: none;
+}
+
+.interface {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.interface.visible {
+  opacity: 1;
+}
+.interface.visible :is(button, input, select, .compteur) {
+  pointer-events: auto;
+}
+
+/* Boutons */
+.bouton {
+  font: inherit;
+  font-weight: 700;
+  color: var(--encre);
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 6px;
+  box-shadow: var(--ombre);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.bouton:hover {
+  background: #fff;
+}
+.bouton:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+.bouton.actif {
+  background: var(--accent);
+}
+.bouton.large {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 5px;
+}
+.bouton.danger {
+  background: var(--rouge);
+  color: #fff;
+}
+.outil {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+.outil.petit {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+.fermer {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* Haut : saison et barre d'outils */
+.haut {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+.outils {
+  display: flex;
+  gap: 4px;
+}
+.etiquette {
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Compteurs, en colonne en bas à gauche */
+.compteurs {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.compteur {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 6px;
+  padding: 1px 6px 1px 3px;
+}
+.compteur .quantite {
+  font-size: 14px;
+}
+.compteur .plafond {
+  font-size: 10px;
+  color: var(--discret);
+}
+.compteur.plein .quantite {
+  color: #b5402f;
+}
+.pastille {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: var(--trait);
+  border-radius: 3px;
+}
+.pastille.ronde {
+  border-radius: 50%;
+}
+.infobulle {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  background: var(--encre);
+  color: var(--papier);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 11px;
+}
+
+.camera {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 3px;
+}
+
+/* Bandeau de placement */
+.bandeau {
+  position: absolute;
+  top: 40px;
+  font-size: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(290px, calc(100% - 12px));
+  box-sizing: border-box;
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 8px;
+  box-shadow: var(--ombre);
+  padding: 2px 3px 2px 6px;
+  pointer-events: auto;
+}
+.bandeau .ligne {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.ligne.aide {
+  font-size: 10px;
+  color: var(--discret);
+}
+.manque {
+  color: #b5402f;
+}
+.bonus {
+  color: #2f7a2a;
+  font-weight: 700;
+}
+
+/* Panneaux */
+.panneau {
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(290px, calc(100% - 12px));
+  max-height: calc(100% - 84px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 8px;
+  box-shadow: 0 3px 0 var(--encre);
+  pointer-events: auto;
+}
+.panneau.bas {
+  top: auto;
+  bottom: 38px;
+  left: auto;
+  right: 6px;
+  transform: none;
+  width: min(200px, calc(100% - 12px));
+}
+.panneau header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px 4px 8px;
+  background: var(--accent);
+  border-bottom: var(--trait);
+  border-radius: 6px 6px 0 0;
+}
+.panneau h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.panneau h3 {
+  margin: 6px 0 2px;
+  font-size: 13px;
+}
+.panneau .corps {
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+}
+.panneau p {
+  margin: 3px 0;
+  font-size: 12px;
+}
+.discret {
+  color: var(--discret);
+}
+
+.catalogue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.carte {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 4px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: var(--trait);
+  border-radius: 6px;
+  padding: 3px 4px;
+  cursor: pointer;
+}
+.carte:hover {
+  background: var(--papier-fonce);
+}
+.carte .nom {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.1;
+}
+.carte .cout {
+  grid-column: 1 / -1;
+  font-size: 10px;
+}
+.carte.manque {
+  background: #efe6d6;
+}
+.carte.manque .cout {
+  color: #b5402f;
+}
+.detail {
+  position: sticky;
+  bottom: -8px;
+  min-height: 3.2em;
+  margin: 4px -8px -8px;
+  padding: 2px 8px 6px;
+  border-radius: 0 0 6px 6px;
+  background: var(--papier);
+  border-top: 2px dashed var(--papier-fonce);
+}
+
+.curseur {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  align-items: center;
+  font-size: 12px;
+}
+.curseur input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.habitants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.habitants li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+}
+.habitants .nom {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.habitants small {
+  display: block;
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--discret);
+}
+.habitants select {
+  font: inherit;
+  font-size: 11px;
+  max-width: 96px;
+  border: var(--trait);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.jauge {
+  height: 8px;
+  border: var(--trait);
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+.jauge div {
+  height: 100%;
+  background: var(--vert);
+}
+
+/* Messages : discrets, au-dessus de la caméra */
+.messages {
+  position: absolute;
+  bottom: 36px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.message {
+  background: var(--encre);
+  color: var(--papier);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 11px;
+}

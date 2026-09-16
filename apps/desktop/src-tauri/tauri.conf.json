@@ -18,6 +18,7 @@
         "width": 320,
         "height": 320,
         "transparent": true,
+        "acceptFirstMouse": true,
         "decorations": false,
         "shadow": false,
         "alwaysOnTop": true,
