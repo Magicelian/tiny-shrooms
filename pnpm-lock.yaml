@@ -171,6 +171,9 @@ importers:
       '@tauri-apps/api':
         specifier: ^2.11.1
         version: 2.11.1
+      '@tiny-shrooms/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@tiny-shrooms/engine':
         specifier: workspace:*
         version: link:../../packages/engine

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
+    "@tiny-shrooms/content": "workspace:*",
     "@tiny-shrooms/engine": "workspace:*",
     "@tiny-shrooms/renderer": "workspace:*",
     "three": "^0.186.0"

@@ -14,7 +14,7 @@ const COURONNE = new THREE.IcosahedronGeometry(0.5, 1);
 /** Les habitants sont volontairement grands par rapport aux cases, pour rester lisibles. */
 const ECHELLE_HABITANT = 1.7;
 
-const TAILLES_ARBRE: Record<StadeArbre, number> = { pousse: 0.5, arbuste: 1, arbre: 1.6, floraison: 1.8 };
+const TAILLES_ARBRE: Record<StadeArbre, number> = { pousse: 0.8, arbuste: 1.1, arbre: 1.6, floraison: 1.8 };
 
 interface HabitantAffiche {
   objet: THREE.Group;

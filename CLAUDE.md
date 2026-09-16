@@ -25,15 +25,13 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
 
 ## Où on en est
 
-- **Étape 0 validée** (commit `09566a8`). macOS gèle le Worker fenêtre cachée : le moteur doit
-  rattraper le temps écoulé sur l'horloge réelle, seule une veille signalée par Rust met en pause.
-- **Contrat posé** : `packages/engine/src/contrat.ts` (grille carrée, repère en tête de fichier).
-- **Ordre choisi** : contrat (types des instantanés et commandes) → étape 3 (îlot pixelisé nourri
-  de fausses données) → étapes 1 et 2 (moteur) branchées ensuite.
-- **Étape 1 validée** : horloge qui rattrape tout sauf la veille, stocks, production, chantiers, commandes.
-  Placement sans contrôle et sans habitants : c'est l'étape 2, puis brancher `Moteur` dans un Worker
-  à la place du faux moteur.
-- **Étape 3 validée** : `apps/desktop/src/faux-moteur.ts` nourrit
-  l'îlot de fausses données (à remplacer par le vrai moteur). Caméra : ←/→ ou Q/E tournent, Z ou molette zooment.
-  Rendu à ½ de la fenêtre (⅓ était illisible à 320 px) ; coût mesuré : 2,9 ms par image.
+- **Étape 0 validée**. macOS gèle le Worker fenêtre cachée : le moteur rattrape le temps écoulé sur
+  l'horloge réelle, seule une veille signalée par Rust met en pause. **Rust ne détecte pas encore la
+  veille** : à faire à l'étape 5, le Worker n'a qu'à relayer `veille` / `reveil` au moteur.
+- **Contrat** : `packages/engine/src/contrat.ts` (grille carrée, repère en tête de fichier).
+- **Étape 3 validée** : rendu à ½ de la fenêtre (⅓ était illisible à 320 px), 2,9 ms par image.
+  Caméra provisoire : ←/→ ou Q/E tournent, Z ou molette zooment.
+- **Étapes 1 et 2 validées** : moteur complet jusqu'aux habitants, branché dans
+  `apps/desktop/src/moteur-worker.ts` (en dev, une partie neuve pose 3 bâtiments pour voir le village vivre).
+- **Prochaine étape : 4** (interface au survol → premier jouable).
 - `pnpm --filter desktop vite` + `.claude/launch.json` : aperçu dans le navigateur, sans Tauri.

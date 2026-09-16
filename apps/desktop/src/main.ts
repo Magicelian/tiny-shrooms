@@ -5,7 +5,7 @@ import { Rendu } from '@tiny-shrooms/renderer';
 const rendu = new Rendu(document.body);
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu });
 
-const moteur = new Worker(new URL('./faux-moteur.ts', import.meta.url), { type: 'module' });
+const moteur = new Worker(new URL('./moteur-worker.ts', import.meta.url), { type: 'module' });
 const envoyer = (message: MessageVersMoteur) => moteur.postMessage(message);
 
 moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {

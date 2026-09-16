@@ -325,6 +325,10 @@ son critère n'est pas rempli.
 - Grille de l'île, placement, déplacement, démolition, bonus de voisinage.
 - Habitants : arrivée, choix de tâche par priorités, épinglage, bien-être.
 - **Critère** : scénario testé « poser 3 bâtiments → les habitants récoltent et construisent seuls ».
+- **Résultat (16/09/2026)** : validé (33 tests). Tout passe par les habitants : un bâtiment ne produit
+  qu'avec un récolteur, la récolte attend en réserve qu'un porteur l'amène à un dépôt (arbre-mère,
+  garde-manger, remise), le chantier n'avance qu'avec des bâtisseurs. Déplacements en ligne droite,
+  sommeil sur place la nuit, partie commencée le matin. Le vrai moteur remplace le faux dans le Worker.
 
 ### Étape 3 — Îlot pixelisé (frontend)
 - Pipeline basse résolution + contours + ombrage en paliers ; îlot en coupe ; caméra isométrique,

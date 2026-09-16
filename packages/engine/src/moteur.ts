@@ -3,6 +3,7 @@
 import type { Evenement, MessageDepuisMoteur, MessageVersMoteur } from './contrat';
 import type { Contenu } from './contenu';
 import { creerEtat, type Etat } from './etat';
+import { casesLibres } from './grille';
 import { Horloge } from './horloge';
 import { appliquerCommande, avancer, instantane } from './simulation';
 
@@ -31,7 +32,7 @@ export class Moteur {
         this.etat = message.sauvegarde ? (JSON.parse(message.sauvegarde) as Etat) : creerEtat(this.contenu);
         this.evenements = [];
         this.horloge.reveil(maintenantMs);
-        return [this.publier()];
+        return [{ type: 'ile', ile: this.etat.ile }, this.publier()];
       case 'commande':
         this.rattraper(this.horloge.pasARattraper(maintenantMs));
         this.evenements.push(...appliquerCommande(this.etat, this.contenu, message.commande));
@@ -59,6 +60,11 @@ export class Moteur {
     const evenements = this.evenements;
     this.evenements = [];
     return evenements;
+  }
+
+  /** Cases constructibles, de la plus proche à la plus lointaine de l'arbre-mère. */
+  casesLibres() {
+    return casesLibres(this.etat);
   }
 
   private rattraper(pas: number): void {
