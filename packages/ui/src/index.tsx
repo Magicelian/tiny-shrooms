@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
-import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, casesCouvertes, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
+import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, Instantane, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
+import { bonusVoisinage, casesCouvertes, centreSouche, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
@@ -23,6 +23,8 @@ export interface SceneInteractive {
   basculerZoom(): void;
   zoomer(sens: 1 | -1): void;
   glisser(dx: number, dy: number): void;
+  /** Point de la fenêtre où s'affiche la position (x, y) de l'île à cette hauteur. */
+  projeter(x: number, y: number, hauteur: number): { x: number; y: number } | null;
 }
 
 export interface OptionsInterface {
@@ -54,6 +56,9 @@ const SEUIL_GLISSER = 4;
 /** Défilement cumulé (en pixels) qui vaut un palier de zoom ; au-delà d'une pause, le cumul repart de zéro. */
 const PAS_MOLETTE = 100;
 const PAUSE_MOLETTE_MS = 200;
+/** Hauteur, en unités du monde, où l'astuce pointe la souche (juste au-dessus de son sommet). */
+const HAUTEUR_ASTUCE = 1.4;
+
 /** Un appui arrivé si tôt après la prise du focus est le clic qui l'a donné : il n'agit pas. */
 const DELAI_FOCUS_MS = 250;
 
@@ -126,6 +131,7 @@ export class ControleurInterface {
       } else if (e.type === 'renaissance') {
         this.fermer();
         this.magasin.annoncer(t('message.renaissance', { graines: e.graines }));
+        if (message.instantane.prestige.renaissances === 1) this.magasin.modifier({ astuceSouche: true });
       } else if (e.type === 'soucheRetiree') {
         this.magasin.annoncer(t('message.soucheRetiree'));
       } else if (e.type === 'palierAtteint') {
@@ -192,8 +198,18 @@ export class ControleurInterface {
     return this.magasin.valeur.instantane?.batiments.find((b) => b.id === id);
   }
 
+  /** Au-dessus du centre de la souche, là où s'accroche l'astuce. */
+  pointSouche(): { x: number; y: number } | null {
+    const ile = this.magasin.valeur.ile;
+    if (!ile?.soucheEnPlace) return null;
+    const c = centreSouche(ile);
+    return this.options.scene.projeter(c.x, c.y, HAUTEUR_ASTUCE);
+  }
+
   private ouvrir(bulle: Bulle | null): void {
-    this.magasin.modifier({ bulle, deplacement: null, bonusVise: null });
+    const ile = this.magasin.valeur.ile;
+    const souche = bulle?.type === 'nature' && !!ile && dansLaSouche(ile, bulle.case.x, bulle.case.y);
+    this.magasin.modifier({ bulle, deplacement: null, bonusVise: null, ...(souche ? { astuceSouche: false } : {}) });
     this.options.scene.afficherGrille(bulle?.type === 'construire' && bulle.choix !== null);
     this.majVisee();
   }
@@ -304,14 +320,21 @@ export class ControleurInterface {
     const element = visee.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
     const nature = visee.case ? natureVisee(ile, visee.case) : null;
     if (id !== null) this.ouvrir({ type: 'batiment', id, haut });
-    // Un élément prêt se récolte d'un clic ; épuisé, il ouvre sa bulle comme un arbre.
-    else if (element >= 0 && (instantane.pousses[element] ?? 0) >= 1) {
+    // Un élément prêt se récolte d'un clic ; épuisé ou stock plein, il ouvre sa bulle comme un arbre.
+    else if (this.recoltable(ile, instantane, element)) {
       this.recoltes.set(element, { x, y });
       this.envoyer({ type: 'recolter', element });
     } else if (nature) this.ouvrir({ type: 'nature', case: visee.case!, haut });
     else if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case) === null) {
       this.ouvrir({ type: 'construire', case: visee.case, choix: null, haut });
     }
+  }
+
+  /** Prêt à cueillir, et avec de la place dans le stock pour ce qu'il donne. */
+  private recoltable(ile: Ile, instantane: Instantane, element: number): boolean {
+    if (element < 0 || (instantane.pousses[element] ?? 0) < 1) return false;
+    const stock = instantane.stocks[this.contenu.recolte[ile.elements[element]!.type].ressource];
+    return stock.quantite < stock.plafond;
   }
 
   private batimentSur(c: Case | null): IdBatiment | null {
@@ -351,7 +374,7 @@ export class ControleurInterface {
     const survole = id === null ? undefined : this.batiment(id);
     const libre = !survole && !!visee?.case && emplacementRefuse(ile, batiments, visee.case) === null;
     const element = !survole && visee?.case ? elementEn(ile, visee.case.x, visee.case.y) : -1;
-    const recoltable = element >= 0 && (instantane.pousses[element] ?? 0) >= 1;
+    const recoltable = this.recoltable(ile, instantane, element);
     const nature = !survole && visee?.case ? natureVisee(ile, visee.case) : null;
     // Ce que vise la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
     const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : bulle ? undefined : survole;

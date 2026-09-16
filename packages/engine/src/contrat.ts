@@ -247,6 +247,8 @@ export type Commande =
   | { type: 'retirerSouche' }
   /** Paie l'arrachage de l'arbre, du buisson ou de la plante de cette case. */
   | { type: 'defricher'; case: Case }
+  /** Annule l'arrachage en cours sur cette case (`null` : la souche) et rend tout ce qu'il a coûté. */
+  | { type: 'annulerArrachage'; case: Case | null }
   /** Sur un logement, la montée au rang suivant ; sur le village, un niveau d'amélioration de l'atelier. */
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
   /** Au sanctuaire : efface l'île et le village contre des graines de prestige. */

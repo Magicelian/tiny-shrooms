@@ -172,7 +172,9 @@ le relais pour la progression longue.
 - **Gain** : des graines de prestige, `floor((population maximale / 10) ^ 1,2)` : 6 au bourg, 15 à
   100 habitants, 25 à 150. Attendre rapporte de plus en plus.
 - **Remise à zéro** : tout, sur une nouvelle île (nouvelle graine), sauf les graines, les bonus et les réglages.
-- **Bonus permanents**, achetés en graines dans la bulle du sanctuaire (la renaissance referme la bulle) :
+- **Bonus permanents**, achetés en graines dans la bulle de la souche (rubrique « Pouvoirs », dès qu'on a des graines ou un
+  bonus ; le sanctuaire ne sert qu'à renaître). À la première renaissance, une petite bulle
+  accrochée à la souche indique où dépenser les graines, jusqu'à ce qu'on l'ouvre :
   production (sève vive), stock et habitants de départ (bagages), coût et vitesse des chantiers
   (mains habiles), bien-être, places et rythme d'arrivée des habitants (nids douillets).
 
@@ -531,6 +533,9 @@ son critère n'est pas rempli.
   Au bourg, l'île n'a plus de case libre : il faut défricher un arbre pour poser le sanctuaire. Le rythme des
   arrivées (1 habitant par minute) plafonnait le gain des bonus, d'où l'accueil plus rapide des nids douillets.
   Le sanctuaire coûte 20 spores, le plafond de base du stock.
+  Retouches du 16/09/2026 : bonus à la souche, astuce à la première renaissance ; un arrachage (souche comprise) s'annule
+  depuis sa bulle et rend tout son prix (commande `annulerArrachage`) ; la bulle se ferme quand on le lance ;
+  un buisson ou une plante prêts mais dont le stock est plein ouvrent leur bulle au lieu de se récolter.
 
 ### Étape 15 — Habillage
 - Modèles définitifs (Blockbench ou MagicaVoxel), animations des habitants, police pixel, style de l'interface.

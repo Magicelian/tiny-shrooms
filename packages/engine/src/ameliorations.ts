@@ -27,6 +27,10 @@ export function bonusProduction(etat: Etat, contenu: Contenu): number {
 }
 
 /** Prélève un coût s'il est entièrement disponible. */
+export function rembourser(etat: Etat, cout: Quantites): void {
+  for (const r of RESSOURCES) etat.stocks[r] += cout[r] ?? 0;
+}
+
 export function payer(etat: Etat, cout: Quantites): boolean {
   const ressources = RESSOURCES.filter((r) => cout[r] !== undefined);
   if (ressources.some((r) => etat.stocks[r] < (cout[r] ?? 0))) return false;

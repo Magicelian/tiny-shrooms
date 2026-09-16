@@ -265,6 +265,40 @@
 .bulle.bas {
   bottom: 28px;
 }
+/* Astuce accrochée à la souche : la pointe vise le sommet, la position est mise à jour à chaque image */
+.astuce {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin-top: -8px;
+  max-width: 150px;
+  padding: 3px 7px;
+  font-size: 13px;
+  text-align: center;
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 var(--encre);
+  pointer-events: none;
+  animation: astuce 1.2s ease-in-out infinite alternate;
+}
+.astuce::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 10px;
+  height: 10px;
+  background: var(--papier);
+  border-right: var(--trait);
+  border-bottom: var(--trait);
+  transform: translateX(-50%) rotate(45deg);
+}
+@keyframes astuce {
+  to {
+    margin-top: -12px;
+  }
+}
 .bulle header {
   display: flex;
   justify-content: space-between;

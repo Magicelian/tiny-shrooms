@@ -1,6 +1,6 @@
 // Composants de l'interface : écriteaux (saison, habitants), rangée de planches (ressources), bulles et messages.
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource } from '@tiny-shrooms/engine';
 import { capaciteLogement } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
@@ -35,6 +35,7 @@ export function Interface({ controleur }: Props) {
       <Rangee instantane={instantane} />
 
       {deplacement !== null && <BandeauDeplacement controleur={controleur} bonus={etat.bonusVise} />}
+      {etat.astuceSouche && !bulle && <AstuceSouche controleur={controleur} />}
       {bulle && <ContenuBulle controleur={controleur} bulle={bulle} instantane={instantane} />}
 
       {etat.envols.map((e) => (
@@ -77,6 +78,30 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
     <Cadre titre={nomPose(controleur.contenu, batiment)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
       <BulleBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
     </Cadre>
+  );
+}
+
+/** Petite bulle qui suit la souche à l'écran (la caméra bouge) : c'est là que se dépensent les graines. */
+function AstuceSouche({ controleur }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let image = 0;
+    const suivre = () => {
+      const point = controleur.pointSouche();
+      const el = ref.current;
+      if (el) {
+        el.style.visibility = point ? 'visible' : 'hidden';
+        if (point) el.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -100%)`;
+      }
+      image = requestAnimationFrame(suivre);
+    };
+    suivre();
+    return () => cancelAnimationFrame(image);
+  }, [controleur]);
+  return (
+    <div ref={ref} class="astuce">
+      {t('prestige.astuce')}
+    </div>
   );
 }
 

@@ -773,6 +773,23 @@ describe('Retrait de la souche', () => {
     expect(etat.habitants).toHaveLength(2);
   });
 
+  it('un retrait annulé rend les spores et libère les habitants', () => {
+    const moteur = new Moteur(contenuRetrait(), 0);
+    const annuler = () => commander(moteur, { type: 'annulerArrachage', case: null });
+    expect(annuler()[0]).toMatchObject({ raison: 'introuvable' });
+    commander(moteur, poser('remise', caseLibre(moteur)));
+    commander(moteur, { type: 'retirerSouche' });
+    moteur.simuler(PAS_PAR_MINUTE / 6);
+    const etat = moteur.etatCourant;
+    expect(etat.habitants.some((h) => h.mission?.tache === 'arracher')).toBe(true);
+    expect(annuler()).toEqual([]);
+    expect(etat.retraitSouche).toBeNull();
+    expect(etat.stocks.spores).toBe(30);
+    moteur.simuler(1);
+    expect(etat.habitants.some((h) => h.mission?.tache === 'arracher')).toBe(false);
+    expect(etat.ile.soucheEnPlace).toBe(true);
+  });
+
   it('migre une sauvegarde de version 7 avec la souche en place', () => {
     const moteur = new Moteur(contenuDeTest(), 0);
     const { retraitSouche: _r, defrichages: _d, ile, ...reste } = moteur.etatCourant;
@@ -803,6 +820,22 @@ describe('Défrichage', () => {
     expect(etat.stocks.baies).toBe(103);
     expect(messages.some((m) => m.type === 'ile')).toBe(true);
     expect(commander(moteur, poser('hutte', c))).toEqual([]);
+  });
+
+  it('un arrachage annulé est remboursé et laisse l’arbre en place', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const etat = moteur.etatCourant;
+    const { ile } = etat;
+    const arbre = ile.terrain.indexOf('foret');
+    const c = { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) };
+    commander(moteur, { type: 'defricher', case: c });
+    expect(etat.stocks.boisMort).toBe(95);
+    expect(commander(moteur, { type: 'annulerArrachage', case: { x: c.x + 1, y: c.y } })[0]).toMatchObject({ raison: 'introuvable' });
+    expect(commander(moteur, { type: 'annulerArrachage', case: c })).toEqual([]);
+    expect(etat.stocks.boisMort).toBe(100);
+    expect(etat.defrichages).toHaveLength(0);
+    moteur.simuler(PAS_PAR_MINUTE);
+    expect(terrainEn(ile, c.x, c.y)).toBe('foret');
   });
 
   it('une plante disparaît avec sa repousse', () => {

@@ -62,7 +62,10 @@ export const fr = {
   'nature.arrachage': 'Arrachage : {pourcent} %',
   'nature.gain': 'Rapporte {liste}',
   'nature.retirer': 'Retirer la souche : {liste}',
+  'nature.retrait': 'Retrait de la souche',
   'nature.arracher': 'Arracher : {liste}',
+  'nature.annuler': 'Annuler',
+  'nature.annulerRembourse': 'Annuler (rend {liste})',
 
   // Construction
   'construction.titre': 'Construire ici',
@@ -113,6 +116,8 @@ export const fr = {
   'prestige.renaitre': 'Renaître (+{gain} graines)',
   'prestige.confirmer': 'Sûr ? Le village sera effacé',
   'prestige.graines': 'Graines de prestige : {graines}',
+  'prestige.pouvoirs': 'Pouvoirs',
+  'prestige.astuce': 'Tes graines se dépensent ici : clique sur la souche',
   'prestige.acheter': 'Acheter : {prix} graines',
   'bonus.suivant': 'Niveau suivant : {effet}',
   'bonus.production': 'Sève vive',

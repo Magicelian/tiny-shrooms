@@ -1,7 +1,7 @@
 // Règles du jeu : un pas de simulation, les commandes et la vue publiée de l'état.
 import type { Commande, Evenement, Instantane, Quantites, RaisonRefus, Ressource, Stock } from './contrat';
 import { RESSOURCES } from './contrat';
-import { bonusProduction, coutAmelioration, payer } from './ameliorations';
+import { bonusProduction, coutAmelioration, payer, rembourser } from './ameliorations';
 import { BONUS_PRESTIGE } from './contrat';
 import { coutBatiment, coutBonus, peutRenaitre, renaitre } from './prestige';
 import type { Contenu } from './contenu';
@@ -9,7 +9,7 @@ import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
-import { demanderDefrichage } from './defrichage';
+import { demanderDefrichage, memeCase } from './defrichage';
 import type { BatimentEtat } from './etat';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
@@ -190,6 +190,19 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
     case 'defricher': {
       const raison = demanderDefrichage(etat, contenu, commande.case);
       return raison ? refus(raison) : [];
+    }
+    case 'annulerArrachage': {
+      if (commande.case === null) {
+        if (etat.retraitSouche === null) return refus('introuvable');
+        etat.retraitSouche = null;
+        rembourser(etat, contenu.souche.coutRetrait);
+        return [];
+      }
+      const i = etat.defrichages.findIndex((d) => memeCase(d.case, commande.case!));
+      if (i < 0) return refus('introuvable');
+      const [d] = etat.defrichages.splice(i, 1);
+      rembourser(etat, contenu.defrichage[d!.nature].cout);
+      return [];
     }
     case 'renaitre': {
       if (!peutRenaitre(etat)) return refus(etat.batimentsDebloques.includes('sanctuaire') ? 'indisponible' : 'nonDebloque');

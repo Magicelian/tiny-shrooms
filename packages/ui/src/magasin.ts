@@ -35,6 +35,8 @@ export interface EtatInterface {
   /** Position de la fenêtre verrouillée (menu de l'icône) : ⌘ + glisser ne fait rien. */
   verrouillee: boolean;
   bulle: Bulle | null;
+  /** Après la première renaissance : petite bulle au-dessus de la souche, jusqu'à ce qu'on l'ouvre. */
+  astuceSouche: boolean;
   /** Bâtiment en cours de déplacement : il suit la souris jusqu'au clic. */
   deplacement: IdBatiment | null;
   /** Bonus de voisinage à l'emplacement visé, pendant le déplacement ou le choix d'un bâtiment. */
@@ -55,6 +57,7 @@ export class Magasin {
     focus: false,
     verrouillee: false,
     bulle: null,
+    astuceSouche: false,
     deplacement: null,
     bonusVise: null,
     messages: [],

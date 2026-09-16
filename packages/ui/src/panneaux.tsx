@@ -210,8 +210,18 @@ export function BulleNature({ controleur, instantane, ile, case: c }: Props & { 
   const depot = instantane.batiments.some((b) => b.chantier === null && contenu.batiments[b.type].stockage);
   const possible = !souche || depot;
   const payable = abordable(def.cout, instantane.stocks);
+  // Les pouvoirs n'apparaissent qu'une fois le prestige entamé.
+  const { prestige } = instantane;
+  const pouvoirs = souche && (prestige.graines > 0 || Object.values(prestige.bonus).some((n) => n > 0));
   return (
     <>
+      {pouvoirs && (
+        <>
+          <h3>{t('prestige.pouvoirs')}</h3>
+          <ArbreBonus controleur={controleur} instantane={instantane} />
+          <h3>{t('nature.retrait')}</h3>
+        </>
+      )}
       {souche && <p>{t('nature.soucheDetail')}</p>}
       {pousse < 1 && (
         <>
@@ -223,6 +233,15 @@ export function BulleNature({ controleur, instantane, ile, case: c }: Props & { 
         <>
           <p>{t('nature.arrachage', { pourcent: pourcent(avancement) })}</p>
           <Jauge valeur={avancement} />
+          <button
+            class="bouton large"
+            onClick={() => {
+              controleur.envoyer({ type: 'annulerArrachage', case: souche ? null : c });
+              controleur.fermer();
+            }}
+          >
+            {listeQuantites(def.cout) ? t('nature.annulerRembourse', { liste: listeQuantites(def.cout) }) : t('nature.annuler')}
+          </button>
         </>
       ) : (
         <>
@@ -231,7 +250,10 @@ export function BulleNature({ controleur, instantane, ile, case: c }: Props & { 
           <button
             class={`bouton large ${possible && payable ? 'valider' : 'manque'}`}
             disabled={!possible}
-            onClick={() => controleur.envoyer(souche ? { type: 'retirerSouche' } : { type: 'defricher', case: c })}
+            onClick={() => {
+              controleur.envoyer(souche ? { type: 'retirerSouche' } : { type: 'defricher', case: c });
+              if (payable) controleur.fermer();
+            }}
           >
             {t(souche ? 'nature.retirer' : 'nature.arracher', { liste: listeQuantites(def.cout) || t('construction.gratuit') })}
           </button>
@@ -271,7 +293,7 @@ function Ameliorations({ controleur, instantane }: Props) {
   );
 }
 
-/** Renaissance : gain annoncé, confirmation, puis l'arbre de bonus. */
+/** Renaissance : gain annoncé, puis confirmation. Les bonus s'achètent à la souche. */
 function Sanctuaire({ controleur, instantane }: Props) {
   const [confirmer, setConfirmer] = useState(false);
   const { prestige } = instantane;
@@ -286,7 +308,6 @@ function Sanctuaire({ controleur, instantane }: Props) {
       >
         {confirmer ? t('prestige.confirmer') : t('prestige.renaitre', { gain })}
       </button>
-      <ArbreBonus controleur={controleur} instantane={instantane} />
     </>
   );
 }

@@ -8,6 +8,7 @@ import { ElementsRendu } from './elements';
 import { Entites } from './entites';
 import { construireIle } from './ile';
 import { Pixelisation } from './pixelisation';
+import { versMonde } from './repere';
 
 export { CHAPEAUX, COULEURS_BATIMENT } from './palette';
 
@@ -103,6 +104,15 @@ export class Rendu {
     const y = Math.floor(point.z + ile.profondeur / 2);
     const dedans = x >= 0 && y >= 0 && x < ile.largeur && y < ile.profondeur;
     return { case: dedans ? { x, y } : null, batiment };
+  }
+
+  /** Point de la fenêtre, en pixels CSS, où s'affiche la position (x, y) de l'île à cette hauteur. */
+  projeter(x: number, y: number, hauteur: number): { x: number; y: number } | null {
+    if (!this.ile) return null;
+    const p = versMonde({ x, y }, this.ile, new THREE.Vector3());
+    p.y = hauteur;
+    p.project(this.vue.camera);
+    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
   }
 
   afficherGrille(visible: boolean): void {
