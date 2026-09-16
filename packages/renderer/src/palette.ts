@@ -16,6 +16,7 @@ export const COULEURS = {
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
   floraison: 0xf29ac2,
+  mycelium: 0xf4ecd8,
   herisson: 0x7a5236,
   museau: 0xe0c29a,
   coquille: 0xd9822b,

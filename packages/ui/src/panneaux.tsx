@@ -1,7 +1,7 @@
 // Contenu des panneaux superposés à l'îlot.
 import { useState } from 'preact/hooks';
 import type { Batiment, Instantane, Priorites, Tache, TypeBatiment, TypeVisiteur, Visiteur } from '@tiny-shrooms/engine';
-import { PAS_PAR_MINUTE, TACHES } from '@tiny-shrooms/engine';
+import { AMELIORATIONS_VILLAGE, coutAmelioration, PAS_PAR_MINUTE, STADES_ARBRE, TACHES } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, pourcent } from './format';
 import type { ControleurInterface } from './index';
@@ -64,6 +64,7 @@ export function PanneauBatiment({ controleur, batiment, instantane }: Props & { 
       ))}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
       {batiment.type === 'relais' && batiment.chantier === null && <PanneauVisiteurs controleur={controleur} instantane={instantane} />}
+      {batiment.type === 'atelier' && batiment.chantier === null && <Ameliorations controleur={controleur} instantane={instantane} />}
       <button
         class={`bouton large ${confirmer ? 'danger' : ''}`}
         onClick={() => {
@@ -135,17 +136,77 @@ export function PanneauHabitants({ controleur, instantane }: Props) {
   );
 }
 
-export function PanneauArbre({ instantane }: { instantane: Instantane }) {
+function Ameliorations({ controleur, instantane }: Props) {
+  return (
+    <ul class="ameliorations">
+      {AMELIORATIONS_VILLAGE.map((a) => {
+        const def = controleur.contenu.ameliorations[a];
+        const niveau = instantane.ameliorations[a];
+        const cout = coutAmelioration(controleur.contenu, a, niveau);
+        return (
+          <li key={a}>
+            <p>
+              <strong>{t(`amelioration.${a}`)}</strong> · {t('amelioration.niveau', { niveau, max: def.niveauMax })}
+            </p>
+            <p class="discret">{t(`amelioration.effet.${a}`, { pourcent: pourcent(def.effet * niveau) })}</p>
+            {cout ? (
+              <button
+                class={`bouton large ${abordable(cout, instantane.stocks) ? '' : 'manque'}`}
+                onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { village: a } })}
+              >
+                {t('amelioration.acheter', { liste: listeQuantites(cout) })}
+              </button>
+            ) : (
+              <p class="bonus">{t('amelioration.max')}</p>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+export function PanneauArbre({ controleur, instantane }: Props) {
   const { arbreMere, stocks } = instantane;
+  const suivant = STADES_ARBRE[STADES_ARBRE.indexOf(arbreMere.stade) + 1];
+  const deblocages = suivant ? (controleur.contenu.arbreMere.deblocages[suivant] ?? []) : [];
+  const spores = Math.floor(stocks.spores.quantite);
   return (
     <>
       <p>{t('arbre.stade', { stade: t(`stade.${arbreMere.stade}`) })}</p>
-      <p>{t('arbre.avancement', { pourcent: pourcent(arbreMere.avancement) })}</p>
-      <Jauge valeur={arbreMere.avancement} />
-      <p>
-        {t('ressource.spores')} : {nombre(Math.floor(stocks.spores.quantite))}
-      </p>
-      <p class="discret">{t('arbre.aVenir')}</p>
+      {suivant && (
+        <>
+          <p>{t('arbre.avancement', { spores: nombre(arbreMere.sporesRestantes), stade: t(`stade.${suivant}`) })}</p>
+          <Jauge valeur={arbreMere.avancement} />
+          {arbreMere.sporesParMinute > 0 && <p class="discret">{t('arbre.apport', { nombre: nombre(arbreMere.sporesParMinute, 1) })}</p>}
+          {deblocages.length > 0 && (
+            <p class="discret">{t('arbre.deblocages', { stade: t(`stade.${suivant}`), liste: deblocages.map(nomBatiment).join(', ') })}</p>
+          )}
+          <button
+            class={`bouton large ${spores > 0 ? '' : 'manque'}`}
+            onClick={() => controleur.envoyer({ type: 'nourrirArbre', spores })}
+          >
+            {spores > 0 ? t('arbre.nourrir', { nombre: nombre(spores) }) : t('arbre.sansSpores')}
+          </button>
+        </>
+      )}
+      <p class="discret">{t('arbre.mycelium', { pourcent: pourcent(arbreMere.mycelium) })}</p>
+      {arbreMere.floraisonPossible && (
+        <>
+          <p class="bonus">{t('arbre.pret')}</p>
+          <button class="bouton large actif" onClick={() => controleur.envoyer({ type: 'fleurir' })}>
+            {t('arbre.fleurir')}
+          </button>
+        </>
+      )}
+      {arbreMere.floraisons > 0 && (
+        <>
+          <p>{t('arbre.fleuri')}</p>
+          <button class="bouton large" onClick={() => controleur.lancerFloraison()}>
+            {t('arbre.revoir')}
+          </button>
+        </>
+      )}
     </>
   );
 }

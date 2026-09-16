@@ -1,6 +1,6 @@
 // Interface au survol : reçoit les messages du moteur, traduit la souris en commandes.
 import { render } from 'preact';
-import type { Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, StadeArbre, TypeBatiment } from '@tiny-shrooms/engine';
 import { bonusVoisinage, emplacementRefuse } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { abordable, nomBatiment, nomRessource } from './format';
@@ -16,6 +16,7 @@ export interface SceneInteractive {
   cacherFantome(): void;
   tourner(sens: 1 | -1): void;
   basculerZoom(): void;
+  lancerFloraison(): void;
 }
 
 export interface OptionsInterface {
@@ -24,6 +25,8 @@ export interface OptionsInterface {
   envoyer(commande: Commande): void;
   /** Couleurs du rendu, pour que les pastilles de l'interface y correspondent. */
   couleurs: { batiments: Record<TypeBatiment, number>; chapeaux: readonly number[] };
+  /** Durée de l'envol des spores dans le rendu, avant l'écran « nouvelle île à venir ». */
+  dureeEnvolMs: number;
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
 }
@@ -64,13 +67,17 @@ export class ControleurInterface {
       if (message.origine === 'illisible') this.magasin.annoncer(t('message.partieIllisible'));
     }
     if (message.type !== 'instantane') return;
+    // Un plan reçu d'un visiteur s'annonce seul ; ceux d'un nouveau stade viennent avec le stade.
     const avant = this.magasin.valeur.instantane?.batimentsDebloques;
+    const parStade = message.evenements.flatMap((e) => (e.type === 'stadeAtteint' ? e.debloques : []));
     for (const type of avant ? message.instantane.batimentsDebloques : []) {
-      if (!avant!.includes(type)) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
+      if (!avant!.includes(type) && !parStade.includes(type)) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
     }
     this.magasin.modifier({ instantane: message.instantane });
     for (const e of message.evenements) {
-      if (e.type === 'commandeRefusee') this.magasin.annoncer(t(`refus.${e.raison}`));
+      if (e.type === 'stadeAtteint') this.annoncerStade(e.stade, e.debloques);
+      else if (e.type === 'floraison') this.lancerFloraison();
+      else if (e.type === 'commandeRefusee') this.magasin.annoncer(t(`refus.${e.raison}`));
       else if (e.type === 'visiteurArrive') this.magasin.annoncer(t('message.visiteurArrive', { visiteur: t(`visiteur.${e.visiteur.type}`) }));
       else if (e.type === 'habitantArrive') this.magasin.annoncer(t('message.habitantArrive'));
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
@@ -81,6 +88,22 @@ export class ControleurInterface {
     }
     // Le village a changé : l'aperçu sous la souris aussi.
     this.majVisee();
+  }
+
+  private annoncerStade(stade: StadeArbre, debloques: TypeBatiment[]): void {
+    this.magasin.annoncer(t('message.stadeAtteint', { stade: t(`stade.${stade}`) }));
+    for (const type of debloques) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
+  }
+
+  /** Envol des spores dans le rendu, puis écran de fin ; rejouable depuis le panneau de l'arbre. */
+  lancerFloraison(): void {
+    this.magasin.modifier({ floraison: 'envol', panneau: null, placement: null });
+    this.options.scene.lancerFloraison();
+    setTimeout(() => this.magasin.modifier({ floraison: 'ecran' }), this.options.dureeEnvolMs);
+  }
+
+  fermerFloraison(): void {
+    this.magasin.modifier({ floraison: null });
   }
 
   envoyer(commande: Commande): void {

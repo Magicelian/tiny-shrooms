@@ -458,3 +458,46 @@
     transform: translateY(-2px);
   }
 }
+
+/* Atelier */
+.ameliorations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ameliorations li + li {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--papier-fonce);
+}
+
+/* Floraison */
+.ecran-floraison {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(27 19 32 / 0.55);
+  pointer-events: auto;
+  animation: apparition 0.8s ease-out;
+}
+.ecran-floraison > div {
+  max-width: 260px;
+  padding: 10px 12px;
+  text-align: center;
+  background: var(--papier);
+  border: var(--trait);
+  border-radius: 8px;
+  box-shadow: 0 3px 0 var(--encre);
+}
+.ecran-floraison h2 {
+  margin: 0 0 6px;
+  font-size: 1.2em;
+  color: #c2357a;
+}
+@keyframes apparition {
+  from {
+    opacity: 0;
+  }
+}

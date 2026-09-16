@@ -1,5 +1,15 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
-import type { Meteo, Quantites, Ressource, Saison, Terrain, TypeBatiment, TypeVisiteur } from './contrat';
+import type {
+  AmeliorationVillage,
+  Meteo,
+  Quantites,
+  Ressource,
+  Saison,
+  StadeArbre,
+  Terrain,
+  TypeBatiment,
+  TypeVisiteur,
+} from './contrat';
 
 export interface RegleVoisinage {
   /** Terrain ou bâtiment à chercher dans les 8 cases voisines. */
@@ -90,6 +100,24 @@ export interface ContenuVisiteurs {
   luciole: { multiplicateur: Fourchette; minutes: Fourchette };
 }
 
+export interface ContenuArbreMere {
+  /** Spores données par les racines, par minute, selon le stade. */
+  sporesParMinute: Record<StadeArbre, number>;
+  /** Spores à apporter pour quitter chaque stade. */
+  sporesParStade: Record<Exclude<StadeArbre, 'floraison'>, number>;
+  /** Bâtiments débloqués en atteignant chaque stade (ceux du départ sont dans `batimentsDeDepart`). */
+  deblocages: Partial<Record<StadeArbre, TypeBatiment[]>>;
+}
+
+export interface DefinitionAmelioration {
+  /** Coût du premier niveau, multiplié par `hausseCout` à chaque niveau suivant. */
+  cout: Quantites;
+  hausseCout: number;
+  /** Gain par niveau : +`effet` de vitesse de marche ou de production. */
+  effet: number;
+  niveauMax: number;
+}
+
 export interface Contenu {
   ile: { taille: number };
   stocksDeDepart: Record<Ressource, number>;
@@ -97,8 +125,9 @@ export interface Contenu {
   batiments: Record<TypeBatiment, DefinitionBatiment>;
   batimentsDeDepart: TypeBatiment[];
   habitants: ContenuHabitants;
-  /** Spores données par les racines, par minute. */
-  arbreMere: { sporesParMinute: number };
+  arbreMere: ContenuArbreMere;
+  /** Améliorations du village, achetées à l'atelier. */
+  ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;
   /** Part du coût rendue à la démolition, entre 0 et 1. */
   remboursementDemolition: number;
   /** `heureDeDepart` : heure du jour (entre 0 et 1) au premier pas d'une partie. */

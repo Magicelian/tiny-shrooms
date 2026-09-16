@@ -77,12 +77,34 @@ export const fr = {
 
   // Arbre-mère
   'arbre.stade': 'Stade : {stade}',
-  'arbre.avancement': 'Vers le stade suivant : {pourcent} %',
-  'arbre.aVenir': 'Nourrir l’arbre et le faire fleurir arrivera bientôt.',
+  'arbre.avancement': 'Encore {spores} spores avant le stade {stade}',
+  'arbre.apport': 'Soigneurs et stock plein : +{nombre} spores / min',
+  'arbre.mycelium': 'Mycélium : {pourcent} % de l’île',
+  'arbre.nourrir': 'Nourrir : {nombre} spores',
+  'arbre.sansSpores': 'Aucune spore en réserve',
+  'arbre.deblocages': 'Au stade {stade} : {liste}',
+  'arbre.fleurir': 'Laisser les spores s’envoler',
+  'arbre.pret': 'L’arbre-mère est en fleur.',
+  'arbre.fleuri': 'Ses spores sont parties fonder une nouvelle île.',
+  'arbre.revoir': 'Revoir le départ',
   'stade.pousse': 'pousse',
   'stade.arbuste': 'arbuste',
   'stade.arbre': 'arbre',
   'stade.floraison': 'floraison',
+  'message.stadeAtteint': 'L’arbre-mère passe au stade {stade}',
+  'floraison.titre': 'Une nouvelle île à venir',
+  'floraison.texte': 'Les spores de l’arbre-mère voguent vers un rivage inconnu : marais, montagne ou corail. Ce voyage-là arrive dans une prochaine version.',
+  'floraison.suite': 'Votre île reste ici : le village continue sa vie.',
+  'floraison.fermer': 'Retourner sur l’île',
+
+  // Atelier
+  'amelioration.vitesse': 'Sabots légers',
+  'amelioration.outils': 'Meilleurs outils',
+  'amelioration.effet.vitesse': 'Marche +{pourcent} %',
+  'amelioration.effet.outils': 'Production +{pourcent} %',
+  'amelioration.niveau': 'niv. {niveau}/{max}',
+  'amelioration.max': 'Au maximum',
+  'amelioration.acheter': 'Améliorer : {liste}',
 
   // Visiteurs
   'visiteur.herisson': 'Hérisson marchand',

@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { contenu } from '@tiny-shrooms/content';
 import type { MessageDepuisMoteur, MessageVersMoteur } from '@tiny-shrooms/engine';
-import { CHAPEAUX, COULEURS_BATIMENT, Rendu } from '@tiny-shrooms/renderer';
+import { CHAPEAUX, COULEURS_BATIMENT, DUREE_ENVOL_MS, Rendu } from '@tiny-shrooms/renderer';
 import { ControleurInterface, infobulleAlerte } from '@tiny-shrooms/ui';
 
 const dansTauri = '__TAURI_INTERNALS__' in window;
@@ -30,6 +30,7 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   contenu,
   envoyer: (commande) => envoyer({ type: 'commande', commande }),
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
+  dureeEnvolMs: DUREE_ENVOL_MS,
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
 });
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });

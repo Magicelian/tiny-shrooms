@@ -2,7 +2,7 @@
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
 import type { Etat } from './etat';
 
-export const VERSION_SAUVEGARDE = 2;
+export const VERSION_SAUVEGARDE = 3;
 
 interface FichierSauvegarde {
   version: number;
@@ -23,6 +23,11 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
     bonus: [],
     batimentsDebloques: [...new Set([...(etat.batimentsDebloques as string[]), 'relais'])],
   }),
+  // Étape 8 : l'arbre-mère grandit et l'atelier vend des améliorations. Les bâtiments déjà débloqués le restent.
+  2: (etat) => {
+    const { mycelium: _mycelium, ...arbre } = etat.arbreMere as Record<string, unknown>;
+    return { ...etat, arbreMere: { ...arbre, floraisons: 0 }, ameliorations: { vitesse: 0, outils: 0 } };
+  },
 };
 
 export function serialiser(etat: Etat): string {
@@ -66,7 +71,7 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 function verifier(etat: Record<string, unknown>): void {
   const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'prochainIdVisiteur', 'pasAvantVisiteur'];
   const tableaux = ['batiments', 'habitants', 'batimentsDebloques', 'stocksPleins', 'visiteurs', 'bonus'];
-  const objets = ['ile', 'stocks', 'priorites', 'arbreMere', 'reglages'];
+  const objets = ['ile', 'stocks', 'priorites', 'arbreMere', 'reglages', 'ameliorations'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??
     tableaux.find((cle) => !Array.isArray(etat[cle])) ??

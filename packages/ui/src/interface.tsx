@@ -31,7 +31,7 @@ export function Interface({ controleur }: Props) {
     controleur.magasin.modifier({ panneau: memePanneau(panneau, p) ? null : p, placement: null });
 
   return (
-    <div class={`interface ${etat.survol || placement ? 'visible' : ''}`}>
+    <div class={`interface ${etat.survol || placement || etat.floraison === 'ecran' ? 'visible' : ''}`}>
       <div class="haut">
         <div class="infos">
           <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
@@ -69,12 +69,29 @@ export function Interface({ controleur }: Props) {
 
       {panneau && <ContenuPanneau controleur={controleur} panneau={panneau} instantane={instantane} />}
 
+      {etat.floraison === 'ecran' && <EcranFloraison controleur={controleur} />}
+
       <div class="messages">
         {etat.messages.map((m) => (
           <div key={m.id} class="message">
             {m.texte}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function EcranFloraison({ controleur }: Props) {
+  return (
+    <div class="ecran-floraison">
+      <div>
+        <h2>{t('floraison.titre')}</h2>
+        <p>{t('floraison.texte')}</p>
+        <p class="discret">{t('floraison.suite')}</p>
+        <button class="bouton large actif" onClick={() => controleur.fermerFloraison()}>
+          {t('floraison.fermer')}
+        </button>
       </div>
     </div>
   );
@@ -102,7 +119,7 @@ function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: 
   if (panneau === 'arbre')
     return (
       <Cadre titre={t('outil.arbre')} fermer={fermer}>
-        <PanneauArbre instantane={instantane} />
+        <PanneauArbre controleur={controleur} instantane={instantane} />
       </Cadre>
     );
   if (panneau === 'visiteurs')

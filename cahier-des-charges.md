@@ -381,6 +381,15 @@ son critère n'est pas rempli.
 ### Étape 8 — Arbre-mère et floraison
 - Stades de croissance, déblocages, mycélium dans la coupe, séquence de floraison, écran « nouvelle île à venir ».
 - **Critère** : on peut atteindre la floraison en partant de zéro (vérifié avec une simulation accélérée).
+- **Résultat (16/09/2026)** : validé sur Mac. L'arbre reçoit des spores
+  de trois façons : le bouton « Nourrir », les soigneurs (directement), et le débordement d'un stock de spores
+  plein. Rien ne se perd donc fenêtre cachée. Seuils : 200, 2 500 puis 12 000 spores. Au départ : hutte,
+  cueillette, tas de bois, tapis de mousse, garde-manger, remise, feu de camp. L'arbuste débloque le séchoir et
+  le relais, l'arbre débloque l'atelier et ses deux améliorations (marche et production, +15 % par niveau,
+  3 niveaux). Mycélium dessiné sur les flancs de l'île, du plus proche de l'arbre au plus lointain. Floraison :
+  envol des spores pendant 6 s, puis écran « nouvelle île à venir » ; l'île continue ensuite. Simulation
+  accélérée avec un joueur scripté : floraison en **17,8 h** de jeu (arbuste à 1,8 h, arbre à 5,3 h), le test
+  exige entre 10 et 30 h. Sauvegarde en version 3.
 
 ### Étape 9 — Habillage
 - Modèles définitifs (Blockbench ou MagicaVoxel), animations des habitants, police pixel, style de l'interface.
@@ -414,7 +423,7 @@ son critère n'est pas rempli.
 
 ## 9. Questions ouvertes (à trancher en cours de route)
 
-- Durée exacte d'une saison et temps cible jusqu'à la floraison.
+- Durée exacte d'une saison et temps cible jusqu'à la floraison (premier jet : 17,8 h, étape 8).
 - Taille de la grille de départ et éventuel agrandissement de l'île.
 - Identité des habitants : ont-ils un nom d'espèce propre ?
 - Direction musicale si on ajoute un jour une musique.

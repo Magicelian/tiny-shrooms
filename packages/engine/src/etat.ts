@@ -1,6 +1,6 @@
 // État complet de la partie : sérialisable tel quel, seul le moteur le modifie.
 import type {
-  ArbreMere,
+  AmeliorationVillage,
   Batiment,
   BonusActif,
   Habitant,
@@ -15,6 +15,7 @@ import type {
   Visiteur,
 } from './contrat';
 import { RESSOURCES } from './contrat';
+import type { ArbreEtat } from './arbre';
 import type { Contenu } from './contenu';
 import { centreArbre, genererIle } from './ile';
 import { PAS_PAR_MINUTE } from './temps';
@@ -49,7 +50,8 @@ export interface Etat {
   pasAvantArrivee: number;
   batimentsDebloques: TypeBatiment[];
   priorites: Priorites;
-  arbreMere: ArbreMere;
+  arbreMere: ArbreEtat;
+  ameliorations: Record<AmeliorationVillage, number>;
   reglages: Reglages;
   visiteurs: Visiteur[];
   prochainIdVisiteur: number;
@@ -73,7 +75,8 @@ export function creerEtat(contenu: Contenu, graine = 1): Etat {
     pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * (PAS_PAR_MINUTE / 60),
     batimentsDebloques: [...contenu.batimentsDeDepart],
     priorites: { recolter: 0.5, construire: 0.5, stocker: 0.5, soignerArbre: 0.5 },
-    arbreMere: { stade: 'pousse', avancement: 0, mycelium: 0, floraisonPossible: false },
+    arbreMere: { stade: 'pousse', avancement: 0, floraisonPossible: false, floraisons: 0 },
+    ameliorations: { vitesse: 0, outils: 0 },
     reglages: {
       langue: 'fr',
       sonActive: false,

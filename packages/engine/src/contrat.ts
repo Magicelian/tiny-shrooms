@@ -150,6 +150,12 @@ export interface ArbreMere {
   mycelium: number;
   /** Vrai quand la floraison peut être déclenchée. */
   floraisonPossible: boolean;
+  /** Floraisons déjà déclenchées sur cette île. */
+  floraisons: number;
+  /** Spores reçues directement par minute : soigneurs et débordement du stock (estimation). */
+  sporesParMinute: number;
+  /** Spores encore à apporter pour atteindre le stade suivant (0 au dernier stade). */
+  sporesRestantes: number;
 }
 
 // ─── Visiteurs ───────────────────────────────────────────────────────────────
@@ -234,7 +240,9 @@ export type RaisonRefus =
 export type Evenement =
   | { type: 'visiteurArrive'; visiteur: Visiteur }
   | { type: 'saisonChangee'; saison: Saison }
-  | { type: 'stadeAtteint'; stade: StadeArbre }
+  | { type: 'stadeAtteint'; stade: StadeArbre; debloques: TypeBatiment[] }
+  /** Les spores de l'arbre-mère s'envolent : le frontend joue la séquence puis l'écran « nouvelle île ». */
+  | { type: 'floraison' }
   | { type: 'stockPlein'; ressource: Ressource }
   | { type: 'habitantArrive'; id: IdHabitant }
   | { type: 'constructionTerminee'; id: IdBatiment }

@@ -46,9 +46,15 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   déduisent du pas et de la graine, rien de plus dans la sauvegarde ; froid loin d'un feu, faim, repli au
   feu l'hiver). Rendu : `packages/renderer/src/ambiance.ts` (teinte des matériaux partagés, particules
   dessinées en superposition). En dev, `moteur.onmessage = null` puis `rendu.ambiance.appliquer(...)`
-  fige une saison pour l'inspecter. Séchoir disponible d'emblée en attendant les déblocages (étape 8).
+  fige une saison pour l'inspecter.
 - **Étape 7 validée**. Moteur : `packages/engine/src/visiteurs.ts` (tirage par visiteur à partir de la graine,
   le premier arrive dès qu'un relais est construit ; sauvegarde en version 2). Rendu : `packages/renderer/src/visiteurs.ts`.
   Alerte : `src-tauri/src/alertes.rs` (point dessiné sur l'icône ; pouls toutes les 20 s fenêtre cachée → message
   `battre` au Worker, qui ne gèle plus). En dev, le terminal affiche `alerte true/false`.
-- **Prochaine étape : 8** (arbre-mère et floraison).
+- **Étape 8 validée**. Moteur : `packages/engine/src/arbre.ts` (spores données par le bouton,
+  les soigneurs et le débordement du stock plein ; stades → déblocages ; améliorations de l'atelier ; sauvegarde
+  en version 3). Rendu : `packages/renderer/src/arbre.ts` (formes par stade, mycélium sur les flancs, envol).
+  Critère : `packages/content/src/floraison.test.ts` (joueur scripté, ~26 s ; `--reporter=verbose` affiche la
+  durée de jeu). Pour inspecter un stade dans le navigateur : modifier `etat.arbreMere` dans
+  `localStorage['tiny-shrooms.partie']` puis recharger.
+- **Prochaine étape : 9** (habillage).

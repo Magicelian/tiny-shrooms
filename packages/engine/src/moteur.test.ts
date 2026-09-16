@@ -46,7 +46,15 @@ function contenuDeTest(
       bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.4, feuDeCamp: 0.1, minutesPourSeStabiliser: 1 },
       ...habitants,
     },
-    arbreMere: { sporesParMinute: 0 },
+    arbreMere: {
+      sporesParMinute: { pousse: 0, arbuste: 0, arbre: 0, floraison: 0 },
+      sporesParStade: { pousse: 10, arbuste: 20, arbre: 30 },
+      deblocages: {},
+    },
+    ameliorations: {
+      vitesse: { cout: { boisMort: 10 }, hausseCout: 2, effet: 0.5, niveauMax: 2 },
+      outils: { cout: { boisMort: 10 }, hausseCout: 2, effet: 0.5, niveauMax: 2 },
+    },
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
     saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1, rayonChaleur: 2 },
@@ -575,5 +583,98 @@ describe('Visiteurs', () => {
     const { visiteurs: _v, prochainIdVisiteur: _p, pasAvantVisiteur: _a, bonus: _b, ...v1 } = etat;
     const migre = charger(JSON.stringify({ version: 1, etat: { ...v1, batimentsDebloques: ['hutte'] } }));
     expect(migre).toMatchObject({ visiteurs: [], bonus: [], pasAvantVisiteur: 0, batimentsDebloques: ['hutte', 'relais'] });
+  });
+});
+
+describe('Arbre-mère', () => {
+  const avecSpores = (spores: number, autres: Partial<Contenu> = {}) =>
+    contenuDeTest({}, {}, { stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores }, ...autres });
+
+  it('franchit les stades en une fois et débloque leurs bâtiments', () => {
+    const base = avecSpores(100);
+    const contenu = { ...base, batimentsDeDepart: ['hutte'], arbreMere: { ...base.arbreMere, deblocages: { arbre: ['atelier'] } } } as Contenu;
+    const moteur = new Moteur(contenu, 0);
+    const evenements = commander(moteur, { type: 'nourrirArbre', spores: 35 });
+    expect(evenements).toEqual([
+      { type: 'stadeAtteint', stade: 'arbuste', debloques: [] },
+      { type: 'stadeAtteint', stade: 'arbre', debloques: ['atelier'] },
+    ]);
+    const arbre = instantaneDe(moteur.recevoir({ type: 'battre' }, 0)).arbreMere;
+    expect(arbre).toMatchObject({ stade: 'arbre', floraisonPossible: false, sporesRestantes: 25 });
+    expect(arbre.avancement).toBeCloseTo(5 / 30);
+    expect(arbre.mycelium).toBeCloseTo(35 / 60);
+    expect(moteur.etatCourant.batimentsDebloques).toEqual(['hutte', 'atelier']);
+    expect(moteur.etatCourant.stocks.spores).toBe(65);
+  });
+
+  it('ne prend que ce qu’il faut pour fleurir, puis fleurit une fois', () => {
+    const moteur = new Moteur(avecSpores(100), 0);
+    expect(commander(moteur, { type: 'fleurir' })).toMatchObject([{ raison: 'indisponible' }]);
+    const evenements = commander(moteur, { type: 'nourrirArbre', spores: 1000 });
+    expect(evenements.at(-1)).toEqual({ type: 'stadeAtteint', stade: 'floraison', debloques: [] });
+    expect(moteur.etatCourant.stocks.spores).toBe(40);
+    expect(moteur.etatCourant.arbreMere).toMatchObject({ floraisonPossible: true });
+    expect(commander(moteur, { type: 'nourrirArbre', spores: 10 })).toMatchObject([{ raison: 'indisponible' }]);
+    expect(commander(moteur, { type: 'fleurir' })).toEqual([{ type: 'floraison' }]);
+    expect(moteur.etatCourant.arbreMere).toMatchObject({ floraisonPossible: false, floraisons: 1 });
+    expect(commander(moteur, { type: 'fleurir' })).toMatchObject([{ raison: 'indisponible' }]);
+  });
+
+  it('refuse de nourrir sans spores', () => {
+    const moteur = new Moteur(avecSpores(0), 0);
+    expect(commander(moteur, { type: 'nourrirArbre', spores: 5 })).toMatchObject([{ raison: 'ressourcesInsuffisantes' }]);
+  });
+
+  it('grandit seul avec les soigneurs et le débordement du stock', () => {
+    const base = avecSpores(0, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 5 } });
+    const contenu: Contenu = {
+      ...base,
+      habitants: { ...base.habitants, sporesParSoigneur: 2 },
+      arbreMere: { ...base.arbreMere, sporesParMinute: { pousse: 3, arbuste: 3, arbre: 3, floraison: 3 } },
+    };
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, { type: 'reglerPriorites', priorites: { ...PRIORITES_NULLES, soignerArbre: 1 } });
+    moteur.simuler(5 * PAS_PAR_MINUTE);
+    // 3 spores par minute remplissent le stock en 2 min, puis débordent ; 2 soigneurs apportent 4 par minute.
+    expect(moteur.etatCourant.stocks.spores).toBeCloseTo(5);
+    const arbre = instantaneDe(moteur.recevoir({ type: 'battre' }, 0)).arbreMere;
+    expect(arbre.stade).toBe('arbuste');
+    expect(arbre.sporesParMinute).toBeCloseTo(7);
+    expect(arbre.mycelium * 60).toBeGreaterThan(20);
+  });
+
+  it('migre une sauvegarde de la version 2', () => {
+    const { ameliorations: _a, ...v2 } = new Moteur(contenuDeTest(), 0).etatCourant as Partial<Etat>;
+    const arbreMere = { stade: 'pousse', avancement: 0.5, mycelium: 0.1, floraisonPossible: false };
+    const migre = charger(JSON.stringify({ version: 2, etat: { ...v2, arbreMere } }));
+    expect(migre.arbreMere).toEqual({ stade: 'pousse', avancement: 0.5, floraisonPossible: false, floraisons: 0 });
+    expect(migre.ameliorations).toEqual({ vitesse: 0, outils: 0 });
+  });
+});
+
+describe('Améliorations', () => {
+  it('se paient à un atelier achevé, de plus en plus cher, jusqu’au niveau maximal', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    const ameliorer: Commande = { type: 'ameliorer', cible: { village: 'outils' } };
+    expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
+    commander(moteur, poser('atelier', caseLibre(moteur)));
+    expect(commander(moteur, ameliorer)).toEqual([]);
+    expect(commander(moteur, ameliorer)).toEqual([]);
+    expect(moteur.etatCourant.stocks.boisMort).toBe(70);
+    expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
+    expect(instantaneDe(moteur.recevoir({ type: 'battre' }, 0)).ameliorations).toEqual({ vitesse: 0, outils: 2 });
+  });
+
+  it('les outils accélèrent la récolte', () => {
+    const recolte = (niveau: number) => {
+      const moteur = new Moteur(contenuDeTest({ cueillette: { production: { baies: 6 } } }), 0);
+      commander(moteur, { type: 'reglerPriorites', priorites: { ...PRIORITES_NULLES, recolter: 1 } });
+      commander(moteur, poser('atelier', caseLibre(moteur)));
+      for (let i = 0; i < niveau; i++) commander(moteur, { type: 'ameliorer', cible: { village: 'outils' } });
+      commander(moteur, poser('cueillette', caseLibre(moteur)));
+      moteur.simuler(PAS_PAR_MINUTE / 2);
+      return moteur.etatCourant.batiments[1]!.reserve.baies ?? 0;
+    };
+    expect(recolte(1)).toBeGreaterThan(recolte(0) * 1.4);
   });
 });

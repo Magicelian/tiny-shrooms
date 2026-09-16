@@ -8,7 +8,8 @@ export { bonusVoisinage, casesLibres, emplacementRefuse, verifierEmplacement } f
 export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
 export { capaciteAccueil, multiplicateurBonus } from './visiteurs';
-export type { Contenu, ContenuHabitants, ContenuVisiteurs, Fourchette, ContenuMeteo, ContenuSaisons, DefinitionBatiment, RegleVoisinage } from './contenu';
+export { coutAmelioration, effetAmelioration, mycelium, sporesRestantes, type ArbreEtat } from './arbre';
+export type { Contenu, ContenuArbreMere, DefinitionAmelioration, ContenuHabitants, ContenuVisiteurs, Fourchette, ContenuMeteo, ContenuSaisons, DefinitionBatiment, RegleVoisinage } from './contenu';
 
 export type * from './contrat';
 export { AMELIORATIONS_VILLAGE, RESSOURCES, SAISONS, STADES_ARBRE, TACHES, TYPES_BATIMENT } from './contrat';

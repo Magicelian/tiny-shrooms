@@ -31,8 +31,8 @@ export const contenu: Contenu = {
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
     relais: { cout: { boisMort: 30, mousse: 15 }, constructionSecondes: 60 },
   },
-  // Séchoir et relais sont disponibles d'emblée tant que les déblocages de l'arbre-mère (étape 8) n'existent pas.
-  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'sechoir', 'feuDeCamp', 'relais'],
+  // Les autres bâtiments viennent avec les stades de l'arbre-mère.
+  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'],
   habitants: {
     auDepart: 2,
     logementDeBase: 2,
@@ -52,7 +52,15 @@ export const contenu: Contenu = {
     valeurBaieSechee: 3,
     bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.2, feuDeCamp: 0.1, minutesPourSeStabiliser: 3 },
   },
-  arbreMere: { sporesParMinute: 1 },
+  arbreMere: {
+    sporesParMinute: { pousse: 1, arbuste: 1.5, arbre: 2, floraison: 2 },
+    sporesParStade: { pousse: 200, arbuste: 2500, arbre: 12000 },
+    deblocages: { arbuste: ['sechoir', 'relais'], arbre: ['atelier'] },
+  },
+  ameliorations: {
+    vitesse: { cout: { boisMort: 50, mousse: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+    outils: { cout: { boisMort: 70, mousse: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+  },
   remboursementDemolition: 0.5,
   temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0.25 },
   saisons: {
@@ -79,7 +87,8 @@ export const contenu: Contenu = {
       vent: { boisMort: 1.2 },
       neige: { mousse: 0.8 },
     },
-  },  visiteurs: {
+  },
+  visiteurs: {
     capaciteParRelais: 2,
     minutesEntreArrivees: { min: 3, max: 8 },
     poids: { herisson: 3, escargot: 2, luciole: 2 },

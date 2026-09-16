@@ -7,6 +7,7 @@ import { majBonusVoisinage } from './grille';
 import { centreArbre } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
 import { multiplicateurBonus } from './visiteurs';
+import { effetAmelioration } from './arbre';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 /** Distance à laquelle un habitant est arrivé devant un bâtiment. */
@@ -186,11 +187,11 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
     // Sans rien à faire en hiver, on va se réchauffer au feu de camp.
     const feu = estLHiver(etat, contenu) ? feuLePlusProche(etat, h.position) : null;
     if (!feu) h.activite = 'attend';
-    else if (marcherVers(h, feu, 0.8 + (h.id % 3) * 0.15, contenu)) h.activite = 'seRechauffe';
+    else if (marcherVers(etat, h, feu, 0.8 + (h.id % 3) * 0.15, contenu)) h.activite = 'seRechauffe';
     return;
   }
   const [cible, rayon] = destination(etat, m);
-  if (!marcherVers(h, cible, rayon, contenu)) return;
+  if (!marcherVers(etat, h, cible, rayon, contenu)) return;
 
   switch (m.tache) {
     case 'recolter':
@@ -222,7 +223,8 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean
 
 function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat, nourri: boolean): void {
   const def = contenu.batiments[b.type];
-  const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri) * multiplicateurBonus(etat.bonus);
+  const cadence =
+    cadenceTravail(etat, contenu, centreCase(b), nourri) * multiplicateurBonus(etat.bonus) * effetAmelioration(etat, contenu, 'outils');
   // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {
@@ -317,12 +319,13 @@ function destination(etat: Etat, m: Mission): [Position, number] {
 }
 
 /** Rapproche l'habitant de sa cible ; renvoie vrai une fois arrivé. */
-function marcherVers(h: HabitantEtat, cible: Position, rayon: number, contenu: Contenu): boolean {
+function marcherVers(etat: Etat, h: HabitantEtat, cible: Position, rayon: number, contenu: Contenu): boolean {
   const dx = cible.x - h.position.x;
   const dy = cible.y - h.position.y;
   const reste = Math.hypot(dx, dy) - rayon;
   if (reste <= 1e-6) return true;
-  const pas = Math.min(reste, (contenu.habitants.vitesseCasesParSeconde * PAS_DE_SIMULATION_MS) / 1000);
+  const vitesse = contenu.habitants.vitesseCasesParSeconde * effetAmelioration(etat, contenu, 'vitesse');
+  const pas = Math.min(reste, (vitesse * PAS_DE_SIMULATION_MS) / 1000);
   const d = Math.hypot(dx, dy);
   h.position = { x: h.position.x + (dx / d) * pas, y: h.position.y + (dy / d) * pas };
   h.direction = Math.atan2(dy, dx);

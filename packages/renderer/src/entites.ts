@@ -1,7 +1,8 @@
 // Bâtiments, habitants et arbre-mère en formes provisoires, synchronisés sur les instantanés.
 import * as THREE from 'three';
-import type { ArbreMere, Batiment, Habitant, IdBatiment, IdHabitant, Ile, Instantane, StadeArbre } from '@tiny-shrooms/engine';
+import type { Batiment, Habitant, IdBatiment, IdHabitant, Ile, Instantane } from '@tiny-shrooms/engine';
 import { PAS_DE_SIMULATION_MS } from '@tiny-shrooms/engine';
+import { ArbreRendu } from './arbre';
 import { CHAPEAUX, COULEURS, COULEURS_BATIMENT, HAUTEURS_BATIMENT, materiau } from './palette';
 import { versMonde } from './repere';
 import { Accueil } from './visiteurs';
@@ -9,13 +10,9 @@ import { Accueil } from './visiteurs';
 const CUBE = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const PIED = new THREE.CylinderGeometry(0.08, 0.1, 0.22, 6).translate(0, 0.11, 0);
 const CHAPEAU = new THREE.SphereGeometry(0.17, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 0.2, 0);
-const TRONC = new THREE.CylinderGeometry(0.16, 0.24, 1, 6).translate(0, 0.5, 0);
-const COURONNE = new THREE.IcosahedronGeometry(0.5, 1);
 
 /** Les habitants sont volontairement grands par rapport aux cases, pour rester lisibles. */
 const ECHELLE_HABITANT = 1.7;
-
-const TAILLES_ARBRE: Record<StadeArbre, number> = { pousse: 0.8, arbuste: 1.1, arbre: 1.6, floraison: 1.8 };
 
 interface HabitantAffiche {
   objet: THREE.Group;
@@ -29,17 +26,13 @@ export class Entites {
   readonly groupe = new THREE.Group();
   private readonly batiments = new Map<IdBatiment, THREE.Mesh>();
   private readonly habitants = new Map<IdHabitant, HabitantAffiche>();
-  private readonly arbre = new THREE.Group();
-  private readonly couronne = new THREE.Mesh(COURONNE, materiau(COULEURS.couronne));
+  readonly arbre = new ArbreRendu();
   private readonly accueil = new Accueil();
   private ile: Ile | null = null;
 
   constructor() {
-    const tronc = new THREE.Mesh(TRONC, materiau(COULEURS.tronc));
-    this.couronne.position.y = 1;
-    for (const m of [tronc, this.couronne]) m.castShadow = m.receiveShadow = true;
-    this.arbre.add(tronc, this.couronne);
-    this.groupe.add(this.arbre, this.accueil.groupe);
+    this.arbre.attacher(this.groupe);
+    this.groupe.add(this.accueil.groupe);
   }
 
   changerIle(ile: Ile): void {
@@ -49,8 +42,7 @@ export class Entites {
     this.batiments.clear();
     this.habitants.clear();
     this.accueil.vider();
-    const milieu = ile.tailleArbreMere / 2;
-    versMonde({ x: ile.arbreMere.x + milieu, y: ile.arbreMere.y + milieu }, ile, this.arbre.position);
+    this.arbre.changerIle(ile);
   }
 
   appliquer(instantane: Instantane, maintenant: number): void {
@@ -58,7 +50,7 @@ export class Entites {
     if (!ile) return;
     this.synchroniserBatiments(instantane.batiments, ile);
     this.synchroniserHabitants(instantane.habitants, ile, maintenant);
-    this.appliquerArbre(instantane.arbreMere);
+    this.arbre.appliquer(instantane.arbreMere);
     this.accueil.appliquer(instantane.batiments, instantane.visiteurs, ile);
   }
 
@@ -70,6 +62,7 @@ export class Entites {
   /** Mouvements entre deux instantanés et petites animations. */
   animer(maintenant: number): void {
     this.accueil.animer(maintenant);
+    this.arbre.animer(maintenant);
     for (const h of this.habitants.values()) {
       const t = Math.min(1, (maintenant - h.debut) / PAS_DE_SIMULATION_MS);
       h.objet.position.lerpVectors(h.depuis, h.vers, t);
@@ -136,11 +129,6 @@ export class Entites {
     }
   }
 
-  private appliquerArbre(arbre: ArbreMere): void {
-    const taille = TAILLES_ARBRE[arbre.stade];
-    this.arbre.scale.setScalar(taille);
-    this.couronne.material = materiau(arbre.stade === 'floraison' ? COULEURS.floraison : COULEURS.couronne);
-  }
 }
 
 function creerHabitant(h: Habitant): THREE.Group {
