@@ -44,3 +44,37 @@ describe('Une heure simulée avec le contenu de la V1', () => {
     expect(Math.min(...habitants.map((h) => h.bienEtre))).toBeGreaterThan(0.6);
   });
 });
+
+// Critère de l'étape 6 : une année complète, sans préparer l'hiver.
+describe('Une année sans préparer l’hiver', () => {
+  const moteur = new Moteur(contenu, 0);
+  const cases = moteur.casesLibres();
+  (['cueillette', 'tasDeBois', 'hutte'] as TypeBatiment[]).forEach((batiment, i) => {
+    moteur.recevoir({ type: 'commande', commande: { type: 'poserBatiment', batiment, case: cases[i]!, orientation: 0 } }, 0);
+  });
+  const saisons: string[] = [];
+  const minutesParSaison = contenu.temps.minutesParSaison;
+  const reserveDeBaies = () => moteur.etatCourant.batiments.reduce((s, b) => s + (b.reserve.baies ?? 0), 0);
+
+  it('enchaîne les quatre saisons', () => {
+    for (let m = 0; m < 4 * minutesParSaison; m++) {
+      const habitants = moteur.etatCourant.habitants.length;
+      const enReserve = reserveDeBaies();
+      for (const e of moteur.simuler(PAS_PAR_MINUTE)) if (e.type === 'saisonChangee') saisons.push(e.saison);
+      const { stocks } = moteur.etatCourant;
+      // Rien ne se perd : ni habitant, ni stock négatif ; l'hiver, la cueillette ne produit plus rien
+      // (les baies récoltées avant peuvent encore être livrées).
+      expect(moteur.etatCourant.habitants.length).toBeGreaterThanOrEqual(habitants);
+      for (const r of RESSOURCES) expect(stocks[r]).toBeGreaterThanOrEqual(0);
+      if (m >= 3 * minutesParSaison) expect(reserveDeBaies()).toBeLessThanOrEqual(enReserve + 1e-9);
+    }
+    expect(saisons).toEqual(['ete', 'automne', 'hiver', 'printemps']);
+  });
+
+  it('ralentit en hiver sans rien faire perdre, puis repart', () => {
+    expect(moteur.etatCourant.habitants.length).toBeGreaterThanOrEqual(4);
+    const baies = moteur.etatCourant.stocks.baies + reserveDeBaies();
+    moteur.simuler(10 * PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.stocks.baies + reserveDeBaies()).toBeGreaterThan(baies);
+  });
+});

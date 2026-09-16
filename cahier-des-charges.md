@@ -361,6 +361,11 @@ son critère n'est pas rempli.
 - Moteur : cycle des saisons, effets de la météo, ralentissement hivernal, séchoir, feu de camp.
 - Rendu : teintes, neige, pluie, feuilles.
 - **Critère** : une année complète s'enchaîne ; un hiver non préparé ralentit sans rien faire perdre.
+- **Résultat (16/09/2026)** : validé sur Mac. Saison et météo déduites du pas et de la graine (rien de plus
+  dans la sauvegarde). Hiver : aucune baie, travail à 60 % hors de portée d'un feu de camp, à 50 % pour un
+  village affamé ; une baie séchée vaut 3 baies. Rendu : teintes des matériaux partagés avec fondu en fin de
+  saison, pluie, neige et feuilles en superposition ; l'arbre-mère reste vert. Corrigé au passage : un porteur
+  ne ramasse plus que ce qui tient dans les stocks (il restait bloqué, stock plein).
 
 ### Étape 7 — Visiteurs et alertes
 - Relais des visiteurs, hérisson marchand, escargot voyageur, luciole.

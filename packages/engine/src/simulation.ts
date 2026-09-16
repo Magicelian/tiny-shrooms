@@ -1,10 +1,11 @@
 // Règles du jeu : un pas de simulation, les commandes et la vue publiée de l'état.
 import type { Commande, Evenement, Instantane, Priorites, Quantites, RaisonRefus, Ressource, Stock } from './contrat';
-import { RESSOURCES, SAISONS, TACHES } from './contrat';
+import { RESSOURCES, TACHES } from './contrat';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants } from './habitants';
+import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_PAR_MINUTE } from './temps';
 
 type Flux = Record<Ressource, number>;
@@ -21,21 +22,29 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; estime: Fl
 
   const estime = { ...direct };
   estime.baies -= etat.habitants.length * h.baiesParMinute;
+  // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
+  const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
   for (const habitant of etat.habitants) {
     const m = habitant.mission;
     if (m?.tache !== 'recolter' || habitant.activite !== 'recolte') continue;
     const b = etat.batiments.find((x) => x.id === m.batiment);
     if (!b) continue;
     const def = contenu.batiments[b.type];
-    for (const r of cles(def.production ?? {})) estime[r] += (def.production![r] ?? 0) * b.bonusVoisinage;
-    for (const r of cles(def.consommation ?? {})) estime[r] -= def.consommation![r] ?? 0;
+    const cadence = cadenceTravail(etat, contenu, { x: b.case.x + 0.5, y: b.case.y + 0.5 }, nourri);
+    for (const r of cles(def.production ?? {})) {
+      estime[r] += (def.production![r] ?? 0) * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence;
+    }
+    for (const r of cles(def.consommation ?? {})) estime[r] -= (def.consommation![r] ?? 0) * cadence;
   }
   return { direct, estime };
 }
 
 export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const evenements: Evenement[] = [];
+  const saisonAvant = calendrier(etat.pas, contenu).rang;
   etat.pas++;
+  const saison = calendrier(etat.pas, contenu);
+  if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
   avancerHabitants(etat, contenu, evenements);
 
   const max = plafonds(etat, contenu);
@@ -138,17 +147,15 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
   for (const r of RESSOURCES) {
     stocks[r] = { quantite: etat.stocks[r], plafond: max[r], productionParMinute: estime[r] };
   }
-  const minutes = etat.pas / PAS_PAR_MINUTE;
-  const { minutesParSaison } = contenu.temps;
-  const saisons = Math.floor(minutes / minutesParSaison);
+  const { saison, annee, avancement } = calendrier(etat.pas, contenu);
   return {
     temps: {
       pas: etat.pas,
-      annee: Math.floor(saisons / SAISONS.length) + 1,
-      saison: SAISONS[saisons % SAISONS.length]!,
-      avancementSaison: (minutes % minutesParSaison) / minutesParSaison,
+      annee,
+      saison,
+      avancementSaison: avancement,
       heure: heureDuJour(etat.pas, contenu.temps),
-      meteo: 'soleil',
+      meteo: meteoAu(etat.pas, etat.graine, contenu),
       enPause,
     },
     stocks,

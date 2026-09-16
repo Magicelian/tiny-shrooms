@@ -42,4 +42,9 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   « Quitter » demande d'abord la sauvegarde au frontend (filet : sortie forcée à 3 s).
   Dans le navigateur, la partie va dans `localStorage`.
 - `pnpm --filter desktop vite` + `.claude/launch.json` : aperçu dans le navigateur, sans Tauri.
-- **Prochaine étape : 6** (saisons et météo).
+- **Étape 6 validée**. Moteur : `packages/engine/src/saisons.ts` (saison et météo se
+  déduisent du pas et de la graine, rien de plus dans la sauvegarde ; froid loin d'un feu, faim, repli au
+  feu l'hiver). Rendu : `packages/renderer/src/ambiance.ts` (teinte des matériaux partagés, particules
+  dessinées en superposition). En dev, `moteur.onmessage = null` puis `rendu.ambiance.appliquer(...)`
+  fige une saison pour l'inspecter. Séchoir disponible d'emblée en attendant les déblocages (étape 8).
+- **Prochaine étape : 7** (visiteurs et alertes).

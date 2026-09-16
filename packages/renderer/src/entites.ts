@@ -29,7 +29,7 @@ export class Entites {
   private readonly batiments = new Map<IdBatiment, THREE.Mesh>();
   private readonly habitants = new Map<IdHabitant, HabitantAffiche>();
   private readonly arbre = new THREE.Group();
-  private readonly couronne = new THREE.Mesh(COURONNE, materiau(COULEURS.feuillage));
+  private readonly couronne = new THREE.Mesh(COURONNE, materiau(COULEURS.couronne));
   private ile: Ile | null = null;
 
   constructor() {
@@ -134,7 +134,7 @@ export class Entites {
   private appliquerArbre(arbre: ArbreMere): void {
     const taille = TAILLES_ARBRE[arbre.stade];
     this.arbre.scale.setScalar(taille);
-    this.couronne.material = materiau(arbre.stade === 'floraison' ? COULEURS.floraison : COULEURS.feuillage);
+    this.couronne.material = materiau(arbre.stade === 'floraison' ? COULEURS.floraison : COULEURS.couronne);
   }
 }
 

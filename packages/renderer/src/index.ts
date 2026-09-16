@@ -1,6 +1,7 @@
 // Rendu de l'îlot : scène Three.js pixelisée, nourrie par les messages du moteur.
 import * as THREE from 'three';
 import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import { Ambiance } from './ambiance';
 import { CameraIso } from './camera';
 import { AidesConstruction } from './construction';
 import { Entites } from './entites';
@@ -30,6 +31,8 @@ export class Rendu {
   private readonly pixelisation: Pixelisation;
   private readonly entites = new Entites();
   private readonly aides = new AidesConstruction();
+  /** Teintes de saison et particules de météo. */
+  readonly ambiance = new Ambiance();
   private readonly rayon = new THREE.Raycaster();
   private readonly sol = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private ile: Ile | null = null;
@@ -64,12 +67,14 @@ export class Rendu {
     this.scene.add(this.decor);
     this.entites.changerIle(ile);
     this.aides.changerIle(ile);
+    this.ambiance.changerIle(ile);
     this.ile = ile;
     this.vue.cadrer(Math.max(ile.largeur, ile.profondeur));
   }
 
   appliquerInstantane(instantane: Instantane): void {
     this.entites.appliquer(instantane, performance.now());
+    this.ambiance.appliquer(instantane.temps);
   }
 
   /** Case et bâtiment sous un point de la fenêtre, en pixels CSS. */
@@ -138,7 +143,9 @@ export class Rendu {
     this.derniereImage = instant;
     this.vue.animer(dt);
     this.entites.animer(performance.now());
-    this.pixelisation.rendre(this.scene, this.vue.camera, this.aides.actives ? this.aides.scene : undefined);
+    this.ambiance.animer(dt);
+    const superpositions = this.aides.actives ? [this.ambiance.scene, this.aides.scene] : [this.ambiance.scene];
+    this.pixelisation.rendre(this.scene, this.vue.camera, superpositions);
     this.images++;
   };
 }

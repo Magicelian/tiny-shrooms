@@ -1,5 +1,5 @@
 // Forme des données d'équilibrage consommées par le moteur ; les valeurs vivent dans packages/content.
-import type { Quantites, Ressource, Terrain, TypeBatiment } from './contrat';
+import type { Meteo, Quantites, Ressource, Saison, Terrain, TypeBatiment } from './contrat';
 
 export interface RegleVoisinage {
   /** Terrain ou bâtiment à chercher dans les 8 cases voisines. */
@@ -45,7 +45,29 @@ export interface ContenuHabitants {
   reevaluationSecondes: number;
   /** Heures du jour (entre 0 et 1) où tout le monde dort. */
   nuit: { debut: number; fin: number };
+  /** Cadence de travail d'un village affamé, entre 0 et 1. */
+  travailAffame: number;
+  /** Nombre de baies fraîches qu'une baie séchée remplace au repas. */
+  valeurBaieSechee: number;
   bienEtre: { base: number; loge: number; nourri: number; affame: number; feuDeCamp: number; minutesPourSeStabiliser: number };
+}
+
+export interface ContenuSaisons {
+  /** Multiplicateur de production par saison (1 pour une ressource absente). */
+  production: Record<Saison, Quantites>;
+  /** En hiver, cadence de travail d'un poste trop loin d'un feu de camp. */
+  travailAuFroid: number;
+  /** Portée de la chaleur d'un feu de camp, en cases. */
+  rayonChaleur: number;
+}
+
+export interface ContenuMeteo {
+  /** Durée pendant laquelle une météo tirée au sort se maintient. */
+  minutesParPeriode: number;
+  /** Poids relatifs des météos possibles, par saison. */
+  probabilites: Record<Saison, Partial<Record<Meteo, number>>>;
+  /** Multiplicateur de production par météo (1 pour une ressource absente). */
+  production: Record<Meteo, Quantites>;
 }
 
 export interface Contenu {
@@ -61,4 +83,6 @@ export interface Contenu {
   remboursementDemolition: number;
   /** `heureDeDepart` : heure du jour (entre 0 et 1) au premier pas d'une partie. */
   temps: { minutesParSaison: number; minutesParJour: number; heureDeDepart: number };
+  saisons: ContenuSaisons;
+  meteo: ContenuMeteo;
 }

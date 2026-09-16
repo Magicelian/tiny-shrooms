@@ -31,7 +31,8 @@ export const contenu: Contenu = {
     atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
     relais: { cout: { boisMort: 30, mousse: 15 }, constructionSecondes: 60 },
   },
-  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'],
+  // Le séchoir est disponible d'emblée tant que les déblocages de l'arbre-mère (étape 8) n'existent pas.
+  batimentsDeDepart: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'sechoir', 'feuDeCamp'],
   habitants: {
     auDepart: 2,
     logementDeBase: 2,
@@ -47,9 +48,36 @@ export const contenu: Contenu = {
     sporesParSoigneur: 1,
     reevaluationSecondes: 30,
     nuit: { debut: 0.85, fin: 0.05 },
+    travailAffame: 0.5,
+    valeurBaieSechee: 3,
     bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.2, feuDeCamp: 0.1, minutesPourSeStabiliser: 3 },
   },
   arbreMere: { sporesParMinute: 1 },
   remboursementDemolition: 0.5,
   temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0.25 },
+  saisons: {
+    production: {
+      printemps: { mousse: 1.1 },
+      ete: { baies: 1.25, mousse: 0.7 },
+      automne: { baies: 0.8, boisMort: 1.25 },
+      hiver: { baies: 0, boisMort: 0.8, mousse: 0.5 },
+    },
+    travailAuFroid: 0.6,
+    rayonChaleur: 2,
+  },
+  meteo: {
+    minutesParPeriode: 4,
+    probabilites: {
+      printemps: { soleil: 5, pluie: 3, vent: 2 },
+      ete: { soleil: 7, pluie: 1, vent: 2 },
+      automne: { soleil: 3, pluie: 3, vent: 4 },
+      hiver: { soleil: 3, vent: 2, neige: 5 },
+    },
+    production: {
+      soleil: { baies: 1.1 },
+      pluie: { mousse: 1.25, boisMort: 0.9 },
+      vent: { boisMort: 1.2 },
+      neige: { mousse: 0.8 },
+    },
+  },
 };

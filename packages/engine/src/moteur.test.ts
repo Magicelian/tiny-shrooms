@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Contenu, ContenuHabitants, DefinitionBatiment } from './contenu';
 import type { Case, Commande, Evenement, MessageDepuisMoteur, Priorites, TypeBatiment } from './contrat';
-import { TYPES_BATIMENT } from './contrat';
+import { RESSOURCES, TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
 import { terrainEn } from './ile';
+import { creerEtat } from './etat';
 import { Moteur } from './moteur';
+import { meteoAu } from './saisons';
 import { charger, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
 import { PAS_PAR_MINUTE } from './temps';
 
@@ -13,6 +15,7 @@ const MINUTE_MS = 60_000;
 function contenuDeTest(
   batiments: Partial<Record<TypeBatiment, Partial<DefinitionBatiment>>> = {},
   habitants: Partial<ContenuHabitants> = {},
+  autres: Partial<Contenu> = {},
 ): Contenu {
   const defs = {} as Record<TypeBatiment, DefinitionBatiment>;
   for (const t of TYPES_BATIMENT) defs[t] = { cout: {}, constructionSecondes: 0, ...batiments[t] };
@@ -37,12 +40,21 @@ function contenuDeTest(
       sporesParSoigneur: 0,
       reevaluationSecondes: 30,
       nuit: { debut: 0, fin: 0 },
+      travailAffame: 1,
+      valeurBaieSechee: 1,
       bienEtre: { base: 0.4, loge: 0.2, nourri: 0.2, affame: -0.4, feuDeCamp: 0.1, minutesPourSeStabiliser: 1 },
       ...habitants,
     },
     arbreMere: { sporesParMinute: 0 },
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
+    saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1, rayonChaleur: 2 },
+    meteo: {
+      minutesParPeriode: 5,
+      probabilites: { printemps: { soleil: 1 }, ete: { soleil: 1 }, automne: { soleil: 1 }, hiver: { soleil: 1 } },
+      production: { soleil: {}, pluie: {}, vent: {}, neige: {} },
+    },
+    ...autres,
   };
 }
 
@@ -175,16 +187,16 @@ describe('Habitants', () => {
     expect(moteur.etatCourant.batiments[0]!.reserve.baies).toBeCloseTo(10, 6);
   });
 
-  it('gardent leur charge quand le stock est plein, sans rien perdre', () => {
+  it('ne ramassent que ce qui tient dans le stock, sans rien perdre', () => {
     const contenu = contenuDeTest({ cueillette: { production: { baies: 60 } } });
     contenu.plafondsDeBase.baies = 102;
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('cueillette', caseLibre(moteur)));
     moteur.simuler(3 * PAS_PAR_MINUTE);
     const { stocks, habitants, batiments } = moteur.etatCourant;
-    const enMain = habitants.reduce((s, h) => s + (h.charge?.quantite ?? 0), 0);
-    expect(stocks.baies).toBe(102);
-    expect(enMain + (batiments[0]!.reserve.baies ?? 0)).toBeGreaterThan(0);
+    expect(stocks.baies).toBeCloseTo(102);
+    expect(habitants.every((h) => h.charge === null)).toBe(true);
+    expect(batiments[0]!.reserve.baies).toBeGreaterThan(0);
   });
 
   it('suivent l’épinglage plutôt que les priorités', () => {
@@ -348,3 +360,90 @@ function sauvegarder(moteur: Moteur): string {
   if (message?.type !== 'sauvegarde') throw new Error('sauvegarde attendue');
   return message.contenu;
 }
+
+describe('Saisons et météo', () => {
+  const MIN = PAS_PAR_MINUTE;
+  const AUTOMNE = 60 * MIN;
+  const HIVER = 90 * MIN;
+  const saisonsNeutres = { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1, rayonChaleur: 2 };
+
+  /** Moteur dont la partie commence au pas donné. */
+  function moteurAu(contenu: Contenu, pas: number): Moteur {
+    const etat = creerEtat(contenu);
+    etat.pas = pas;
+    return new Moteur(contenu, 0, etat);
+  }
+
+  it('enchaîne une année complète', () => {
+    const contenu = contenuDeTest({}, {}, { temps: { minutesParSaison: 1, minutesParJour: 10, heureDeDepart: 0 } });
+    const moteur = new Moteur(contenu, 0);
+    const saisons = moteur.simuler(4 * MIN).flatMap((e) => (e.type === 'saisonChangee' ? [e.saison] : []));
+    expect(saisons).toEqual(['ete', 'automne', 'hiver', 'printemps']);
+    expect(instantaneDe(moteur.battre(0)).temps).toMatchObject({ annee: 2, saison: 'printemps' });
+  });
+
+  it('tire la météo selon la saison, toujours la même pour une graine', () => {
+    const contenu = contenuDeTest();
+    contenu.meteo.probabilites = { printemps: { soleil: 1, pluie: 1 }, ete: {}, automne: {}, hiver: { neige: 1 } };
+    const printemps = Array.from({ length: 6 }, (_, k) => meteoAu(k * 5 * MIN, 1, contenu));
+    expect(new Set(printemps)).toEqual(new Set(['soleil', 'pluie']));
+    expect(Array.from({ length: 6 }, (_, k) => meteoAu(k * 5 * MIN, 1, contenu))).toEqual(printemps);
+    for (let k = 0; k < 6; k++) expect(meteoAu(HIVER + k * 5 * MIN, 1, contenu)).toBe('neige');
+  });
+
+  it('ne fait pousser aucune baie en hiver, sans rien faire perdre', () => {
+    const contenu = contenuDeTest(
+      { cueillette: { production: { baies: 6 } } },
+      { baiesParMinute: 5 },
+      { saisons: { ...saisonsNeutres, production: { ...saisonsNeutres.production, hiver: { baies: 0 } } } },
+    );
+    const moteur = moteurAu(contenu, HIVER);
+    commander(moteur, poser('cueillette', caseLibre(moteur)));
+    moteur.simuler(5 * MIN);
+    expect(moteur.etatCourant.stocks.baies).toBeCloseTo(50);
+    moteur.simuler(10 * MIN);
+    const { stocks, habitants, batiments } = moteur.etatCourant;
+    expect(batiments[0]!.reserve).toEqual({});
+    expect(habitants.map((h) => h.tache)).not.toContain('recolter');
+    expect(habitants).toHaveLength(2);
+    for (const r of RESSOURCES) expect(stocks[r]).toBeGreaterThanOrEqual(0);
+  });
+
+  it('ralentit le travail au froid, sauf près d’un feu de camp', () => {
+    const contenu = contenuDeTest({ tasDeBois: { production: { boisMort: 6 } } }, { reserveMax: 1000 }, {
+      saisons: { ...saisonsNeutres, travailAuFroid: 0.5 },
+    });
+    const recolte = (pas: number, feu: boolean) => {
+      const moteur = moteurAu(contenu, pas);
+      commander(moteur, { type: 'reglerPriorites', priorites: { ...PRIORITES_NULLES, recolter: 1 } });
+      const tas = caseLibre(moteur);
+      commander(moteur, poser('tasDeBois', tas));
+      if (feu) {
+        const proche = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) <= 2);
+        commander(moteur, poser('feuDeCamp', proche!));
+      }
+      moteur.simuler(2 * MIN);
+      return moteur.etatCourant.batiments[0]!.reserve.boisMort ?? 0;
+    };
+    const automne = recolte(AUTOMNE, false);
+    expect(automne).toBeGreaterThan(5);
+    expect(recolte(HIVER, false)).toBeCloseTo(automne / 2);
+    expect(recolte(HIVER, true)).toBeCloseTo(automne);
+  });
+
+  it('va se réchauffer au feu quand il n’a rien à faire en hiver', () => {
+    const moteur = moteurAu(contenuDeTest(), HIVER);
+    commander(moteur, { type: 'reglerPriorites', priorites: PRIORITES_NULLES });
+    commander(moteur, poser('feuDeCamp', caseLibre(moteur)));
+    moteur.simuler(MIN);
+    expect(moteur.etatCourant.habitants.map((h) => h.activite)).toEqual(['seRechauffe', 'seRechauffe']);
+  });
+
+  it('compte une baie séchée pour plusieurs baies fraîches', () => {
+    const contenu = contenuDeTest({}, { baiesParMinute: 3, valeurBaieSechee: 3 });
+    contenu.stocksDeDepart = { ...contenu.stocksDeDepart, baies: 0, baiesSechees: 10 };
+    const moteur = new Moteur(contenu, 0);
+    moteur.simuler(MIN);
+    expect(moteur.etatCourant.stocks.baiesSechees).toBeCloseTo(8);
+  });
+});

@@ -1,7 +1,7 @@
 // Composants de l'interface : compteurs, barre d'outils, bandeau de placement, panneaux et messages.
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Instantane, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Instantane, Meteo, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, listeQuantites, nomBatiment, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
@@ -11,6 +11,8 @@ import { PanneauArbre, PanneauBatiment, PanneauConstruire, PanneauHabitants, Pan
 export interface Props {
   controleur: ControleurInterface;
 }
+
+const ICONES_METEO: Record<Meteo, string> = { soleil: '☀', pluie: '☂', vent: '≋', neige: '❄' };
 
 const COULEURS_RESSOURCE: Record<Ressource, string> = {
   baies: '#c2358a',
@@ -30,7 +32,8 @@ export function Interface({ controleur }: Props) {
   return (
     <div class={`interface ${etat.survol || placement ? 'visible' : ''}`}>
       <div class="haut">
-        <span class="etiquette">
+        <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
+          {ICONES_METEO[instantane.temps.meteo]}{' '}
           {t('temps.annee', { saison: t(`saison.${instantane.temps.saison}`), annee: instantane.temps.annee })}
         </span>
         <nav class="outils">

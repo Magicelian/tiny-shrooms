@@ -32,7 +32,7 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
 });
-if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui });
+if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });
 
 // Écritures à la file, pour que la rotation des copies ne se chevauche jamais.
 let ecritures = Promise.resolve();

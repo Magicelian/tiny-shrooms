@@ -6,7 +6,8 @@ export { creerEtat, plafonds, type BatimentEtat, type Etat, type HabitantEtat, t
 export { dansLArbre, genererIle, terrainEn } from './ile';
 export { bonusVoisinage, casesLibres, emplacementRefuse, verifierEmplacement } from './grille';
 export { appliquerCommande, avancer, instantane } from './simulation';
-export type { Contenu, ContenuHabitants, DefinitionBatiment, RegleVoisinage } from './contenu';
+export { calendrier, meteoAu, type Calendrier } from './saisons';
+export type { Contenu, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, RegleVoisinage } from './contenu';
 
 export type * from './contrat';
 export { AMELIORATIONS_VILLAGE, RESSOURCES, SAISONS, STADES_ARBRE, TACHES, TYPES_BATIMENT } from './contrat';

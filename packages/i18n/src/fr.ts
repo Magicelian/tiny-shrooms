@@ -92,6 +92,10 @@ export const fr = {
   'saison.automne': 'Automne',
   'saison.hiver': 'Hiver',
   'temps.annee': '{saison}, an {annee}',
+  'meteo.soleil': 'Soleil',
+  'meteo.pluie': 'Pluie',
+  'meteo.vent': 'Vent',
+  'meteo.neige': 'Neige',
 
   // Messages
   'refus.ressourcesInsuffisantes': 'Pas assez de ressources',

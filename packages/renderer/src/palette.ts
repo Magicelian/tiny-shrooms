@@ -8,6 +8,8 @@ export const COULEURS = {
   roche: 0x6b6f7a,
   eau: 0x4fa3d9,
   feuillage: 0x3f8f3a,
+  /** Couronne de l'arbre-mère : distincte du feuillage pour ne pas suivre les saisons. */
+  couronne: 0x3f8f3b,
   tronc: 0x6b4226,
   buisson: 0x2f7d4a,
   caillou: 0x9a9ea8,

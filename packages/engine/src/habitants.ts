@@ -5,6 +5,7 @@ import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantEtat, type Mission } from './etat';
 import { majBonusVoisinage } from './grille';
 import { centreArbre } from './ile';
+import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
 /** Distance à laquelle un habitant est arrivé devant un bâtiment. */
@@ -33,7 +34,7 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
     }
     h.pasDepuisChoix++;
     if (!missionValide(etat, contenu, h)) choisirMission(etat, contenu, h);
-    executer(etat, contenu, h, evenements);
+    executer(etat, contenu, h, nourri, evenements);
   }
   arrivees(etat, contenu, capacite, evenements);
 }
@@ -43,10 +44,11 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
 /** Les habitants mangent des baies, puis des baies séchées ; renvoie faux si le compte n'y est pas. */
 function nourrir(etat: Etat, contenu: Contenu): boolean {
   let besoin = (etat.habitants.length * contenu.habitants.baiesParMinute) / PAS_PAR_MINUTE;
+  const valeurs = { baies: 1, baiesSechees: contenu.habitants.valeurBaieSechee } as const;
   for (const r of ['baies', 'baiesSechees'] as const) {
-    const pris = Math.min(besoin, etat.stocks[r]);
+    const pris = Math.min(besoin / valeurs[r], etat.stocks[r]);
     etat.stocks[r] -= pris;
-    besoin -= pris;
+    besoin -= pris * valeurs[r];
   }
   return besoin <= 1e-9;
 }
@@ -98,13 +100,13 @@ function missionValide(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
   switch (m.tache) {
     case 'recolter': {
       const b = trouver(etat, m.batiment);
-      return !reevaluer && !!b && b.chantier === null;
+      return !reevaluer && !!b && b.chantier === null && productif(etat, contenu, b);
     }
     case 'construire':
       return trouver(etat, m.batiment)?.chantier != null;
     case 'stocker':
       if (m.etape === 'deposer') return true;
-      return totalReserve(trouver(etat, m.batiment)) > 0;
+      return transportable(etat, contenu, trouver(etat, m.batiment)) > 0;
     case 'soignerArbre':
       return !reevaluer;
   }
@@ -139,11 +141,16 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
       }
       continue;
     }
-    if (def.production && occupants(etat, h, 'recolter', b.id) < (def.postes ?? 1) && !reservePleine(b, def.production, contenu)) {
+    if (
+      def.production &&
+      productif(etat, contenu, b) &&
+      occupants(etat, h, 'recolter', b.id) < (def.postes ?? 1) &&
+      !reservePleine(b, def.production, contenu)
+    ) {
       proposer({ tache: 'recolter', batiment: b.id }, 1, cible);
     }
-    const reserve = totalReserve(b);
-    if (reserve > 0 && occupants(etat, h, 'stocker', b.id) === 0) {
+    const reserve = cles(b.reserve).reduce((total, r) => total + (b.reserve[r] ?? 0), 0);
+    if (transportable(etat, contenu, b) > 0 && occupants(etat, h, 'stocker', b.id) === 0) {
       proposer({ tache: 'stocker', etape: 'prendre', batiment: b.id }, Math.min(1, reserve / contenu.habitants.capaciteTransport), cible);
     }
   }
@@ -161,16 +168,24 @@ function occupants(etat: Etat, moi: HabitantEtat, tache: Tache, batiment: number
   }).length;
 }
 
+/** Faux quand la saison et la météo réduisent toute la production du bâtiment à rien (baies en hiver). */
+function productif(etat: Etat, contenu: Contenu, b: BatimentEtat): boolean {
+  return cles(contenu.batiments[b.type].production ?? {}).some((r) => facteurSaison(etat, contenu, r) > 0);
+}
+
 function reservePleine(b: BatimentEtat, production: Partial<Record<Ressource, number>>, contenu: Contenu): boolean {
   return cles(production).every((r) => (b.reserve[r] ?? 0) >= contenu.habitants.reserveMax);
 }
 
 // ─── Exécution ───────────────────────────────────────────────────────────────
 
-function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, evenements: Evenement[]): void {
+function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean, evenements: Evenement[]): void {
   const m = h.mission;
   if (!m) {
-    h.activite = 'attend';
+    // Sans rien à faire en hiver, on va se réchauffer au feu de camp.
+    const feu = estLHiver(etat, contenu) ? feuLePlusProche(etat, h.position) : null;
+    if (!feu) h.activite = 'attend';
+    else if (marcherVers(h, feu, 0.8 + (h.id % 3) * 0.15, contenu)) h.activite = 'seRechauffe';
     return;
   }
   const [cible, rayon] = destination(etat, m);
@@ -178,12 +193,13 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, evenements: Eve
 
   switch (m.tache) {
     case 'recolter':
-      recolter(etat, contenu, h, trouver(etat, m.batiment)!);
+      recolter(etat, contenu, h, trouver(etat, m.batiment)!, nourri);
       return;
     case 'construire': {
       const b = trouver(etat, m.batiment)!;
       const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS;
-      b.chantier = pasNecessaires > 0 ? b.chantier! + 1 / pasNecessaires : 1;
+      const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri);
+      b.chantier = pasNecessaires > 0 ? b.chantier! + cadence / pasNecessaires : 1;
       h.activite = 'construit';
       if (b.chantier >= 1 - 1e-9) {
         b.chantier = null;
@@ -203,36 +219,43 @@ function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, evenements: Eve
   }
 }
 
-function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat): void {
+function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat, nourri: boolean): void {
   const def = contenu.batiments[b.type];
-  const production = def.production ?? {};
-  const consommation = def.consommation ?? {};
+  const cadence = cadenceTravail(etat, contenu, centreCase(b), nourri);
+  // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
+  const produit: Partial<Record<Ressource, number>> = {};
+  for (const r of cles(def.production ?? {})) {
+    produit[r] = (def.production![r]! * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence) / PAS_PAR_MINUTE;
+  }
+  const consomme: Partial<Record<Ressource, number>> = {};
+  for (const r of cles(def.consommation ?? {})) consomme[r] = (def.consommation![r]! * cadence) / PAS_PAR_MINUTE;
+
   let part = 1;
-  for (const r of cles(production)) {
-    part = Math.min(part, Math.max(0, contenu.habitants.reserveMax - (b.reserve[r] ?? 0)) / (((production[r] ?? 0) * b.bonusVoisinage) / PAS_PAR_MINUTE));
+  for (const r of cles(produit)) {
+    if (produit[r]! > 0) part = Math.min(part, Math.max(0, contenu.habitants.reserveMax - (b.reserve[r] ?? 0)) / produit[r]!);
   }
-  for (const r of cles(consommation)) {
-    part = Math.min(part, etat.stocks[r] / ((consommation[r] ?? 0) / PAS_PAR_MINUTE));
-  }
+  for (const r of cles(consomme)) part = Math.min(part, etat.stocks[r] / consomme[r]!);
   if (!(part > 0)) {
     h.activite = 'attend';
     h.mission = null;
     return;
   }
-  for (const r of cles(consommation)) etat.stocks[r] -= ((consommation[r] ?? 0) / PAS_PAR_MINUTE) * part;
-  for (const r of cles(production)) {
-    b.reserve[r] = (b.reserve[r] ?? 0) + (((production[r] ?? 0) * b.bonusVoisinage) / PAS_PAR_MINUTE) * part;
-  }
+  for (const r of cles(consomme)) etat.stocks[r] -= consomme[r]! * part;
+  for (const r of cles(produit)) b.reserve[r] = (b.reserve[r] ?? 0) + produit[r]! * part;
   h.activite = 'recolte';
 }
 
 function prendre(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat): void {
-  const ressource = cles(b.reserve).sort((x, y) => (b.reserve[y] ?? 0) - (b.reserve[x] ?? 0))[0];
+  const place = placeLibre(etat, contenu);
+  const aPorter = (r: Ressource) => Math.min(b.reserve[r] ?? 0, place[r]);
+  const ressource = cles(b.reserve)
+    .filter((r) => aPorter(r) > 1e-9)
+    .sort((x, y) => aPorter(y) - aPorter(x))[0];
   if (!ressource) {
     h.mission = null;
     return;
   }
-  const quantite = Math.min(b.reserve[ressource] ?? 0, contenu.habitants.capaciteTransport);
+  const quantite = Math.min(aPorter(ressource), contenu.habitants.capaciteTransport);
   b.reserve[ressource] = (b.reserve[ressource] ?? 0) - quantite;
   if (b.reserve[ressource]! <= 1e-9) delete b.reserve[ressource];
   h.charge = { ressource, quantite };
@@ -246,18 +269,29 @@ function deposer(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
     h.mission = null;
     return;
   }
-  const place = Math.max(0, plafonds(etat, contenu)[charge.ressource] - etat.stocks[charge.ressource]);
-  const pose = Math.min(place, charge.quantite);
-  etat.stocks[charge.ressource] += pose;
-  charge.quantite -= pose;
-  if (charge.quantite <= 1e-9) {
-    h.charge = null;
-    h.mission = null;
-    h.activite = 'attend';
-  } else {
-    // Stock plein : l'habitant garde sa charge et patiente, rien ne se perd.
-    h.activite = 'attend';
-  }
+  // Toujours déposé en entier : la place a été retenue au ramassage, et un stock rempli entre-temps
+  // déborde à peine plutôt que de bloquer le porteur.
+  etat.stocks[charge.ressource] += charge.quantite;
+  h.charge = null;
+  h.mission = null;
+  h.activite = 'attend';
+}
+
+/** Place restante dans les stocks, charges déjà en route comprises. */
+function placeLibre(etat: Etat, contenu: Contenu): Record<Ressource, number> {
+  const max = plafonds(etat, contenu);
+  const place = {} as Record<Ressource, number>;
+  for (const r of RESSOURCES) place[r] = max[r] - etat.stocks[r];
+  for (const h of etat.habitants) if (h.charge) place[h.charge.ressource] -= h.charge.quantite;
+  for (const r of RESSOURCES) place[r] = Math.max(0, place[r]);
+  return place;
+}
+
+/** Part de la réserve d'un bâtiment qui trouverait place dans les stocks. */
+function transportable(etat: Etat, contenu: Contenu, b: BatimentEtat | undefined): number {
+  if (!b) return 0;
+  const place = placeLibre(etat, contenu);
+  return cles(b.reserve).reduce((s, r) => s + Math.min(b.reserve[r] ?? 0, place[r]), 0);
 }
 
 /** Dépôt le plus proche : l'arbre-mère ou un bâtiment de stockage achevé. */
@@ -299,10 +333,6 @@ function marcherVers(h: HabitantEtat, cible: Position, rayon: number, contenu: C
 
 function trouver(etat: Etat, id: number): BatimentEtat | undefined {
   return etat.batiments.find((b) => b.id === id);
-}
-
-function totalReserve(b: BatimentEtat | undefined): number {
-  return b ? cles(b.reserve).reduce((s, r) => s + (b.reserve[r] ?? 0), 0) : 0;
 }
 
 function centreCase(b: BatimentEtat): Position {
