@@ -317,6 +317,9 @@ son critère n'est pas rempli.
 - Boucle à pas fixe, gestion du temps et de la veille, ressources, stocks, commandes et événements.
 - `packages/content` avec les premières données.
 - **Critère** : tests Vitest verts ; une simulation sans affichage produit les quantités attendues sur 1 h simulée.
+- **Résultat (16/09/2026)** : validé (22 tests). `Moteur` reçoit et émet les messages du contrat, le temps réel
+  lui est passé en paramètre ; `packages/content` porte un premier jet d'équilibrage. Pour l'instant les
+  bâtiments produisent seuls et les chantiers avancent seuls : l'étape 2 y met les habitants.
 
 ### Étape 2 — Grille, bâtiments, habitants (backend)
 - Grille de l'île, placement, déplacement, démolition, bonus de voisinage.

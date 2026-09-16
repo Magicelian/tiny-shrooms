@@ -222,7 +222,14 @@ export type TypeCommande = Commande['type'];
 
 // ─── Événements ponctuels (moteur → frontend) ────────────────────────────────
 
-export type RaisonRefus = 'ressourcesInsuffisantes' | 'emplacementOccupe' | 'horsIle' | 'nonDebloque' | 'introuvable';
+export type RaisonRefus =
+  | 'ressourcesInsuffisantes'
+  | 'emplacementOccupe'
+  | 'horsIle'
+  | 'nonDebloque'
+  | 'introuvable'
+  /** L'action n'est pas possible pour l'instant (floraison pas prête, fonction à venir…). */
+  | 'indisponible';
 
 export type Evenement =
   | { type: 'visiteurArrive'; visiteur: Visiteur }
