@@ -69,7 +69,7 @@ export class Rendu {
     this.aides.changerIle(ile);
     this.ambiance.changerIle(ile);
     this.ile = ile;
-    this.vue.cadrer(Math.max(ile.largeur, ile.profondeur));
+    this.vue.cadrer(ile.largeur, ile.profondeur);
   }
 
   appliquerInstantane(instantane: Instantane): void {
@@ -111,6 +111,15 @@ export class Rendu {
 
   basculerZoom(): void {
     this.vue.basculerZoom();
+  }
+
+  zoomer(sens: 1 | -1): void {
+    this.vue.zoomer(sens);
+  }
+
+  /** Déplace la vue pour suivre la souris, `dx`, `dy` en pixels CSS. */
+  glisser(dx: number, dy: number): void {
+    this.vue.glisser(dx, dy, window.innerHeight);
   }
 
   redimensionner(): void {

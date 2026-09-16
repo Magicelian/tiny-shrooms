@@ -15,6 +15,11 @@ export interface EtatInterface {
   instantane: Instantane | null;
   /** La souris est-elle au-dessus de la fenêtre ? Sinon, l'îlot reste seul. */
   survol: boolean;
+  /** Sans le focus, rien ne se révèle au passage de la souris. */
+  focus: boolean;
+  /** La fenêtre peut-elle être déplacée (Tauri) et sa position est-elle verrouillée ? */
+  fenetreMobile: boolean;
+  verrouillee: boolean;
   panneau: Panneau | null;
   /** Bâtiment en cours de placement. */
   placement: TypeBatiment | null;
@@ -30,6 +35,9 @@ export class Magasin {
     ile: null,
     instantane: null,
     survol: false,
+    focus: false,
+    fenetreMobile: false,
+    verrouillee: false,
     panneau: null,
     placement: null,
     bonusVise: null,

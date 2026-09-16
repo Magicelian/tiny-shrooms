@@ -5,6 +5,7 @@ import { AMELIORATIONS_VILLAGE, coutAmelioration } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, pourcent } from './format';
 import type { ControleurInterface } from './index';
+import { useMagasin } from './magasin';
 
 interface Props {
   controleur: ControleurInterface;
@@ -108,10 +109,17 @@ function Ameliorations({ controleur, instantane }: Props) {
   );
 }
 
-export function PanneauReglages() {
+export function PanneauReglages({ controleur }: { controleur: ControleurInterface }) {
+  const { fenetreMobile, verrouillee } = useMagasin(controleur.magasin);
   return (
     <>
       <p>{t('reglages.camera')}</p>
+      {fenetreMobile && (
+        <label class="case-a-cocher">
+          <input type="checkbox" checked={verrouillee} onChange={(e) => controleur.verrouiller(e.currentTarget.checked)} />
+          {t('reglages.verrouiller')}
+        </label>
+      )}
       <p class="discret">{t('reglages.aVenir')}</p>
     </>
   );

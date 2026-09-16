@@ -1,8 +1,9 @@
-// Interface au survol : reçoit les messages du moteur, traduit la souris en commandes.
+// Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
 import { bonusVoisinage, emplacementRefuse } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
+import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomRessource } from './format';
 import { Interface } from './interface';
 import { Magasin } from './magasin';
@@ -16,6 +17,8 @@ export interface SceneInteractive {
   cacherFantome(): void;
   tourner(sens: 1 | -1): void;
   basculerZoom(): void;
+  zoomer(sens: 1 | -1): void;
+  glisser(dx: number, dy: number): void;
 }
 
 export interface OptionsInterface {
@@ -26,21 +29,40 @@ export interface OptionsInterface {
   couleurs: { batiments: Record<TypeBatiment, number>; chapeaux: readonly number[] };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
+  /** Verrouille ou libère la position de la fenêtre (Tauri). */
+  verrouiller?: (verrouillee: boolean) => void;
 }
 
-/** Distance en pixels au-delà de laquelle un appui devient un déplacement de fenêtre. */
+/** Distance en pixels au-delà de laquelle un appui devient un glisser et non plus un clic. */
 const SEUIL_GLISSER = 4;
+/** Défilement cumulé (en pixels) qui vaut un palier de zoom ; au-delà d'une pause, le cumul repart de zéro. */
+const PAS_MOLETTE = 100;
+const PAUSE_MOLETTE_MS = 200;
+/** Un appui arrivé si tôt après la prise du focus est le clic qui l'a donné : il n'agit pas. */
+const DELAI_FOCUS_MS = 250;
+
+/** Appui en cours sur l'îlot : pas encore décidé, glisser de la vue, ou ⌘ + glisser refusé (fenêtre verrouillée). */
+interface Appui {
+  x: number;
+  y: number;
+  mode: 'attente' | 'vue' | 'bloque';
+  fenetre: boolean;
+}
 
 export class ControleurInterface {
   readonly magasin = new Magasin();
   private souris: { x: number; y: number } | null = null;
-  private appui: { x: number; y: number } | null = null;
+  private appui: Appui | null = null;
+  private focusDepuis = -Infinity;
+  private molette = { cumul: 0, dernier: 0 };
 
   constructor(
     racine: HTMLElement,
     private readonly options: OptionsInterface,
   ) {
+    installerCurseurs(document.documentElement);
     render(<Interface controleur={this} />, racine);
+    this.magasin.modifier({ focus: document.hasFocus(), fenetreMobile: !!options.deplacerFenetre });
     this.brancherSouris();
   }
 
@@ -90,11 +112,22 @@ export class ControleurInterface {
     this.options.scene.basculerZoom();
   }
 
-  /** Survol signalé de l'extérieur (Rust), car une fenêtre sans le focus ne reçoit pas la souris. */
+  /** Sortie du curseur signalée de l'extérieur (Rust) : `mouseleave` manque parfois une sortie rapide. */
   signalerSurvol(dedans: boolean): void {
-    if (!dedans) this.souris = null;
-    this.magasin.modifier({ survol: dedans });
+    if (dedans) return;
+    this.souris = null;
+    this.magasin.modifier({ survol: false });
     this.majVisee();
+  }
+
+  /** Position de la fenêtre verrouillée ou libre, qu'importe d'où vient le changement (réglages ou icône). */
+  signalerVerrouillage(verrouillee: boolean): void {
+    this.magasin.modifier({ verrouillee });
+  }
+
+  verrouiller(verrouillee: boolean): void {
+    this.magasin.modifier({ verrouillee });
+    this.options.verrouiller?.(verrouillee);
   }
 
   commencerPlacement(type: TypeBatiment): void {
@@ -118,30 +151,82 @@ export class ControleurInterface {
   private brancherSouris(): void {
     const { canevas } = this.options.scene;
     const racine = document.documentElement;
-    racine.addEventListener('mouseenter', () => this.magasin.modifier({ survol: true }));
+    // Sans le focus, rien ne se révèle ; le focus revenu, on attend que la souris bouge.
+    window.addEventListener('focus', () => {
+      this.focusDepuis = performance.now();
+      this.magasin.modifier({ focus: true });
+    });
+    window.addEventListener('blur', () => {
+      this.appui = null;
+      this.souris = null;
+      this.magasin.modifier({ focus: false, survol: false });
+      this.majVisee();
+    });
     racine.addEventListener('mouseleave', () => this.signalerSurvol(false));
     window.addEventListener('pointermove', (e) => {
+      if (!this.magasin.valeur.focus) return;
       this.magasin.modifier({ survol: true });
       this.souris = e.target === canevas ? { x: e.clientX, y: e.clientY } : null;
-      this.majVisee();
-      if (this.appui && Math.hypot(e.clientX - this.appui.x, e.clientY - this.appui.y) > SEUIL_GLISSER) {
-        this.appui = null;
-        this.options.deplacerFenetre?.();
+      const appui = this.appui;
+      if (appui?.mode === 'attente' && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > SEUIL_GLISSER) {
+        if (!appui.fenetre) appui.mode = 'vue';
+        else if (this.magasin.valeur.verrouillee || !this.options.deplacerFenetre) appui.mode = 'bloque';
+        else {
+          // La fenêtre suit la souris jusqu'au relâchement ; la vue web ne reçoit plus rien d'ici là.
+          this.appui = null;
+          this.options.deplacerFenetre();
+        }
       }
+      if (this.appui?.mode === 'vue') {
+        this.options.scene.glisser(e.clientX - this.appui.x, e.clientY - this.appui.y);
+        this.appui.x = e.clientX;
+        this.appui.y = e.clientY;
+      }
+      this.majVisee();
     });
     canevas.addEventListener('pointerdown', (e) => {
-      if (e.button === 0) this.appui = { x: e.clientX, y: e.clientY };
+      if (e.button !== 0) return;
+      if (!document.hasFocus() || performance.now() - this.focusDepuis < DELAI_FOCUS_MS) {
+        this.focusDepuis = performance.now();
+        return;
+      }
+      this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: e.metaKey };
+      canevas.setPointerCapture(e.pointerId);
+      this.majCurseur();
     });
     canevas.addEventListener('pointerup', (e) => {
       if (e.button !== 0 || !this.appui) return;
+      const { mode } = this.appui;
       this.appui = null;
-      this.cliquer(e.clientX, e.clientY);
+      if (mode === 'attente') this.cliquer(e.clientX, e.clientY);
+      this.majCurseur();
+    });
+    canevas.addEventListener('pointercancel', () => {
+      this.appui = null;
+      this.majCurseur();
     });
     canevas.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       this.annuler();
     });
-    canevas.addEventListener('wheel', () => this.basculerZoom(), { passive: true });
+    canevas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        if (!this.magasin.valeur.focus) return;
+        const pas = e.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? e.deltaY : e.deltaY * PAS_MOLETTE;
+        const m = this.molette;
+        if (e.timeStamp - m.dernier > PAUSE_MOLETTE_MS) m.cumul = 0;
+        m.dernier = e.timeStamp;
+        m.cumul += pas;
+        // Molette vers le haut : on s'approche. Un seul palier par cran, même sur un pavé tactile.
+        while (Math.abs(m.cumul) >= PAS_MOLETTE) {
+          this.options.scene.zoomer(m.cumul < 0 ? 1 : -1);
+          m.cumul -= Math.sign(m.cumul) * PAS_MOLETTE;
+        }
+      },
+      { passive: false },
+    );
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.annuler();
       else if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -175,10 +260,12 @@ export class ControleurInterface {
     const visee = this.souris && ile && instantane ? scene.viser(this.souris.x, this.souris.y) : null;
     if (!visee || !ile || !instantane) {
       scene.cacherFantome();
+      this.majCurseur();
       if (placement) this.magasin.modifier({ bonusVise: null });
       return;
     }
     if (placement) {
+      this.majCurseur();
       if (!visee.case) {
         scene.cacherFantome();
         this.magasin.modifier({ bonusVise: null });
@@ -195,5 +282,14 @@ export class ControleurInterface {
     const b = id === null ? undefined : instantane.batiments.find((x) => x.id === id);
     if (b) scene.montrerFantome(b.case, null, true);
     else scene.cacherFantome();
+    this.majCurseur(b !== undefined);
+  }
+
+  /** Main fermée pendant un glisser, marteau en construction, main sur ce qu'on peut cliquer. */
+  private majCurseur(surCliquable = false): void {
+    let curseur: Curseur = surCliquable ? 'main' : 'fleche';
+    if (this.appui?.mode === 'vue') curseur = 'poing';
+    else if (this.magasin.valeur.placement) curseur = 'marteau';
+    this.options.scene.canevas.style.cursor = `var(--curseur-${curseur})`;
   }
 }

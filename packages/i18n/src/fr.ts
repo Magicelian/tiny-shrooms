@@ -64,7 +64,8 @@ export const fr = {
   'amelioration.acheter': 'Améliorer : {liste}',
 
   // Réglages
-  'reglages.camera': 'Caméra : ←/→ pour tourner, molette pour zoomer.',
+  'reglages.camera': 'Glisser pour déplacer la vue, molette pour zoomer, ←/→ pour tourner. ⌘ + glisser déplace la fenêtre.',
+  'reglages.verrouiller': 'Verrouiller la position',
   'reglages.aVenir': 'Son, opacité et langue arriveront bientôt.',
 
   // Temps

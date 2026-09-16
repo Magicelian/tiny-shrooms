@@ -62,4 +62,9 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
 - **Étape 9 validée**. Souche-dépôt au centre (`ile.souche`, rendu `packages/renderer/src/souche.ts`) ; améliorations dans
   `packages/engine/src/ameliorations.ts`. Sauvegarde en version 4 : une plus ancienne donne l'origine `ancienne`, le
   frontend archive (`archiver_sauvegardes` → `partie.v3*.json` ; `tiny-shrooms.partie.v3` dans le navigateur).
-- **Prochaine étape : 10** (glisser la vue, ⌘ + glisser la fenêtre, verrouillage, curseur, focus).
+- **Étape 10 validée**. Caméra : `centre` borné à l'île et paliers de zoom dans `packages/renderer/src/camera.ts`.
+  Souris : `ControleurInterface.brancherSouris` (seuil de 4 px entre clic et glisser ; ⌘ → fenêtre, sauf verrouillée ;
+  clic de prise de focus ignoré). Curseurs : `packages/ui/src/curseurs.ts` (variables CSS `--curseur-…`). Réglages de
+  fenêtre : `src-tauri/src/reglages.rs` (`reglages.json` : verrouillage + position, écrite en quittant), case du menu
+  de l'icône et événement `verrouillage`.
+- **Prochaine étape : 11** (interface au clic).

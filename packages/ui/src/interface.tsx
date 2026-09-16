@@ -30,7 +30,7 @@ export function Interface({ controleur }: Props) {
     controleur.magasin.modifier({ panneau: memePanneau(panneau, p) ? null : p, placement: null });
 
   return (
-    <div class={`interface ${etat.survol || placement ? 'visible' : ''}`}>
+    <div class={`interface ${etat.focus && (etat.survol || placement) ? 'visible' : ''}`}>
       <div class="haut">
         <div class="infos">
           <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
@@ -83,7 +83,7 @@ function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: 
   if (panneau === 'reglages')
     return (
       <Cadre titre={t('outil.reglages')} fermer={fermer}>
-        <PanneauReglages />
+        <PanneauReglages controleur={controleur} />
       </Cadre>
     );
   const batiment = instantane.batiments.find((b) => b.id === panneau.batiment);

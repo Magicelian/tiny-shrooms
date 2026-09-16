@@ -384,3 +384,18 @@
   border-top: 1px dashed var(--papier-fonce);
 }
 
+
+/* Curseurs pixel (voir curseurs.ts) ; le canevas choisit sa variante selon ce qui est visé. */
+html,
+body {
+  cursor: var(--curseur-fleche, default);
+}
+.interface.visible :is(button, .bouton, .carte, input, select, label) {
+  cursor: var(--curseur-main, pointer);
+}
+
+.case-a-cocher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

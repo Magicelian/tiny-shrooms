@@ -457,6 +457,13 @@ son critère n'est pas rempli.
 - Sans le focus : plus rien ne se révèle au survol ; le premier clic prend le focus sans agir.
 - **Critère** : à 320 px, on parcourt l'île à la souris sans jamais déplacer la fenêtre par erreur ;
   le curseur retrouve son apparence normale dès qu'il sort de la fenêtre.
+- **Résultat (16/09/2026)** : validé. Vue qui suit exactement la souris (mesuré
+  dans les quatre orientations), bornée à l'étendue de l'île ; quatre paliers de zoom (un cran de molette = un palier,
+  pavé tactile cumulé) ; la touche Z et le bouton font toujours le tour des paliers. ⌘ + glisser au-delà de 4 px
+  déplace la fenêtre, rien si elle est verrouillée ; « Verrouiller la position » dans Réglages et dans le menu de
+  l'icône, gardé dans `reglages.json` avec la dernière position (restaurée si elle tombe sur un écran). Curseurs
+  pixel en variables CSS : flèche, main (bâtiment, boutons), marteau (placement), poing (glisser). Sans le focus :
+  interface et aperçu masqués, molette ignorée ; un appui dans les 250 ms qui suivent la prise du focus n'agit pas.
 
 ### Étape 11 — Interface au clic
 - Suppression de la barre d'outils au survol ; bulle de construction sur une case vide, bulle

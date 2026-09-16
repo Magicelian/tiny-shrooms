@@ -1,13 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod pouls;
+mod reglages;
 mod sauvegarde;
 mod veille;
 
 use std::time::Duration;
 
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{CheckMenuItem, Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
@@ -63,15 +64,20 @@ fn demander_fermeture(app: &AppHandle) {
             let app = app.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_secs(3));
+                reglages::enregistrer(&app);
                 app.exit(0);
             });
         }
-        _ => app.exit(0),
+        _ => {
+            reglages::enregistrer(app);
+            app.exit(0);
+        }
     }
 }
 
 #[tauri::command]
 fn quitter(app: AppHandle) {
+    reglages::enregistrer(&app);
     app.exit(0);
 }
 
@@ -83,8 +89,16 @@ fn main() {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
             let basculer = MenuItem::with_id(app, "basculer", "Afficher / cacher", true, None::<&str>)?;
+            let lus = reglages::lire(app.handle());
+            let verrouiller =
+                CheckMenuItem::with_id(app, "verrouiller", "Verrouiller la position", true, lus.verrouillee, None::<&str>)?;
             let quitter = MenuItem::with_id(app, "quitter", "Quitter", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&basculer, &quitter])?;
+            let menu = Menu::with_items(app, &[&basculer, &verrouiller, &quitter])?;
+            reglages::restaurer_position(app.handle(), &lus);
+            app.manage(reglages::EtatReglages {
+                reglages: std::sync::Mutex::new(lus),
+                case_menu: verrouiller.clone(),
+            });
 
             let icone = app
                 .tray_by_id("main")
@@ -93,6 +107,10 @@ fn main() {
             icone.set_show_menu_on_left_click(false)?;
             icone.on_menu_event(|app, evenement| match evenement.id.as_ref() {
                 "basculer" => basculer_fenetre(app),
+                "verrouiller" => {
+                    let coche = app.state::<reglages::EtatReglages>().case_menu.is_checked().unwrap_or(false);
+                    reglages::appliquer_verrouillage(app, coche);
+                }
                 "quitter" => demander_fermeture(app),
                 _ => {}
             });
@@ -115,6 +133,8 @@ fn main() {
             sauvegarde::lire_sauvegardes,
             sauvegarde::ecrire_sauvegarde,
             sauvegarde::archiver_sauvegardes,
+            reglages::lire_reglages,
+            reglages::verrouiller_position,
             quitter
         ])
         .run(tauri::generate_context!())

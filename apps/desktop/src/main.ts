@@ -38,6 +38,7 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   envoyer: (commande) => envoyer({ type: 'commande', commande }),
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
+  verrouiller: (verrouillee) => void invoke('verrouiller_position', { verrouillee }),
 });
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });
 
@@ -77,6 +78,9 @@ if (dansTauri) {
   await listen('fenetre-cachee', () => rendu.arreter());
   await listen('fenetre-affichee', () => rendu.demarrer());
   await listen<boolean>('survol', (e) => ui.signalerSurvol(e.payload));
+  await listen<boolean>('verrouillage', (e) => ui.signalerVerrouillage(e.payload));
+  const reglages = await invoke<{ verrouillee: boolean }>('lire_reglages');
+  ui.signalerVerrouillage(reglages.verrouillee);
   await listen<number>('veille', (e) => {
     envoyer({ type: 'veille', momentMs: e.payload });
     sauvegarder();
