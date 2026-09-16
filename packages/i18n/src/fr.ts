@@ -37,8 +37,7 @@ export const fr = {
   'terrain.herbe': 'herbe',
   'terrain.vide': 'vide',
 
-  // Barre d'outils
-  'outil.construire': 'Construire',
+  // Commandes
   'outil.reglages': 'Réglages',
   'outil.tournerGauche': 'Tourner à gauche',
   'outil.tournerDroite': 'Tourner à droite',
@@ -46,11 +45,17 @@ export const fr = {
   'panneau.fermer': 'Fermer',
 
   // Construction
-  'construction.aide': 'Clic pour poser · Échap pour finir',
+  'construction.titre': 'Construire ici',
+  'construction.choisir': 'Choisis un bâtiment.',
   'construction.gratuit': 'Gratuit',
   'construction.bonusIci': 'Ici : +{pourcent} %',
+  'construction.poser': 'Construire',
   'construction.demolir': 'Démolir',
   'construction.confirmer': 'Sûr ? (+{liste})',
+  'construction.deplacer': 'Déplacer',
+  'construction.aideDeplacer': 'Clic sur une case libre · Échap pour annuler',
+  'construction.emplois': 'Emplois : {pourvus}/{postes}',
+  'construction.batisseurs': 'Bâtisseurs : {pourvus}/{postes}',
 
   // Habitants
 

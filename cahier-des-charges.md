@@ -471,6 +471,12 @@ son critère n'est pas rempli.
 - Ressources intégrées au décor ; saison et météo à l'essai dans le même style.
 - **Critère** : toute la boucle se joue au clic, à 320 px ; les ressources restent lisibles sur
   toutes les saisons ; décision prise (garder ou retirer) pour l'affichage de la saison.
+- **Résultat (16/09/2026)** : validé. Clic sur une case libre → bulle de construction (choix, fantôme vert ou rouge
+  sur la case, effet, bonus, bouton Construire) ; clic sur un bâtiment → bulle d'informations (chantier, emplois
+  pourvus, effets, bonus, améliorations de l'atelier) avec déplacer et démolir. Bulles dans la moitié opposée à la case,
+  à droite des ressources ; fermées d'un clic ailleurs, avec Échap, le clic droit ou la perte du focus. Icône ⚙ en haut
+  à droite (caméra, verrouillage). Ressources sur un poteau de planches, saison et météo sur un écriteau suspendu :
+  **l'écriteau est gardé**.
 
 ### Étape 12 — Récolte à la main
 - Éléments naturels cliquables (buissons, bois mort, mousse), épuisement puis repousse, chiffre qui s'envole.

@@ -104,6 +104,8 @@ export interface Habitant {
   direction: number;
   activite: Activite;
   tache: Tache | null;
+  /** Bâtiment où l'habitant récolte ou construit en ce moment, pour compter les emplois pourvus. */
+  lieu: IdBatiment | null;
   /** Entre 0 et 1. */
   bienEtre: number;
   /** Indice dans la palette des chapeaux. */

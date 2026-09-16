@@ -1,9 +1,16 @@
 // État affiché par l'interface : le dernier instantané du moteur et ce que le joueur est en train de faire.
 // Rien ici ne modifie la partie : les changements passent par des commandes envoyées au moteur.
 import { useEffect, useState } from 'preact/hooks';
-import type { IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 
-export type Panneau = 'construire' | 'reglages' | { batiment: IdBatiment };
+/**
+ * Bulle ouverte au clic. `haut` : la bulle se place dans la moitié haute de la fenêtre,
+ * pour laisser voir la case visée quand celle-ci est en bas.
+ */
+export type Bulle =
+  | { type: 'reglages' }
+  | { type: 'construire'; case: Case; choix: TypeBatiment | null; haut: boolean }
+  | { type: 'batiment'; id: IdBatiment; haut: boolean };
 
 export interface Message {
   id: number;
@@ -13,17 +20,15 @@ export interface Message {
 export interface EtatInterface {
   ile: Ile | null;
   instantane: Instantane | null;
-  /** La souris est-elle au-dessus de la fenêtre ? Sinon, l'îlot reste seul. */
-  survol: boolean;
-  /** Sans le focus, rien ne se révèle au passage de la souris. */
+  /** Sans le focus, aucune commande n'est proposée. */
   focus: boolean;
   /** La fenêtre peut-elle être déplacée (Tauri) et sa position est-elle verrouillée ? */
   fenetreMobile: boolean;
   verrouillee: boolean;
-  panneau: Panneau | null;
-  /** Bâtiment en cours de placement. */
-  placement: TypeBatiment | null;
-  /** Bonus de voisinage à l'emplacement visé, pendant le placement. */
+  bulle: Bulle | null;
+  /** Bâtiment en cours de déplacement : il suit la souris jusqu'au clic. */
+  deplacement: IdBatiment | null;
+  /** Bonus de voisinage à l'emplacement visé, pendant le déplacement ou le choix d'un bâtiment. */
   bonusVise: number | null;
   messages: Message[];
 }
@@ -34,12 +39,11 @@ export class Magasin {
   private etat: EtatInterface = {
     ile: null,
     instantane: null,
-    survol: false,
     focus: false,
     fenetreMobile: false,
     verrouillee: false,
-    panneau: null,
-    placement: null,
+    bulle: null,
+    deplacement: null,
     bonusVise: null,
     messages: [],
   };

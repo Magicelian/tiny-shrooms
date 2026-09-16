@@ -1,12 +1,12 @@
-// Composants de l'interface : compteurs, barre d'outils, bandeau de placement, panneaux et messages.
+// Composants de l'interface : panneaux de bois (ressources), écriteau (saison), icône Réglages, bulles et messages.
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Instantane, Meteo, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Instantane, Meteo, Ressource } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import { abordable, listeQuantites, nomBatiment, nomRessource, pourcent } from './format';
+import { nomBatiment, nomRessource, pourcent } from './format';
 import type { ControleurInterface } from './index';
-import { useMagasin, type Panneau } from './magasin';
-import { PanneauBatiment, PanneauConstruire, PanneauReglages } from './panneaux';
+import { useMagasin, type Bulle } from './magasin';
+import { BulleBatiment, BulleConstruire, BulleReglages } from './panneaux';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -24,37 +24,25 @@ const COULEURS_RESSOURCE: Record<Ressource, string> = {
 
 export function Interface({ controleur }: Props) {
   const etat = useMagasin(controleur.magasin);
-  const { instantane, panneau, placement } = etat;
+  const { instantane, bulle, deplacement } = etat;
   if (!instantane) return null;
-  const ouvrir = (p: Panneau) =>
-    controleur.magasin.modifier({ panneau: memePanneau(panneau, p) ? null : p, placement: null });
 
   return (
-    <div class={`interface ${etat.focus && (etat.survol || placement) ? 'visible' : ''}`}>
-      <div class="haut">
-        <div class="infos">
-          <span class="etiquette" title={t(`meteo.${instantane.temps.meteo}`)}>
-            {ICONES_METEO[instantane.temps.meteo]}{' '}
-            {t('temps.annee', { saison: t(`saison.${instantane.temps.saison}`), annee: instantane.temps.annee })}
-          </span>
-        </div>
-        <nav class="outils">
-          <Outil icone="🔨" titre={t('outil.construire')} actif={panneau === 'construire' || !!placement} onClick={() => (placement ? controleur.finirPlacement() : ouvrir('construire'))} />
-          <Outil icone="⚙" titre={t('outil.reglages')} actif={panneau === 'reglages'} onClick={() => ouvrir('reglages')} />
-        </nav>
-      </div>
+    <div class={`interface ${etat.focus ? 'active' : ''}`}>
+      <Ecriteau instantane={instantane} />
+      <Poteau instantane={instantane} />
 
-      {placement && <BandeauPlacement controleur={controleur} type={placement} bonus={etat.bonusVise} instantane={instantane} />}
+      <button
+        class={`bouton outil commande reglages ${bulle?.type === 'reglages' ? 'actif' : ''}`}
+        title={t('outil.reglages')}
+        aria-label={t('outil.reglages')}
+        onClick={() => controleur.basculerReglages()}
+      >
+        ⚙
+      </button>
 
-      <Compteurs instantane={instantane} />
-
-      <nav class="camera">
-        <Outil petit icone="⟲" titre={t('outil.tournerGauche')} onClick={() => controleur.tourner(-1)} />
-        <Outil petit icone="⟳" titre={t('outil.tournerDroite')} onClick={() => controleur.tourner(1)} />
-        <Outil petit icone="⌕" titre={t('outil.zoom')} onClick={() => controleur.basculerZoom()} />
-      </nav>
-
-      {panneau && <ContenuPanneau controleur={controleur} panneau={panneau} instantane={instantane} />}
+      {deplacement !== null && <BandeauDeplacement controleur={controleur} bonus={etat.bonusVise} />}
+      {bulle && <ContenuBulle controleur={controleur} bulle={bulle} instantane={instantane} />}
 
       <div class="messages">
         {etat.messages.map((m) => (
@@ -67,81 +55,75 @@ export function Interface({ controleur }: Props) {
   );
 }
 
-function memePanneau(a: Panneau | null, b: Panneau): boolean {
-  if (typeof a === 'object' && a !== null && typeof b === 'object') return a.batiment === b.batiment;
-  return a === b;
-}
-
-function ContenuPanneau({ controleur, panneau, instantane }: Props & { panneau: Panneau; instantane: Instantane }) {
-  const fermer = () => controleur.magasin.modifier({ panneau: null });
-  if (panneau === 'construire')
+function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle; instantane: Instantane }) {
+  const fermer = () => controleur.fermer();
+  if (bulle.type === 'reglages')
     return (
-      <Cadre titre={t('outil.construire')} fermer={fermer}>
-        <PanneauConstruire controleur={controleur} instantane={instantane} />
+      <Cadre titre={t('outil.reglages')} fermer={fermer} position="reglages">
+        <BulleReglages controleur={controleur} />
       </Cadre>
     );
-  if (panneau === 'reglages')
+  if (bulle.type === 'construire')
     return (
-      <Cadre titre={t('outil.reglages')} fermer={fermer}>
-        <PanneauReglages controleur={controleur} />
+      <Cadre titre={t('construction.titre')} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+        <BulleConstruire controleur={controleur} instantane={instantane} bulle={bulle} />
       </Cadre>
     );
-  const batiment = instantane.batiments.find((b) => b.id === panneau.batiment);
+  const batiment = controleur.batiment(bulle.id);
   if (!batiment) return null;
   return (
-    <Cadre titre={nomBatiment(batiment.type)} fermer={fermer} bas>
-      <PanneauBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
+    <Cadre titre={nomBatiment(batiment.type)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+      <BulleBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
     </Cadre>
   );
 }
 
-function Cadre({ titre, fermer, bas, children }: { titre: string; fermer: () => void; bas?: boolean; children: ComponentChildren }) {
+function Cadre(props: { titre: string; fermer: () => void; position: 'haut' | 'bas' | 'reglages'; children: ComponentChildren }) {
   return (
-    <section class={`panneau ${bas ? 'bas' : ''}`}>
+    <section class={`bulle commande ${props.position}`}>
       <header>
-        <h2>{titre}</h2>
-        <button class="bouton fermer" title={t('panneau.fermer')} onClick={fermer}>
+        <h2>{props.titre}</h2>
+        <button class="bouton fermer" title={t('panneau.fermer')} onClick={props.fermer}>
           ✕
         </button>
       </header>
-      <div class="corps">{children}</div>
+      <div class="corps">{props.children}</div>
     </section>
   );
 }
 
-function Outil(props: { icone: string; titre: string; actif?: boolean; petit?: boolean; onClick: () => void }) {
+/** Saison et météo sur un petit écriteau suspendu, en haut à gauche. */
+function Ecriteau({ instantane }: { instantane: Instantane }) {
+  const { temps } = instantane;
   return (
-    <button
-      class={`bouton outil ${props.actif ? 'actif' : ''} ${props.petit ? 'petit' : ''}`}
-      title={props.titre}
-      aria-label={props.titre}
-      onClick={props.onClick}
-    >
-      {props.icone}
-    </button>
+    <div class="ecriteau" title={t(`meteo.${temps.meteo}`)}>
+      <span class="meteo">{ICONES_METEO[temps.meteo]}</span>
+      {t('temps.annee', { saison: t(`saison.${temps.saison}`), annee: temps.annee })}
+    </div>
   );
 }
 
-function Compteurs({ instantane }: { instantane: Instantane }) {
+/** Ressources sur des planches clouées à un poteau, en bas à gauche. */
+function Poteau({ instantane }: { instantane: Instantane }) {
   const { stocks } = instantane;
   const visibles: Ressource[] = ['baies', 'boisMort', 'mousse', 'spores'];
   if (stocks.baiesSechees.quantite > 0 || instantane.batimentsDebloques.includes('sechoir')) visibles.splice(1, 0, 'baiesSechees');
   return (
-    <ul class="compteurs">
+    <ul class="poteau">
       {visibles.map((r) => (
-        <Compteur key={r} ressource={r} instantane={instantane} />
+        <Planche key={r} ressource={r} instantane={instantane} />
       ))}
     </ul>
   );
 }
 
-function Compteur({ ressource, instantane }: { ressource: Ressource; instantane: Instantane }) {
+function Planche({ ressource, instantane }: { ressource: Ressource; instantane: Instantane }) {
   const [detail, setDetail] = useState(false);
   const stock = instantane.stocks[ressource];
   const plein = stock.quantite >= stock.plafond;
   const variation = stock.productionParMinute;
   return (
-    <li class={`compteur ${plein ? 'plein' : ''}`} onMouseEnter={() => setDetail(true)} onMouseLeave={() => setDetail(false)}>
+    <li class={`planche ${plein ? 'plein' : ''}`} onMouseEnter={() => setDetail(true)} onMouseLeave={() => setDetail(false)}>
       <span class="pastille" style={{ background: COULEURS_RESSOURCE[ressource] }} />
       <span class="quantite">{nombre(Math.floor(stock.quantite))}</span>
       <span class="plafond">/{nombre(stock.plafond)}</span>
@@ -155,23 +137,22 @@ function Compteur({ ressource, instantane }: { ressource: Ressource; instantane:
   );
 }
 
-function BandeauPlacement(props: Props & { type: TypeBatiment; bonus: number | null; instantane: Instantane }) {
-  const { controleur, type, bonus, instantane } = props;
-  const cout = controleur.contenu.batiments[type].cout;
-  const payable = abordable(cout, instantane.stocks);
+function BandeauDeplacement({ controleur, bonus }: Props & { bonus: number | null }) {
+  const { deplacement } = controleur.magasin.valeur;
+  const batiment = deplacement === null ? undefined : controleur.batiment(deplacement);
+  if (!batiment) return null;
   return (
-    <div class="bandeau">
+    <div class="bandeau commande">
       <div class="ligne">
         <span>
-          <strong>{nomBatiment(type)}</strong>
-          <span class={payable ? '' : 'manque'}> · {listeQuantites(cout)}</span>
+          <strong>{nomBatiment(batiment.type)}</strong>
           {bonus !== null && bonus > 1 && <span class="bonus"> · {t('construction.bonusIci', { pourcent: pourcent(bonus - 1) })}</span>}
         </span>
-        <button class="bouton fermer" title={t('panneau.fermer')} onClick={() => controleur.finirPlacement()}>
+        <button class="bouton fermer" title={t('panneau.fermer')} onClick={() => controleur.fermer()}>
           ✕
         </button>
       </div>
-      <div class="ligne aide">{t('construction.aide')}</div>
+      <div class="ligne aide">{t('construction.aideDeplacer')}</div>
     </div>
   );
 }

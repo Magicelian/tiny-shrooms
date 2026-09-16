@@ -27,7 +27,7 @@ export type Mission =
   | { tache: 'stocker'; etape: 'prendre'; batiment: IdBatiment }
   | { tache: 'stocker'; etape: 'deposer'; destination: Position; rayon: number };
 
-export interface HabitantEtat extends Habitant {
+export interface HabitantEtat extends Omit<Habitant, 'lieu'> {
   mission: Mission | null;
   charge: { ressource: Ressource; quantite: number } | null;
   pasDepuisChoix: number;

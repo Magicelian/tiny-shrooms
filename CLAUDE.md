@@ -67,4 +67,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   clic de prise de focus ignoré). Curseurs : `packages/ui/src/curseurs.ts` (variables CSS `--curseur-…`). Réglages de
   fenêtre : `src-tauri/src/reglages.rs` (`reglages.json` : verrouillage + position, écrite en quittant), case du menu
   de l'icône et événement `verrouillage`.
-- **Prochaine étape : 11** (interface au clic).
+- **Étape 11 validée**. Clic → bulle (`Bulle` dans `packages/ui/src/magasin.ts`) : case libre
+  → construire (choix, fantôme, bouton), bâtiment → infos, déplacer, démolir ; ⚙ en haut à droite (caméra, verrouillage).
+  Ressources sur un poteau de planches, saison sur un écriteau (gardé), toujours visibles ; sans le focus, commandes
+  masquées et bulle fermée. L'instantané donne `habitant.lieu` (emplois pourvus).
+- **Prochaine étape : 12** (récolte à la main).

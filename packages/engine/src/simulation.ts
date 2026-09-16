@@ -148,9 +148,10 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     },
     stocks,
     batiments: etat.batiments.map(({ reserve: _reserve, ...b }) => ({ ...b, case: { ...b.case } })),
-    habitants: etat.habitants.map(({ mission: _m, charge: _c, pasDepuisChoix: _p, ...h }) => ({
+    habitants: etat.habitants.map(({ mission, charge: _c, pasDepuisChoix: _p, ...h }) => ({
       ...h,
       position: { ...h.position },
+      lieu: mission && mission.tache !== 'stocker' ? mission.batiment : null,
     })),
     batimentsDebloques: [...etat.batimentsDebloques],
     ameliorations: { ...etat.ameliorations },

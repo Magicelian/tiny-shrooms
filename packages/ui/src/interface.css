@@ -1,4 +1,4 @@
-/* Interface au survol : police pixel épaisse, aplats cerclés de noir, lisible à 320 px. */
+/* Interface au clic : police pixel épaisse, aplats cerclés de noir, lisible à 320 px. */
 @import '@fontsource/pixelify-sans/latin-500.css';
 @import '@fontsource/pixelify-sans/latin-700.css';
 
@@ -37,13 +37,16 @@
 .interface {
   position: absolute;
   inset: 0;
+}
+/* Sans le focus, le décor (ressources, saison) reste seul : aucune commande n'est proposée. */
+.commande {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.interface.visible {
+.interface.active .commande {
   opacity: 1;
 }
-.interface.visible :is(button, input, select, .compteur) {
+.interface.active :is(button, input, select, .planche) {
   pointer-events: auto;
 }
 
@@ -99,68 +102,111 @@
   line-height: 1;
 }
 
-/* Haut : saison et barre d'outils */
-.haut {
+/* Icône Réglages, discrète en haut à droite */
+.outil.reglages {
   position: absolute;
   top: 6px;
-  left: 6px;
   right: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 6px;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
 }
-.outils {
-  display: flex;
-  gap: 4px;
-}
-.infos {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-}
-.etiquette {
-  background: var(--papier);
-  border: var(--trait);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-size: 11px;
-  white-space: nowrap;
+.interface.active .outil.reglages:not(:hover, .actif) {
+  opacity: 0.7;
 }
 
-/* Compteurs, en colonne en bas à gauche */
-.compteurs {
+/* Décor : bois sombre, texte clair cerclé de noir, lisible sur toutes les saisons. */
+.ecriteau,
+.planche {
+  color: var(--papier);
+  text-shadow:
+    1px 0 var(--encre),
+    -1px 0 var(--encre),
+    0 1px var(--encre),
+    0 -1px var(--encre);
+  background:
+    linear-gradient(transparent 45%, rgb(0 0 0 / 0.18) 45% 55%, transparent 55%),
+    #7a4f2d;
+  border: var(--trait);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 2px 0 #a0703f,
+    0 2px 0 var(--encre);
+}
+
+/* Écriteau de saison, suspendu par deux ficelles */
+.ecriteau {
   position: absolute;
-  left: 6px;
-  bottom: 6px;
+  top: 12px;
+  left: 8px;
+  padding: 1px 6px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ecriteau::before,
+.ecriteau::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  width: 2px;
+  height: 8px;
+  background: var(--encre);
+}
+.ecriteau::before {
+  left: 8px;
+}
+.ecriteau::after {
+  right: 8px;
+}
+.ecriteau .meteo {
+  margin-right: 4px;
+  color: var(--accent);
+}
+
+/* Ressources : planches clouées à un poteau planté en bas à gauche */
+.poteau {
+  position: absolute;
+  left: 8px;
+  bottom: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 0 10px;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
-.compteur {
+.poteau::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 10px;
+  top: -4px;
+  bottom: 0;
+  width: 6px;
+  background: #4f321c;
+  border: var(--trait);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+}
+.planche {
   position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
   width: max-content;
-  background: var(--papier);
-  border: var(--trait);
-  border-radius: 6px;
-  padding: 1px 6px 1px 3px;
+  padding: 0 6px 0 3px;
 }
-.compteur .quantite {
+.planche .quantite {
   font-size: 14px;
+  font-weight: 700;
 }
-.compteur .plafond {
+.planche .plafond {
   font-size: 10px;
-  color: var(--discret);
+  color: #e3cfa6;
 }
-.compteur.plein .quantite {
-  color: #b5402f;
+.planche.plein .quantite {
+  color: #ffb199;
 }
 .pastille {
   display: inline-block;
@@ -170,9 +216,6 @@
   border: var(--trait);
   border-radius: 3px;
 }
-.pastille.ronde {
-  border-radius: 50%;
-}
 .infobulle {
   position: absolute;
   left: calc(100% + 4px);
@@ -181,20 +224,16 @@
   white-space: nowrap;
   background: var(--encre);
   color: var(--papier);
+  text-shadow: none;
   border-radius: 4px;
   padding: 2px 5px;
   font-size: 11px;
 }
-
-.camera {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  display: flex;
-  gap: 3px;
+.interface:not(.active) .infobulle {
+  display: none;
 }
 
-/* Bandeau de placement */
+/* Bandeau de déplacement */
 .bandeau {
   position: absolute;
   top: 40px;
@@ -228,14 +267,12 @@
   font-weight: 700;
 }
 
-/* Panneaux */
-.panneau {
+/* Bulles : dans la moitié de la fenêtre opposée à la case visée, à droite du poteau des ressources */
+.bulle {
   position: absolute;
-  top: 42px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(290px, calc(100% - 12px));
-  max-height: calc(100% - 84px);
+  right: 6px;
+  width: min(230px, calc(100% - 90px));
+  max-height: 58%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -245,36 +282,37 @@
   box-shadow: 0 3px 0 var(--encre);
   pointer-events: auto;
 }
-.panneau.bas {
-  top: auto;
-  bottom: 38px;
-  left: auto;
-  right: 6px;
-  transform: none;
-  width: min(200px, calc(100% - 12px));
+.bulle.haut {
+  top: 6px;
 }
-.panneau header {
+.bulle.bas {
+  bottom: 6px;
+}
+.bulle.reglages {
+  top: 36px;
+}
+.bulle header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 4px 4px 8px;
+  padding: 3px 4px 3px 8px;
   background: var(--accent);
   border-bottom: var(--trait);
   border-radius: 6px 6px 0 0;
 }
-.panneau h2 {
+.bulle h2 {
   margin: 0;
   font-size: 15px;
 }
-.panneau h3 {
+.bulle h3 {
   margin: 6px 0 2px;
   font-size: 13px;
 }
-.panneau .corps {
+.bulle .corps {
   overflow-y: auto;
   padding: 4px 8px 8px;
 }
-.panneau p {
+.bulle p {
   margin: 3px 0;
   font-size: 12px;
 }
@@ -294,7 +332,7 @@
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   column-gap: 4px;
   align-items: center;
   text-align: left;
@@ -303,7 +341,7 @@
   background: #fff;
   border: var(--trait);
   border-radius: 6px;
-  padding: 3px 4px;
+  padding: 2px 4px;
   cursor: pointer;
 }
 .carte:hover {
@@ -313,10 +351,14 @@
   font-weight: 700;
   font-size: 12px;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 .carte .cout {
   grid-column: 1 / -1;
   font-size: 10px;
+}
+.carte.choisie {
+  background: var(--accent);
 }
 .carte.manque {
   background: #efe6d6;
@@ -347,10 +389,10 @@
   background: var(--vert);
 }
 
-/* Messages : discrets, au-dessus de la caméra */
+/* Messages : discrets, en bas à droite */
 .messages {
   position: absolute;
-  bottom: 36px;
+  bottom: 6px;
   right: 6px;
   display: flex;
   flex-direction: column;
@@ -368,8 +410,21 @@
 .bouton.manque {
   background: #eee4d8;
 }
-.bouton.discret {
-  box-shadow: none;
+.bouton.valider {
+  background: var(--vert);
+}
+.bouton:disabled {
+  cursor: inherit;
+  transform: none;
+}
+.actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.actions .bouton:not(.outil) {
+  flex: 1;
+  padding: 4px;
 }
 
 /* Atelier */
@@ -390,7 +445,7 @@ html,
 body {
   cursor: var(--curseur-fleche, default);
 }
-.interface.visible :is(button, .bouton, .carte, input, select, label) {
+.interface.active :is(button:not(:disabled), .carte, input, select, label) {
   cursor: var(--curseur-main, pointer);
 }
 

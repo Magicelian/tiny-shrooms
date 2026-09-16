@@ -1,12 +1,12 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
-import type { Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Batiment, Case, Commande, Contenu, IdBatiment, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
 import { bonusVoisinage, emplacementRefuse } from '@tiny-shrooms/engine';
 import { t } from '@tiny-shrooms/i18n';
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomRessource } from './format';
 import { Interface } from './interface';
-import { Magasin } from './magasin';
+import { Magasin, type Bulle } from './magasin';
 
 /** Ce que l'interface attend du rendu de l'îlot. */
 export interface SceneInteractive {
@@ -55,6 +55,7 @@ export class ControleurInterface {
   private appui: Appui | null = null;
   private focusDepuis = -Infinity;
   private molette = { cumul: 0, dernier: 0 };
+  private curseur: Curseur = 'fleche';
 
   constructor(
     racine: HTMLElement,
@@ -87,6 +88,10 @@ export class ControleurInterface {
       if (!avant!.includes(type)) this.magasin.annoncer(t('message.planObtenu', { batiment: nomBatiment(type) }));
     }
     this.magasin.modifier({ instantane: message.instantane });
+    // Le bâtiment visé a disparu (démoli) : sa bulle ou son déplacement n'ont plus d'objet.
+    const { bulle, deplacement } = this.magasin.valeur;
+    const vise = bulle?.type === 'batiment' ? bulle.id : deplacement;
+    if (vise !== null && !this.batiment(vise)) this.fermer();
     for (const e of message.evenements) {
       if (e.type === 'commandeRefusee') this.magasin.annoncer(t(`refus.${e.raison}`));
       else if (e.type === 'habitantArrive') this.magasin.annoncer(t('message.habitantArrive'));
@@ -116,7 +121,6 @@ export class ControleurInterface {
   signalerSurvol(dedans: boolean): void {
     if (dedans) return;
     this.souris = null;
-    this.magasin.modifier({ survol: false });
     this.majVisee();
   }
 
@@ -130,22 +134,42 @@ export class ControleurInterface {
     this.options.verrouiller?.(verrouillee);
   }
 
-  commencerPlacement(type: TypeBatiment): void {
-    this.magasin.modifier({ placement: type, panneau: null });
+  basculerReglages(): void {
+    this.ouvrir(this.magasin.valeur.bulle?.type === 'reglages' ? null : { type: 'reglages' });
+  }
+
+  /** Choix d'un bâtiment dans la bulle de construction : son fantôme apparaît sur la case. */
+  choisir(type: TypeBatiment): void {
+    const { bulle } = this.magasin.valeur;
+    if (bulle?.type === 'construire') this.ouvrir({ ...bulle, choix: type });
+  }
+
+  construire(): void {
+    const { bulle } = this.magasin.valeur;
+    if (bulle?.type !== 'construire' || !bulle.choix) return;
+    this.envoyer({ type: 'poserBatiment', batiment: bulle.choix, case: bulle.case, orientation: 0 });
+    this.fermer();
+  }
+
+  commencerDeplacement(id: IdBatiment): void {
+    this.magasin.modifier({ bulle: null, deplacement: id });
     this.options.scene.afficherGrille(true);
     this.majVisee();
   }
 
-  finirPlacement(): void {
-    this.magasin.modifier({ placement: null, bonusVise: null });
-    this.options.scene.afficherGrille(false);
-    this.majVisee();
+  /** Échap, clic droit ou clic ailleurs : la bulle ou le déplacement en cours se referment. */
+  fermer(): void {
+    this.ouvrir(null);
   }
 
-  /** Échap : d'abord le placement, puis le panneau ouvert. */
-  annuler(): void {
-    if (this.magasin.valeur.placement) this.finirPlacement();
-    else this.magasin.modifier({ panneau: null });
+  batiment(id: IdBatiment): Batiment | undefined {
+    return this.magasin.valeur.instantane?.batiments.find((b) => b.id === id);
+  }
+
+  private ouvrir(bulle: Bulle | null): void {
+    this.magasin.modifier({ bulle, deplacement: null, bonusVise: null });
+    this.options.scene.afficherGrille(bulle?.type === 'construire' && bulle.choix !== null);
+    this.majVisee();
   }
 
   private brancherSouris(): void {
@@ -159,13 +183,12 @@ export class ControleurInterface {
     window.addEventListener('blur', () => {
       this.appui = null;
       this.souris = null;
-      this.magasin.modifier({ focus: false, survol: false });
-      this.majVisee();
+      this.magasin.modifier({ focus: false });
+      this.fermer();
     });
     racine.addEventListener('mouseleave', () => this.signalerSurvol(false));
     window.addEventListener('pointermove', (e) => {
       if (!this.magasin.valeur.focus) return;
-      this.magasin.modifier({ survol: true });
       this.souris = e.target === canevas ? { x: e.clientX, y: e.clientY } : null;
       const appui = this.appui;
       if (appui?.mode === 'attente' && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > SEUIL_GLISSER) {
@@ -192,22 +215,22 @@ export class ControleurInterface {
       }
       this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: e.metaKey };
       canevas.setPointerCapture(e.pointerId);
-      this.majCurseur();
+      this.majCurseur(this.curseur);
     });
     canevas.addEventListener('pointerup', (e) => {
       if (e.button !== 0 || !this.appui) return;
       const { mode } = this.appui;
       this.appui = null;
       if (mode === 'attente') this.cliquer(e.clientX, e.clientY);
-      this.majCurseur();
+      this.majCurseur(this.curseur);
     });
     canevas.addEventListener('pointercancel', () => {
       this.appui = null;
-      this.majCurseur();
+      this.majCurseur(this.curseur);
     });
     canevas.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      this.annuler();
+      this.fermer();
     });
     canevas.addEventListener(
       'wheel',
@@ -228,7 +251,7 @@ export class ControleurInterface {
       { passive: false },
     );
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') this.annuler();
+      if (e.key === 'Escape') this.fermer();
       else if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       else if (e.key === 'ArrowLeft' || e.key === 'q') this.tourner(-1);
       else if (e.key === 'ArrowRight' || e.key === 'e') this.tourner(1);
@@ -237,14 +260,25 @@ export class ControleurInterface {
   }
 
   private cliquer(x: number, y: number): void {
+    const { ile, instantane, bulle, deplacement } = this.magasin.valeur;
+    if (!ile || !instantane) return;
     const visee = this.options.scene.viser(x, y);
-    const { placement } = this.magasin.valeur;
-    if (placement) {
-      if (visee.case) this.envoyer({ type: 'poserBatiment', batiment: placement, case: visee.case, orientation: 0 });
+    if (deplacement !== null) {
+      if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case, deplacement) === null) {
+        const orientation = this.batiment(deplacement)?.orientation ?? 0;
+        this.envoyer({ type: 'deplacerBatiment', id: deplacement, case: visee.case, orientation });
+        this.fermer();
+      }
       return;
     }
-    const batiment = visee.batiment ?? this.batimentSur(visee.case);
-    this.magasin.modifier({ panneau: batiment === null ? null : { batiment } });
+    // Un clic ailleurs referme la bulle, sans rien ouvrir d'autre.
+    if (bulle) return this.fermer();
+    const haut = y > window.innerHeight / 2;
+    const id = visee.batiment ?? this.batimentSur(visee.case);
+    if (id !== null) this.ouvrir({ type: 'batiment', id, haut });
+    else if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case) === null) {
+      this.ouvrir({ type: 'construire', case: visee.case, choix: null, haut });
+    }
   }
 
   private batimentSur(c: Case | null): IdBatiment | null {
@@ -253,43 +287,44 @@ export class ControleurInterface {
     return b?.id ?? null;
   }
 
-  /** Met à jour le fantôme ou le surlignage sous la souris. */
+  /** Met à jour le fantôme, le surlignage et le curseur selon la bulle ouverte et ce qui est sous la souris. */
   private majVisee(): void {
     const { scene } = this.options;
-    const { ile, instantane, placement } = this.magasin.valeur;
-    const visee = this.souris && ile && instantane ? scene.viser(this.souris.x, this.souris.y) : null;
-    if (!visee || !ile || !instantane) {
-      scene.cacherFantome();
-      this.majCurseur();
-      if (placement) this.magasin.modifier({ bonusVise: null });
-      return;
+    const { ile, instantane, bulle, deplacement } = this.magasin.valeur;
+    if (!ile || !instantane) return;
+    const { batiments } = instantane;
+    // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
+    if (bulle?.type === 'construire') {
+      const { choix } = bulle;
+      scene.montrerFantome(bulle.case, choix, !choix || abordable(this.contenu.batiments[choix].cout, instantane.stocks));
+      this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });
+      return this.majCurseur('fleche');
     }
-    if (placement) {
-      this.majCurseur();
-      if (!visee.case) {
-        scene.cacherFantome();
-        this.magasin.modifier({ bonusVise: null });
-        return;
-      }
-      const libre = emplacementRefuse(ile, instantane.batiments, visee.case) === null;
-      const valide = libre && abordable(this.contenu.batiments[placement].cout, instantane.stocks);
-      scene.montrerFantome(visee.case, placement, valide);
-      const bonus = libre ? bonusVoisinage(ile, instantane.batiments, this.contenu, placement, visee.case) : null;
-      this.magasin.modifier({ bonusVise: bonus });
-      return;
+    const visee = this.souris ? scene.viser(this.souris.x, this.souris.y) : null;
+    const deplace = deplacement === null ? undefined : this.batiment(deplacement);
+    if (deplace) {
+      const autres = batiments.filter((b) => b.id !== deplace.id);
+      const libre = !!visee?.case && emplacementRefuse(ile, autres, visee.case) === null;
+      if (visee?.case) scene.montrerFantome(visee.case, deplace.type, libre);
+      else scene.cacherFantome();
+      this.magasin.modifier({ bonusVise: libre ? bonusVoisinage(ile, autres, this.contenu, deplace.type, visee!.case!) : null });
+      return this.majCurseur('marteau');
     }
-    const id = visee.batiment ?? this.batimentSur(visee.case);
-    const b = id === null ? undefined : instantane.batiments.find((x) => x.id === id);
-    if (b) scene.montrerFantome(b.case, null, true);
+    const id = visee ? (visee.batiment ?? this.batimentSur(visee.case)) : null;
+    const survole = id === null ? undefined : this.batiment(id);
+    const libre = !survole && !!visee?.case && emplacementRefuse(ile, batiments, visee.case) === null;
+    // Le bâtiment de la bulle reste surligné ; sinon, ce qu'on pourrait cliquer sous la souris.
+    const cible = bulle?.type === 'batiment' ? this.batiment(bulle.id) : survole;
+    if (cible) scene.montrerFantome(cible.case, null, true);
+    else if (libre && !bulle) scene.montrerFantome(visee!.case!, null, true);
     else scene.cacherFantome();
-    this.majCurseur(b !== undefined);
+    this.majCurseur(bulle ? 'fleche' : survole ? 'main' : libre ? 'marteau' : 'fleche');
   }
 
-  /** Main fermée pendant un glisser, marteau en construction, main sur ce qu'on peut cliquer. */
-  private majCurseur(surCliquable = false): void {
-    let curseur: Curseur = surCliquable ? 'main' : 'fleche';
-    if (this.appui?.mode === 'vue') curseur = 'poing';
-    else if (this.magasin.valeur.placement) curseur = 'marteau';
-    this.options.scene.canevas.style.cursor = `var(--curseur-${curseur})`;
+  /** Main fermée pendant un glisser, sinon la variante choisie selon ce qui est visé. */
+  private majCurseur(curseur: Curseur): void {
+    this.curseur = curseur;
+    const affiche = this.appui?.mode === 'vue' ? 'poing' : curseur;
+    this.options.scene.canevas.style.cursor = `var(--curseur-${affiche})`;
   }
 }
