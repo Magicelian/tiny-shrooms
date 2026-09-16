@@ -1,22 +1,17 @@
 {
-  "name": "desktop",
+  "name": "@tiny-shrooms/renderer",
   "private": true,
   "type": "module",
+  "exports": "./src/index.ts",
   "scripts": {
-    "vite": "vite",
-    "tauri": "tauri",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.11.1",
     "@tiny-shrooms/engine": "workspace:*",
-    "@tiny-shrooms/renderer": "workspace:*",
     "three": "^0.186.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.11.4",
     "@types/three": "^0.186.0",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "typescript": "^7.0.2"
   }
 }

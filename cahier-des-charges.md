@@ -262,7 +262,7 @@ tiny_shrooms/
 ### 6.1 Rendu (`packages/renderer`)
 
 - Caméra **orthographique isométrique** ; rotation par pas de 90° ; 2 niveaux de zoom.
-- **Pipeline pixelisé** : rendu dans une cible basse résolution (≈ ⅓ de la taille de la fenêtre),
+- **Pipeline pixelisé** : rendu dans une cible basse résolution (½ de la taille de la fenêtre),
   agrandie avec filtrage `nearest` ; passe de **contours** (détection de bords sur la profondeur et
   les normales) ; ombrage en paliers (toon) ; palette limitée.
 - Fond **transparent** (`alpha: true`, fond à opacité 0) : seul l'îlot flotte sur le bureau.
@@ -328,6 +328,8 @@ son critère n'est pas rempli.
   rotation et zoom.
 - Bâtiments et habitants en formes provisoires (cubes colorés), synchronisés sur les instantanés du moteur.
 - **Critère** : le rendu rappelle l'image de référence ; 30 i/s stables ; 0 i/s fenêtre cachée.
+- **Résultat (16/09/2026)** : validé sur Mac, nourri par un faux moteur. Rendu à ½ de la fenêtre
+  (⅓ rendait bâtiments et habitants illisibles à 320 px), 2,9 ms par image ; habitants agrandis ×1,7.
 
 ### Étape 4 — Interface au survol → premier jouable
 - Compteurs, barre d'outils, panneau de construction avec aperçu fantôme, panneau des priorités.
