@@ -5,7 +5,7 @@ import { coutAmelioration, effetAmelioration, payer } from './ameliorations';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
-import { avancerHabitants, logements } from './habitants';
+import { avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
 import { cadenceTravail, calendrier, facteurSaison, meteoAu } from './saisons';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
@@ -211,6 +211,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
       saison,
       avancementSaison: avancement,
       heure: heureDuJour(etat.pas, contenu.temps),
+      nuit: estLaNuit(etat, contenu),
       meteo: meteoAu(etat.pas, etat.graine, contenu),
       enPause,
     },

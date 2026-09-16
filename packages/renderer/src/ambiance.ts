@@ -21,6 +21,19 @@ const GOUTTES = 120;
 const FLOCONS = 140;
 const FEUILLES = 36;
 const COULEURS_FEUILLES = [0xd2782c, 0xe0a33a, 0xb0442a];
+/** Durée du crépuscule et de l'aube, en secondes réelles. */
+const CREPUSCULE_S = 3;
+/** Lumières de nuit : un ciel bleu sombre, un soleil devenu lune. */
+const CIEL_NUIT = new THREE.Color(0x5a6ab8);
+const LUNE = new THREE.Color(0x8fa6ff);
+const PART_NUIT = { ciel: 0.45, soleil: 0.2 };
+
+interface Lumieres {
+  ciel: THREE.HemisphereLight;
+  soleil: THREE.DirectionalLight;
+  intensites: { ciel: number; soleil: number };
+  couleurs: { ciel: THREE.Color; soleil: THREE.Color };
+}
 
 interface Particules {
   objet: THREE.Points | THREE.LineSegments;
@@ -40,6 +53,10 @@ export class Ambiance {
   private meteo: Meteo = 'soleil';
   private saison: Saison = 'printemps';
   private temps = 0;
+  private nuit = false;
+  /** 0 en plein jour, 1 en pleine nuit. */
+  private obscurite = 0;
+  private lumieres: Lumieres | null = null;
   private readonly pluie = creerParticules(GOUTTES, 2, new THREE.LineBasicMaterial({ color: 0x9fd0f2, transparent: true, opacity: 0.8 }));
   private readonly neige = creerParticules(FLOCONS, 1, new THREE.PointsMaterial({ color: 0xffffff, size: 1, sizeAttenuation: false }));
   private readonly feuilles = creerParticules(
@@ -62,6 +79,16 @@ export class Ambiance {
     this.montrer();
   }
 
+  /** Lumières de la scène, assombries la nuit ; leurs réglages de jour servent de référence. */
+  eclairer(ciel: THREE.HemisphereLight, soleil: THREE.DirectionalLight): void {
+    this.lumieres = {
+      ciel,
+      soleil,
+      intensites: { ciel: ciel.intensity, soleil: soleil.intensity },
+      couleurs: { ciel: ciel.color.clone(), soleil: soleil.color.clone() },
+    };
+  }
+
   changerIle(ile: Ile): void {
     this.demiLargeur = ile.largeur / 2;
     this.demiProfondeur = ile.profondeur / 2;
@@ -69,6 +96,7 @@ export class Ambiance {
   }
 
   appliquer(temps: Temps): void {
+    this.nuit = temps.nuit;
     const rang = SAISONS.indexOf(temps.saison);
     const suivante = SAISONS[(rang + 1) % SAISONS.length]!;
     const glissement = Math.max(0, (temps.avancementSaison - (1 - TRANSITION)) / TRANSITION);
@@ -86,9 +114,24 @@ export class Ambiance {
 
   animer(dt: number): void {
     this.temps += dt;
+    this.assombrir(dt);
     if (this.pluie.objet.visible) this.deplacer(this.pluie, dt, 7, 1.2, 0);
     if (this.neige.objet.visible) this.deplacer(this.neige, dt, 0.7, this.meteo === 'vent' ? 1.5 : 0.2, 0.3);
     if (this.feuilles.objet.visible) this.deplacer(this.feuilles, dt, 0.5, this.meteo === 'vent' ? 2.5 : 0.4, 0.6);
+  }
+
+  private assombrir(dt: number): void {
+    const cible = this.nuit ? 1 : 0;
+    // Premier affichage (dt nul) : on part directement de la bonne lumière.
+    const pas = dt === 0 ? 1 : dt / CREPUSCULE_S;
+    this.obscurite += Math.sign(cible - this.obscurite) * Math.min(pas, Math.abs(cible - this.obscurite));
+    const l = this.lumieres;
+    if (!l) return;
+    const o = this.obscurite;
+    l.ciel.intensity = l.intensites.ciel * (1 - (1 - PART_NUIT.ciel) * o);
+    l.soleil.intensity = l.intensites.soleil * (1 - (1 - PART_NUIT.soleil) * o);
+    l.ciel.color.lerpColors(l.couleurs.ciel, CIEL_NUIT, o);
+    l.soleil.color.lerpColors(l.couleurs.soleil, LUNE, o);
   }
 
   private montrer(): void {

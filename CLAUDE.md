@@ -82,6 +82,9 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `AidesConstruction.montrerPortee`. Critère : `packages/content/src/bourg.test.ts`. Sauvegarde en version 7.
   Livraisons : une charge déposée passe par `etat.arrivages`, rangés dans le stock au rythme de la production
   (6/min → +1 toutes les 10 s).
+- **Nuit** (2 min sur un jour de 10) : `temps.nuit` dans l'instantané ; les habitants rentrent dormir au pied de leur
+  logement, l'éclairage baisse (`Ambiance.eclairer`) et des « z » montent (`entites.ts`). Pour la voir dans le
+  navigateur : envelopper `moteur.onmessage` et forcer `instantane.temps.nuit = true`.
   Pour inspecter une partie avancée dans le navigateur : importer le moteur via `/@fs/<chemin>/packages/engine/src/index.ts`,
   simuler, puis écrire `serialiser(etat)` dans `localStorage['tiny-shrooms.partie']` et recharger.
 - **Prochaine étape : 14** (île extensible).

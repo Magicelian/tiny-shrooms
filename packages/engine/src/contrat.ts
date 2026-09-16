@@ -160,6 +160,8 @@ export interface Temps {
   avancementSaison: number;
   /** Heure du jour entre 0 et 1 (0 = minuit). */
   heure: number;
+  /** Les habitants dorment : rien ne se récolte ni ne se livre. */
+  nuit: boolean;
   meteo: Meteo;
   /** Vrai pendant une veille signalée par Rust. */
   enPause: boolean;

@@ -10,6 +10,11 @@ const CUBE = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const PIED = new THREE.CylinderGeometry(0.08, 0.1, 0.22, 6).translate(0, 0.11, 0);
 const CHAPEAU = new THREE.SphereGeometry(0.17, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 0.2, 0);
 
+/** « z » en pixels au-dessus d'un habitant endormi, partagé par tous. */
+const MATERIAU_Z = new THREE.SpriteMaterial({ map: textureZ(), transparent: true, depthWrite: false });
+/** Durée de la montée d'un « z », en millisecondes. */
+const CYCLE_Z_MS = 1800;
+
 /** Les habitants sont volontairement grands par rapport aux cases, pour rester lisibles. */
 const ECHELLE_HABITANT = 1.7;
 
@@ -19,6 +24,7 @@ interface HabitantAffiche {
   vers: THREE.Vector3;
   debut: number;
   donnees: Habitant;
+  z: THREE.Sprite;
 }
 
 export class Entites {
@@ -35,7 +41,7 @@ export class Entites {
   changerIle(ile: Ile): void {
     this.ile = ile;
     for (const m of this.batiments.values()) this.groupe.remove(m);
-    for (const h of this.habitants.values()) this.groupe.remove(h.objet);
+    for (const h of this.habitants.values()) this.groupe.remove(h.objet, h.z);
     this.batiments.clear();
     this.habitants.clear();
     this.souche.changerIle(ile);
@@ -66,6 +72,13 @@ export class Entites {
         h.objet.rotation.z = Math.sin(phase * 0.8) * 0.2;
       }
       h.objet.scale.y = ECHELLE_HABITANT * (activite === 'dort' ? 0.7 : 1);
+      // Le « z » monte en s'effaçant, puis repart ; chaque dormeur a son propre décalage.
+      h.z.visible = activite === 'dort';
+      if (h.z.visible) {
+        const t = (maintenant / CYCLE_Z_MS + h.donnees.id * 0.37) % 1;
+        h.z.position.set(h.objet.position.x + t * 0.15, 0.6 + t * 0.4, h.objet.position.z);
+        h.z.material.opacity = 1 - t;
+      }
     }
   }
 
@@ -104,9 +117,12 @@ export class Entites {
       let affiche = this.habitants.get(h.id);
       const vers = versMonde(h.position, ile);
       if (!affiche) {
-        affiche = { objet: creerHabitant(h), depuis: vers.clone(), vers, debut: maintenant, donnees: h };
+        const z = new THREE.Sprite(MATERIAU_Z.clone());
+        z.scale.setScalar(0.22);
+        z.visible = false;
+        affiche = { objet: creerHabitant(h), depuis: vers.clone(), vers, debut: maintenant, donnees: h, z };
         this.habitants.set(h.id, affiche);
-        this.groupe.add(affiche.objet);
+        this.groupe.add(affiche.objet, z);
       } else {
         affiche.depuis.copy(affiche.objet.position).setY(0);
         affiche.vers = vers;
@@ -117,11 +133,32 @@ export class Entites {
     }
     for (const [id, affiche] of this.habitants) {
       if (vus.has(id)) continue;
-      this.groupe.remove(affiche.objet);
+      this.groupe.remove(affiche.objet, affiche.z);
+      affiche.z.material.dispose();
       this.habitants.delete(id);
     }
   }
 
+}
+
+/** Un « z » de 5 × 5 pixels, blanc cerclé de sombre. */
+function textureZ(): THREE.CanvasTexture {
+  const motif = ['#####', '...#.', '..#..', '.#...', '#####'];
+  const toile = document.createElement('canvas');
+  toile.width = toile.height = 7;
+  const ctx = toile.getContext('2d')!;
+  motif.forEach((ligne, y) =>
+    [...ligne].forEach((p, x) => {
+      if (p !== '#') return;
+      ctx.fillStyle = '#2b2233';
+      ctx.fillRect(x, y, 3, 3);
+    }),
+  );
+  ctx.fillStyle = '#f4f0ff';
+  motif.forEach((ligne, y) => [...ligne].forEach((p, x) => p === '#' && ctx.fillRect(x + 1, y + 1, 1, 1)));
+  const texture = new THREE.CanvasTexture(toile);
+  texture.magFilter = texture.minFilter = THREE.NearestFilter;
+  return texture;
 }
 
 function creerHabitant(h: Habitant): THREE.Group {

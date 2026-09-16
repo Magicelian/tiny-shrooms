@@ -35,7 +35,7 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   for (const h of etat.habitants) {
     majBienEtre(h, contenu, loges.get(h.id), nourri);
     if (nuit) {
-      h.activite = 'dort';
+      dormir(etat, contenu, h, loges.get(h.id));
       continue;
     }
     h.pasDepuisChoix++;
@@ -49,6 +49,16 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
     for (const b of etat.batiments) if (b.chantier !== null) avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements);
   }
   arrivees(etat, contenu, capacite, evenements);
+}
+
+/** La nuit, chacun rentre dormir au pied de son logement ; un sans-logis dort où il se trouve. */
+function dormir(etat: Etat, contenu: Contenu, h: HabitantEtat, logement: BatimentEtat | true | undefined): void {
+  const arrive =
+    logement === undefined ||
+    (logement === true
+      ? marcherVers(etat, h, centreSouche(etat.ile), rayonSouche(etat), contenu)
+      : marcherVers(etat, h, centreCase(logement), RAYON_BATIMENT, contenu));
+  if (arrive) h.activite = 'dort';
 }
 
 /** Fait avancer un chantier d'un pas ; renvoie vrai s'il vient de se terminer. */

@@ -52,7 +52,8 @@ export class Rendu {
     conteneur.prepend(this.canevas);
 
     this.pixelisation = new Pixelisation(this.moteur);
-    this.scene.add(new THREE.HemisphereLight(0xfff4e0, 0x5a4a6a, 1.2));
+    const ciel = new THREE.HemisphereLight(0xfff4e0, 0x5a4a6a, 1.2);
+    this.scene.add(ciel);
     const soleil = new THREE.DirectionalLight(0xfff0d0, 2.2);
     soleil.position.set(6, 12, 4);
     soleil.castShadow = true;
@@ -60,6 +61,7 @@ export class Rendu {
     soleil.shadow.bias = -0.002;
     Object.assign(soleil.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 });
     this.scene.add(soleil, this.entites.groupe, this.elements.groupe);
+    this.ambiance.eclairer(ciel, soleil);
     this.redimensionner();
   }
 

@@ -642,3 +642,24 @@ describe('Logements et paliers', () => {
     expect(etat.batiments[0]!.besoins).toEqual({});
   });
 });
+
+describe('Nuit', () => {
+  it('chacun rentre dormir au pied de son logement', () => {
+    const contenu = contenuDeTest({ hutte: { logement: true } }, { auDepart: 0, logementDeBase: 0 });
+    contenu.habitants.nuit = { debut: 0.5, fin: 0.9 };
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.habitants).toHaveLength(2);
+    // Jour de 10 min qui commence à minuit : la nuit débute à 5 min.
+    moteur.simuler(4 * PAS_PAR_MINUTE);
+    const [message] = moteur.recevoir({ type: 'commande', commande: { type: 'demolir', id: -1 } }, 0);
+    const instantane = message?.type === 'instantane' ? message.instantane : null;
+    expect(instantane?.temps.nuit).toBe(true);
+    const hutte = moteur.etatCourant.batiments[0]!.case;
+    for (const h of moteur.etatCourant.habitants) {
+      expect(h.activite).toBe('dort');
+      expect(Math.hypot(h.position.x - hutte.x - 0.5, h.position.y - hutte.y - 0.5)).toBeLessThan(0.7);
+    }
+  });
+});
