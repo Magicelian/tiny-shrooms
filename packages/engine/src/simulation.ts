@@ -174,7 +174,8 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if ((etat.pousses[commande.element] ?? 1) < 1) return refus('pasPret');
       const { ressource, quantite } = contenu.recolte[element.type];
       const place = plafonds(etat, contenu)[ressource] - etat.stocks[ressource];
-      const gain = Math.min(Math.round(quantite * bonusProduction(etat, contenu)), Math.floor(place));
+      // Le stock s'affiche arrondi à l'unité inférieure : une fraction de place libre se remplit aussi.
+      const gain = Math.min(Math.round(quantite * bonusProduction(etat, contenu)), place);
       if (gain <= 0) return refus('stockPlein');
       etat.stocks[ressource] += gain;
       etat.pousses[commande.element] = 0;

@@ -201,7 +201,8 @@ export class ControleurInterface {
       if (e.type === 'recolte') {
         const point = this.recoltes.get(e.element);
         this.recoltes.delete(e.element);
-        if (point) this.magasin.envoler({ ...point, ressource: e.ressource, quantite: e.quantite });
+        // Stock affiché à l'unité inférieure : un complément de 0,2 fait bien passer de 49 à 50.
+        if (point) this.magasin.envoler({ ...point, ressource: e.ressource, quantite: Math.ceil(e.quantite - 1e-9) });
         this.sons.jouer('recolte');
       } else if (e.type === 'commandeRefusee') {
         this.sons.jouer('refus');

@@ -945,3 +945,19 @@ describe('Nouvelle partie', () => {
     expect(etat.stocks.boisMort).toBe(contenu.stocksDeDepart.boisMort);
   });
 });
+
+describe('Récolte presque au plafond', () => {
+  it('remplit la fraction de place qui reste au lieu de refuser', () => {
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
+    moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
+    const etat = moteur.etatCourant as Etat;
+    const element = etat.ile.elements.findIndex((e) => e.type === 'buisson');
+    const ressource = contenu.recolte.buisson.ressource;
+    etat.pousses[element] = 1;
+    etat.stocks[ressource] = contenu.plafondsDeBase[ressource] - 0.2;
+    const [message] = moteur.recevoir({ type: 'commande', commande: { type: 'recolter', element } }, 0);
+    expect(message?.type === 'instantane' && message.evenements.some((e) => e.type === 'commandeRefusee')).toBe(false);
+    expect(etat.stocks[ressource]).toBeCloseTo(contenu.plafondsDeBase[ressource]);
+  });
+});
