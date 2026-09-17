@@ -84,7 +84,7 @@ export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = pre
     habitants: [],
     pousses: ile.elements.map(() => 1),
     prochainIdHabitant: 1,
-    pasAvantArrivee: contenu.habitants.delaiArriveeSecondes * effets.arrivee * (PAS_PAR_MINUTE / 60),
+    pasAvantArrivee: (contenu.habitants.premiereArriveeSecondes ?? contenu.habitants.delaiArriveeSecondes) * effets.arrivee * (PAS_PAR_MINUTE / 60),
     batimentsDebloques: [...(contenu.paliers[0]?.debloque ?? [])],
     palier: 0,
     retraitSouche: null,

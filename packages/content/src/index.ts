@@ -66,10 +66,11 @@ export const contenu: Contenu = {
     boisMort: { ressource: 'boisMort', quantite: 2, repousseSecondes: 45 },
     mousse: { ressource: 'mousse', quantite: 2, repousseSecondes: 60 },
   },
-  // Aucun habitant ni logement au départ : ils arrivent avec la première hutte.
+  // Aucun habitant au départ ; la souche en loge un, qui arrive vite : on n'attend jamais sans rien pouvoir faire.
   habitants: {
     auDepart: 0,
-    logementDeBase: 0,
+    logementDeBase: 1,
+    premiereArriveeSecondes: 15,
     vitesseCasesParSeconde: 1.2,
     capaciteTransport: 5,
     reserveMax: 10,

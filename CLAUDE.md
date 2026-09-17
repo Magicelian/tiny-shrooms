@@ -73,8 +73,9 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   masquées et bulle fermée. L'instantané donne `habitant.lieu` (emplois pourvus).
 - **Étape 12 validée**. Éléments naturels dans `ile.elements` (placés par la graine,
   `placerElements` dans `packages/engine/src/ile.ts`), repousse dans `etat.pousses` / `instantane.pousses` ; commande
-  `recolter`, événement `recolte` (chiffre qui s'envole depuis le point cliqué). Partie neuve : ni stock, ni habitant,
-  ni logement de base ; sans habitants les chantiers avancent seuls. Sauvegarde en version 5 (migration depuis la 4).
+  `recolter`, événement `recolte` (chiffre qui s'envole depuis le point cliqué). Partie neuve : ni stock ni habitant,
+  mais la souche loge 1 habitant qui arrive au bout de 15 s (`premiereArriveeSecondes`, corrigé le 17/09 : sans lui,
+  une renaissance semblait bloquée) ; sans habitants les chantiers avancent seuls. Sauvegarde en version 5 (migration depuis la 4).
   Rendu : `packages/renderer/src/elements.ts`. Critère : `packages/content/src/recolte.test.ts` (hutte achevée à ~3 min).
   Menu Réglages retiré : habitants/places en haut à droite, ressources en rangée discrète en bas (plafond au survol).
 - **Étape 13 implémentée, à valider**. Logements, besoins, montée en gamme et paliers : `packages/engine/src/logements.ts`

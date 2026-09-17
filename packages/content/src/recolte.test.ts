@@ -42,9 +42,15 @@ describe('Partie neuve', () => {
     expect(achevee).toBeLessThanOrEqual(240);
   });
 
-  it('les deux premiers habitants s’installent ensuite dans la hutte, si on cueille des baies', () => {
+  it('un premier habitant arrive sans hutte, logé à la souche', () => {
+    const moteur = new Moteur(contenu, 0);
+    moteur.simuler(30 * PAS_PAR_SECONDE);
+    expect(moteur.etatCourant.habitants).toHaveLength(1);
+  });
+
+  it('deux autres habitants s’installent ensuite dans la hutte, si on cueille des baies', () => {
     const { moteur } = premiereHutte(0);
-    expect(moteur.etatCourant.habitants).toHaveLength(0);
+    expect(moteur.etatCourant.habitants).toHaveLength(1);
     // Il faut aussi de quoi manger : le joueur cueille les buissons prêts, toutes les 5 s.
     for (let s = 0; s < 180; s += 5) {
       const { ile, pousses } = moteur.etatCourant;
@@ -53,6 +59,6 @@ describe('Partie neuve', () => {
       });
       moteur.simuler(5 * PAS_PAR_SECONDE);
     }
-    expect(moteur.etatCourant.habitants).toHaveLength(2);
+    expect(moteur.etatCourant.habitants).toHaveLength(3);
   });
 });

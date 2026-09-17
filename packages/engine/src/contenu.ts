@@ -50,6 +50,8 @@ export interface ContenuHabitants {
   auDepart: number;
   /** Places offertes par la souche-dépôt. */
   logementDeBase: number;
+  /** Délai de la toute première arrivée d'une île (sinon `delaiArriveeSecondes`). */
+  premiereArriveeSecondes?: number;
   vitesseCasesParSeconde: number;
   /** Quantité portée par voyage. */
   capaciteTransport: number;
