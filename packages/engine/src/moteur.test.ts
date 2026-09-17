@@ -897,7 +897,7 @@ describe('Renaissance', () => {
     const moteur = new Moteur(contenuDeTest({ hutte: { cout: { boisMort: 10 }, constructionSecondes: 10, logement: true } }), 0);
     const etat = moteur.etatCourant;
     etat.prestige.graines = 4;
-    expect(commander(moteur, { type: 'acheterBonus', bonus: 'depart' })).toEqual([]);
+    expect(commander(moteur, { type: 'acheterBonus', bonus: 'depart' }).every((e) => e.type === 'habitantArrive')).toBe(true);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'construction' })).toEqual([]);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })).toEqual([]);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
@@ -959,5 +959,23 @@ describe('Récolte presque au plafond', () => {
     const [message] = moteur.recevoir({ type: 'commande', commande: { type: 'recolter', element } }, 0);
     expect(message?.type === 'instantane' && message.evenements.some((e) => e.type === 'commandeRefusee')).toBe(false);
     expect(etat.stocks[ressource]).toBeCloseTo(contenu.plafondsDeBase[ressource]);
+  });
+});
+
+describe('Bagages', () => {
+  it('un niveau acheté donne tout de suite ses ressources et ses habitants', () => {
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
+    moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
+    const etat = moteur.etatCourant as Etat;
+    etat.prestige.graines = 100;
+    const { stocksDeDepart, habitantsDeDepart } = contenu.prestige.effets;
+    const r = RESSOURCES.find((x) => (stocksDeDepart[x] ?? 0) > 0)!;
+    etat.stocks[r] = 0;
+    const habitants = etat.habitants.length;
+    moteur.recevoir({ type: 'commande', commande: { type: 'acheterBonus', bonus: 'depart' } }, 0);
+    expect(etat.prestige.bonus.depart).toBe(1);
+    expect(etat.stocks[r]).toBe(Math.min(stocksDeDepart[r]!, contenu.plafondsDeBase[r]));
+    expect(etat.habitants.length).toBe(habitants + habitantsDeDepart);
   });
 });

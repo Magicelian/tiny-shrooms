@@ -127,7 +127,7 @@ export const en: Record<keyof typeof fr, string> = {
   'bonus.construction': 'Skilled hands',
   'bonus.logement': 'Cosy nests',
   'bonus.effet.production': 'Production +{pourcent}%',
-  'bonus.effet.depart': 'At start: {liste}, {nombre} villager(s)',
+  'bonus.effet.depart': 'At start: {liste}, {nombre} villager(s). Each level bought also helps right away.',
   'bonus.effet.construction': 'Cost −{cout}%, building +{vitesse}%',
   'bonus.effet.logement': 'Well-being +{pourcent}%, +{places} bed(s) per home, arrivals {accueil}% sooner',
   'message.renaissance': 'New island! +{graines} prestige seeds',

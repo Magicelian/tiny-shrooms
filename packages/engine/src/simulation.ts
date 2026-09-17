@@ -5,7 +5,7 @@ import { bonusProduction, coutAmelioration, payer, rembourser } from './ameliora
 import { BONUS_PRESTIGE } from './contrat';
 import { coutBatiment, coutBonus, peutRenaitre, recommencer, renaitre } from './prestige';
 import type { Contenu } from './contenu';
-import { plafonds, type Etat } from './etat';
+import { ajouterHabitant, plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
 import { avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
@@ -220,6 +220,8 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if (etat.prestige.graines < prix) return refus('ressourcesInsuffisantes');
       etat.prestige.graines -= prix;
       etat.prestige.bonus[commande.bonus] = niveau + 1;
+      // Les bagages servent aussi tout de suite : on les achète juste après avoir renaît.
+      if (commande.bonus === 'depart') return donnerBagages(etat, contenu);
       return [];
     }
     case 'modifierReglage': {
@@ -245,6 +247,18 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       return [];
     }
   }
+}
+
+/** Un niveau de bagages : ses ressources (jusqu'au plafond) et ses habitants, dans la partie en cours. */
+function donnerBagages(etat: Etat, contenu: Contenu): Evenement[] {
+  const { stocksDeDepart, habitantsDeDepart } = contenu.prestige.effets;
+  const max = plafonds(etat, contenu);
+  for (const r of RESSOURCES) {
+    etat.stocks[r] = Math.max(etat.stocks[r], Math.min(max[r], etat.stocks[r] + (stocksDeDepart[r] ?? 0)));
+  }
+  const evenements: Evenement[] = [];
+  for (let i = 0; i < habitantsDeDepart; i++) evenements.push({ type: 'habitantArrive', id: ajouterHabitant(etat).id });
+  return evenements;
 }
 
 export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Instantane {

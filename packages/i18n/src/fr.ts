@@ -124,7 +124,7 @@ export const fr = {
   'bonus.construction': 'Mains habiles',
   'bonus.logement': 'Nids douillets',
   'bonus.effet.production': 'Production +{pourcent} %',
-  'bonus.effet.depart': 'Au départ : {liste}, {nombre} habitant(s)',
+  'bonus.effet.depart': 'Au départ : {liste}, {nombre} habitant(s). Chaque niveau acheté sert aussi tout de suite.',
   'bonus.effet.construction': 'Coût −{cout} %, chantiers +{vitesse} %',
   'bonus.effet.logement': 'Bien-être +{pourcent} %, +{places} place(s) par logement, arrivées +{accueil} % plus tôt',
   'message.renaissance': 'Nouvelle île ! +{graines} graines de prestige',

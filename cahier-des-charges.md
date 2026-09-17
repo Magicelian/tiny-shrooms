@@ -175,7 +175,7 @@ le relais pour la progression longue.
 - **Bonus permanents**, achetés en graines dans la bulle de la souche (rubrique « Pouvoirs », dès qu'on a des graines ou un
   bonus ; le sanctuaire ne sert qu'à renaître). À la première renaissance, une petite bulle
   accrochée à la souche indique où dépenser les graines, jusqu'à ce qu'on l'ouvre :
-  production (sève vive), stock et habitants de départ (bagages), coût et vitesse des chantiers
+  production (sève vive), stock et habitants de départ (bagages, dont chaque niveau acheté sert aussi tout de suite), coût et vitesse des chantiers
   (mains habiles), bien-être, places et rythme d'arrivée des habitants (nids douillets).
 
 ### 3.8 Contenu de la V1
