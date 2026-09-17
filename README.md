@@ -74,7 +74,7 @@ Pour savoir quel Mac tu as : menu Pomme → **À propos de ce Mac**. « Puce » 
 
 ## 🎮 Jouer
 
-<img src="docs/gros-plan.png" width="280" align="right" alt="Gros plan sur le village" />
+<img src="docs/menu.png" width="260" align="right" alt="Menu de démarrage" />
 
 | Action | Commande |
 |---|---|
@@ -84,10 +84,13 @@ Pour savoir quel Mac tu as : menu Pomme → **À propos de ce Mac**. « Puce » 
 | Zoomer | **molette** ou `Z` |
 | Tourner l'île | `←` `→` ou `Q` `E` |
 
+Au lancement, un menu propose **Continuer** ou **Nouvelle partie** ; **Paramètres** regroupe le son, la langue et
+le rappel des commandes.
+
 Si la fenêtre n’est pas active, le premier clic ne fait que l’activer. Position verrouillée (menu de l’icône) : glisser déplace la vue.
 
-Le **menu de l'icône** permet d'afficher ou de cacher la fenêtre, de verrouiller sa position, et de régler le son
-(coupé au départ) et la langue.
+Le **menu de l'icône** permet d'afficher ou de cacher la fenêtre, de verrouiller sa position, de régler le son
+(coupé au départ) et la langue, et montre où en est la mise à jour.
 
 💾 La partie s'enregistre toute seule. Appli fermée, le jeu est en pause ; fenêtre cachée, la ville continue de vivre.
 

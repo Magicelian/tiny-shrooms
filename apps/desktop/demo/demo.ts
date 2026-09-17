@@ -1,4 +1,4 @@
-// Développement seulement : `/demo.html?graine=1&minutes=45` fait jouer le joueur scripté des tests,
+// Développement seulement : `/demo.html?graine=1&minutes=45` (ajouter `&menu` pour garder le menu de démarrage) fait jouer le joueur scripté des tests,
 // écrit la partie obtenue à la place de celle du navigateur, puis ouvre le jeu dessus.
 import { contenu } from '@tiny-shrooms/content';
 import { creerEtat, Moteur, serialiser } from '@tiny-shrooms/engine';
@@ -15,4 +15,5 @@ for (let s = 0; s < minutes * 60; s += 5) {
   moteur.simuler(5 * PAS_PAR_SECONDE);
 }
 localStorage.setItem('tiny-shrooms.partie', serialiser(moteur.etatCourant));
-location.replace('/?sansMenu');
+// `&menu` : on garde le menu de démarrage (capture du menu).
+location.replace(parametres.has('menu') ? '/' : '/?sansMenu');
