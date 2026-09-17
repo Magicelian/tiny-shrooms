@@ -29,10 +29,10 @@ export const contenu: Contenu = {
       voisinage: [{ voisin: 'gardeManger', bonus: 0.25 }],
     },
     feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20, portee: 2 },
-    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60, stockage: { spores: 60 } },
+    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60, stockage: { spores: 60 }, unique: true },
     puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
     marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
-    sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90 },
+    sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90, unique: true },
   },
   logement: {
     rangs: [

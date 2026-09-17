@@ -470,6 +470,20 @@ describe('Saisons et météo', () => {
   });
 });
 
+describe('Bâtiments en un seul exemplaire', () => {
+  it('un deuxième atelier est refusé, sauf après démolition', () => {
+    const contenu = contenuDeTest({ atelier: { unique: true } });
+    const moteur = new Moteur(contenu, 0);
+    expect(commander(moteur, poser('atelier', caseLibre(moteur)))).toEqual([]);
+    const atelier = moteur.etatCourant.batiments[0]!;
+    expect(commander(moteur, poser('atelier', caseLibre(moteur)))[0]).toMatchObject({ raison: 'dejaConstruit' });
+    // Le déplacer reste permis.
+    expect(commander(moteur, { type: 'deplacerBatiment', id: atelier.id, case: caseLibre(moteur), orientation: 0 })).toEqual([]);
+    commander(moteur, { type: 'demolir', id: atelier.id });
+    expect(commander(moteur, poser('atelier', caseLibre(moteur)))).toEqual([]);
+  });
+});
+
 describe('Améliorations', () => {
   it('se paient à un atelier achevé, de plus en plus cher, jusqu’au niveau maximal', () => {
     const contenu = contenuDeTest();

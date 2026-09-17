@@ -6,7 +6,7 @@ import { BONUS_PRESTIGE } from './contrat';
 import { coutBatiment, coutBonus, peutRenaitre, recommencer, renaitre } from './prestige';
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type Etat } from './etat';
-import { majBonusVoisinage, verifierEmplacement } from './grille';
+import { dejaConstruit, majBonusVoisinage, verifierEmplacement } from './grille';
 import { appelerArracheurs, avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
 import { demanderDefrichage, memeCase } from './defrichage';
@@ -125,6 +125,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
   switch (commande.type) {
     case 'poserBatiment': {
       if (!etat.batimentsDebloques.includes(commande.batiment)) return refus('nonDebloque');
+      if (dejaConstruit(contenu, etat.batiments, commande.batiment)) return refus('dejaConstruit');
       const emplacement = verifierEmplacement(etat, commande.case);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];

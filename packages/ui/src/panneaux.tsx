@@ -10,6 +10,7 @@ import {
   coutBatiment,
   coutBonus,
   coutTotal,
+  dejaConstruit,
   effetsPrestige,
   gainRenaissance,
   placesLogement,
@@ -33,6 +34,8 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   const { bonusVise } = useMagasin(controleur.magasin);
   const { choix } = bulle;
   const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix), instantane.stocks);
+  // Un bâtiment en un seul exemplaire disparaît du catalogue tant qu'il est là.
+  const batissables = instantane.batimentsDebloques.filter((type) => !dejaConstruit(contenu, instantane.batiments, type));
   // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
   const verrouilles = contenu.paliers.flatMap((p, palier) =>
     p.debloque.filter((type) => !instantane.batimentsDebloques.includes(type)).map((type): [TypeBatiment, number] => [type, palier]),
@@ -40,7 +43,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   return (
     <>
       <ul class="catalogue">
-        {instantane.batimentsDebloques.map((type) => {
+        {batissables.map((type) => {
           const cout = coutBatiment(contenu, instantane.prestige.bonus, type);
           return (
             <li key={type}>

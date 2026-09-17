@@ -282,6 +282,8 @@ export type RaisonRefus =
   | 'besoinsManquants'
   /** Il faut garder au moins un dépôt achevé (garde-manger, remise) une fois la souche partie. */
   | 'depotRequis'
+  /** Ce bâtiment ne se bâtit qu'une fois et il est déjà là. */
+  | 'dejaConstruit'
   /** L'action n'est pas possible pour l'instant (fonction à venir…). */
   | 'indisponible';
 

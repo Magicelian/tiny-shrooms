@@ -35,6 +35,8 @@ export interface DefinitionBatiment {
   logement?: boolean;
   /** Rayon d'effet en cases (carré centré sur le bâtiment) : chaleur d'un feu, eau d'un puits, commerce d'un marché. */
   portee?: number;
+  /** Un seul exemplaire par île : le catalogue ne le propose plus tant qu'il est là. */
+  unique?: boolean;
   voisinage?: RegleVoisinage[];
 }
 

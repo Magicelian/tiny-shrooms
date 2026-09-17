@@ -16,6 +16,11 @@ export function emplacementRefuse(ile: Ile, batiments: readonly Emprise[], c: Ca
   return null;
 }
 
+/** Vrai si ce type ne se bâtit qu'une fois et qu'il est déjà posé (chantier compris). */
+export function dejaConstruit(contenu: Contenu, batiments: readonly Pick<Batiment, 'type'>[], type: TypeBatiment): boolean {
+  return contenu.batiments[type].unique === true && batiments.some((b) => b.type === type);
+}
+
 /** Multiplicateur de voisinage qu'aurait un bâtiment de ce type posé sur `c` (1 = aucun bonus). */
 export function bonusVoisinage(ile: Ile, batiments: readonly Emprise[], contenu: Contenu, type: TypeBatiment, c: Case): number {
   let bonus = 1;

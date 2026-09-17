@@ -185,6 +185,7 @@ export const fr = {
   'refus.stockPlein': 'Stock plein',
   'refus.besoinsManquants': 'Il manque encore quelque chose',
   'refus.depotRequis': 'Il faut d’abord un garde-manger ou une remise',
+  'refus.dejaConstruit': 'Il n’en faut qu’un',
   'message.palierAtteint': '{palier} ! Nouveaux plans : {liste}',
   'message.palierAtteintSeul': 'Le village devient {palier} !',
   'message.logementAmeliore': '{rang} achevé',

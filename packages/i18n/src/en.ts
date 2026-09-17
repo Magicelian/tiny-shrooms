@@ -187,6 +187,7 @@ export const en: Record<keyof typeof fr, string> = {
   'refus.stockPlein': 'Storage full',
   'refus.besoinsManquants': 'Something is still missing',
   'refus.depotRequis': 'Build a pantry or a shed first',
+  'refus.dejaConstruit': 'Only one of these',
   'message.palierAtteint': '{palier}! New plans: {liste}',
   'message.palierAtteintSeul': 'The village becomes a {palier}!',
   'message.logementAmeliore': '{rang} finished',
