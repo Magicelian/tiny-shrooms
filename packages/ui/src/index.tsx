@@ -197,6 +197,7 @@ export class ControleurInterface {
     if (message.instantane.faim && !this.faim && performance.now() - this.sonFaimMs > 60_000) {
       this.sonFaimMs = performance.now();
       this.sons.jouer('faim');
+      this.magasin.annoncer(t('message.faim'));
     }
     this.faim = message.instantane.faim;
     // Le bâtiment visé a disparu (démoli) : sa bulle ou son déplacement n'ont plus d'objet.

@@ -189,6 +189,7 @@ export const en: Record<keyof typeof fr, string> = {
   'message.habitantArrive': 'A new villager arrives!',
   'message.constructionTerminee': '{batiment} finished',
   'message.stockPlein': 'Storage full: {ressource}',
+  'message.faim': 'Out of berries!',
   'message.partieSecours': 'Damaged save: game resumed from a backup copy',
   'message.partieIllisible': 'No readable save: new game',
   'message.partieAncienne': 'The game has changed: new game (the old one is archived)',

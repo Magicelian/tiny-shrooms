@@ -187,6 +187,7 @@ export const fr = {
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.stockPlein': 'Stock plein : {ressource}',
+  'message.faim': 'Plus de baies en stock !',
   'message.partieSecours': 'Sauvegarde abîmée : partie reprise sur une copie de secours',
   'message.partieIllisible': 'Aucune sauvegarde lisible : nouvelle partie',
   'message.partieAncienne': 'Le jeu a changé : nouvelle partie (l’ancienne est archivée)',
