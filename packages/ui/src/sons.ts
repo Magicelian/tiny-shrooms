@@ -15,7 +15,8 @@ export type Effet =
   | 'palier'
   | 'renaissance'
   | 'arracher'
-  | 'demolir';
+  | 'demolir'
+  | 'faim';
 
 export interface AmbianceSonore {
   saison: Saison;
@@ -72,6 +73,11 @@ const NOTES: Record<Effet, Note[]> = {
     { f: 1760, t: 0.75, d: 0.5, onde: 'sine', v: 0.3 },
   ],
   arracher: [{ f: 300, t: 0, d: 0.12, vers: 140, onde: 'sawtooth', v: 0.25 }],
+  // Deux notes douces qui descendent : plus rien à manger.
+  faim: [
+    { f: 494, t: 0, d: 0.16, onde: 'triangle', v: 0.45 },
+    { f: 370, t: 0.16, d: 0.28, vers: 330, onde: 'triangle', v: 0.45 },
+  ],
   demolir: [
     { f: 120, t: 0, d: 0.1, vers: 60, onde: 'square', v: 0.35 },
     { f: 90, t: 0.08, d: 0.14, vers: 45, onde: 'square', v: 0.3 },

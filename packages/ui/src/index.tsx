@@ -112,6 +112,9 @@ export class ControleurInterface {
   /** Point cliqué pour chaque récolte envoyée, d'où partira son chiffre. */
   private readonly recoltes = new Map<number, { x: number; y: number }>();
   private tourAccueil: ReturnType<typeof setInterval> | null = null;
+  /** Faim au dernier instantané, et moment du dernier son de faim (une fois par minute au plus). */
+  private faim = false;
+  private sonFaimMs = -Infinity;
 
   constructor(
     racine: HTMLElement,
@@ -190,6 +193,12 @@ export class ControleurInterface {
     if (message.type !== 'instantane') return;
     this.magasin.modifier({ instantane: message.instantane });
     this.sons.ambiancer(message.instantane.temps);
+    // Les baies viennent de s'épuiser : un son discret, pas à chaque petite oscillation autour de zéro.
+    if (message.instantane.faim && !this.faim && performance.now() - this.sonFaimMs > 60_000) {
+      this.sonFaimMs = performance.now();
+      this.sons.jouer('faim');
+    }
+    this.faim = message.instantane.faim;
     // Le bâtiment visé a disparu (démoli) : sa bulle ou son déplacement n'ont plus d'objet.
     const { bulle, deplacement } = this.magasin.valeur;
     const vise = bulle?.type === 'batiment' ? bulle.id : deplacement;
