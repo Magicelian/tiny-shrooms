@@ -835,3 +835,24 @@
 .lien-quitter:hover {
   color: var(--rouge);
 }
+.commandes {
+  margin: 2px 0 4px;
+  font-size: 12px;
+  text-align: left;
+}
+.commandes div {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 0;
+  border-bottom: 2px dotted var(--papier-fonce);
+}
+.commandes dt {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.commandes dd {
+  margin: 0;
+  color: var(--bois-fonce);
+  text-align: right;
+}

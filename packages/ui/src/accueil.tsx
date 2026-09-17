@@ -3,6 +3,17 @@ import { t } from '@tiny-shrooms/i18n';
 import type { ControleurInterface } from './index';
 import { useMagasin } from './magasin';
 
+/** Touche qui accompagne le glisser pour déplacer l'île : ⌘ sur Mac, Ctrl ailleurs. */
+const TOUCHE = /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
+
+const COMMANDES = [
+  ['accueil.commande.clic', 'accueil.commande.clicAction'],
+  ['accueil.commande.glisser', 'accueil.commande.glisserAction'],
+  ['accueil.commande.toucheGlisser', 'accueil.commande.toucheGlisserAction'],
+  ['accueil.commande.zoom', 'accueil.commande.zoomAction'],
+  ['accueil.commande.tourner', 'accueil.commande.tournerAction'],
+] as const;
+
 export function Accueil({ controleur }: { controleur: ControleurInterface }) {
   const etat = useMagasin(controleur.magasin);
   const vignette = controleur.vignettes?.batiment('hutte', 3);
@@ -18,7 +29,22 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
       </div>
 
       <section class="panneau-accueil">
-        {etat.menu === 'confirmer' ? (
+        {etat.menu === 'commandes' ? (
+          <div class="corps">
+            <h2>{t('accueil.commandes')}</h2>
+            <dl class="commandes">
+              {COMMANDES.map(([geste, action]) => (
+                <div key={geste}>
+                  <dt>{t(geste, { touche: TOUCHE })}</dt>
+                  <dd>{t(action)}</dd>
+                </div>
+              ))}
+            </dl>
+            <button class="bouton" onClick={() => controleur.montrerCommandes(false)}>
+              {t('accueil.retour')}
+            </button>
+          </div>
+        ) : etat.menu === 'confirmer' ? (
           <div class="corps">
             <h2>{t('accueil.confirmerTitre')}</h2>
             <p>{t('accueil.confirmerTexte')}</p>
@@ -54,6 +80,9 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
                 </button>
               </span>
             </div>
+            <button class="bouton" onClick={() => controleur.montrerCommandes(true)}>
+              {t('accueil.commandes')}
+            </button>
             {controleur.quittable && (
               <button class="lien-quitter" onClick={() => controleur.quitter()}>
                 {t('accueil.quitter')}

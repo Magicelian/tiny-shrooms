@@ -143,6 +143,11 @@ export class ControleurInterface {
     this.sons.jouer('termine');
   }
 
+  montrerCommandes(visibles: boolean): void {
+    this.magasin.modifier({ menu: visibles ? 'commandes' : 'accueil' });
+    this.sons.jouer(visibles ? 'termine' : 'fermer');
+  }
+
   demanderRecommencer(confirmer: boolean): void {
     this.magasin.modifier({ menu: confirmer ? 'confirmer' : 'accueil' });
     this.sons.jouer(confirmer ? 'refus' : 'fermer');
