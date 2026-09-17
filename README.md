@@ -77,12 +77,12 @@ Les autres fichiers de la page servent aux mises à jour automatiques.
 | Action | Commande |
 |---|---|
 | Construire, récolter, inspecter | **clic** |
-| Déplacer la vue | **glisser** |
+| Déplacer la fenêtre | **glisser** |
+| Déplacer la vue | `⌘` + glisser<br />(`Ctrl` sous Windows) |
 | Zoomer | **molette** ou `Z` |
 | Tourner l'île | `←` `→` ou `Q` `E` |
-| Déplacer la fenêtre | `⌘` + glisser<br />(`Ctrl` sous Windows) |
 
-Si la fenêtre n'est pas active, le premier clic ne fait que l'activer.
+Si la fenêtre n’est pas active, le premier clic ne fait que l’activer. Position verrouillée (menu de l’icône) : glisser déplace la vue.
 
 Le **menu de l'icône** permet d'afficher ou de cacher la fenêtre, de verrouiller sa position, et de régler le son
 (coupé au départ) et la langue.

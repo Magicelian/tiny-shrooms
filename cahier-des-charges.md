@@ -41,8 +41,8 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 | Style | Pixel art 3D isométrique (façon Tiny Tycoon) |
 | Rendu | Three.js, rendu basse résolution pixelisé + contours |
 | Fenêtre | Flottante, sans bordure, toujours au-dessus, fond transparent, **fixe à 320 × 320** + icône dans la barre des menus |
-| Navigation | Clic maintenu = faire glisser l'île dans toutes les directions ; zoom à la molette ; rotation par pas de 90° |
-| Déplacer la fenêtre | **⌘ + clic maintenu** ; option « Verrouiller la position » (paramètres et menu de l'icône) |
+| Navigation | **⌘ (Ctrl sous Windows) + clic maintenu** = faire glisser l'île dans toutes les directions (inversé le 17/09/2026) ; zoom à la molette ; rotation par pas de 90° |
+| Déplacer la fenêtre | **Clic maintenu** (la vue si la position est verrouillée) ; option « Verrouiller la position » (paramètres et menu de l'icône) |
 | Curseur | Curseur pixel personnalisé, uniquement quand la souris est dans la fenêtre |
 | Focus | Fenêtre sans le focus : aucune interface révélée, aucun aperçu ; le premier clic donne le focus sans agir |
 | Emballage | Tauri v2 |

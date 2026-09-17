@@ -74,7 +74,7 @@ const DELAI_FOCUS_MS = 250;
 interface Appui {
   x: number;
   y: number;
-  mode: 'attente' | 'vue' | 'bloque';
+  mode: 'attente' | 'vue';
   fenetre: boolean;
 }
 
@@ -281,8 +281,8 @@ export class ControleurInterface {
       this.souris = e.target === canevas ? { x: e.clientX, y: e.clientY } : null;
       const appui = this.appui;
       if (appui?.mode === 'attente' && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > SEUIL_GLISSER) {
-        if (!appui.fenetre) appui.mode = 'vue';
-        else if (this.magasin.valeur.verrouillee || !this.options.deplacerFenetre) appui.mode = 'bloque';
+        // Fenêtre verrouillée ou simple navigateur : le glisser déplace la vue, faute de mieux.
+        if (!appui.fenetre || this.magasin.valeur.verrouillee || !this.options.deplacerFenetre) appui.mode = 'vue';
         else {
           // La fenêtre suit la souris jusqu'au relâchement ; la vue web ne reçoit plus rien d'ici là.
           this.appui = null;
@@ -302,7 +302,8 @@ export class ControleurInterface {
         this.focusDepuis = performance.now();
         return;
       }
-      this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: e.metaKey || e.ctrlKey };
+      // Glisser seul déplace la fenêtre ; avec ⌘ (Ctrl sous Windows), il déplace la vue.
+      this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: !(e.metaKey || e.ctrlKey) };
       canevas.setPointerCapture(e.pointerId);
       this.majCurseur(this.curseur);
     });
