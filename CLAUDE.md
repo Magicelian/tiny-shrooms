@@ -64,7 +64,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   frontend archive (`archiver_sauvegardes` → `partie.v3*.json` ; `tiny-shrooms.partie.v3` dans le navigateur).
 - **Étape 10 validée**. Caméra : `centre` borné à l'île et paliers de zoom dans `packages/renderer/src/camera.ts`.
   Souris : `ControleurInterface.brancherSouris` (seuil de 4 px entre clic et glisser ; ⌘ → fenêtre, sauf verrouillée ;
-  clic de prise de focus ignoré). Curseurs : `packages/ui/src/curseurs.ts` (variables CSS `--curseur-…`). Réglages de
+  clic de prise de focus ignoré). Curseurs : `packages/ui/src/curseurs.ts` (feuille de style injectée, `data-curseur` sur le canevas). En mode économie d'énergie, le curseur
+  clignote ou reste la flèche macOS : essais natifs (zones de curseur de `TaoView`, `-[NSCursor set]`) sans effet, abandonnés. Réglages de
   fenêtre : `src-tauri/src/reglages.rs` (`reglages.json` : verrouillage + position, écrite en quittant), case du menu
   de l'icône et événement `verrouillage`.
 - **Étape 11 validée**. Clic → bulle (`Bulle` dans `packages/ui/src/magasin.ts`) : case libre

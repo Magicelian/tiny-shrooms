@@ -105,7 +105,7 @@ export class ControleurInterface {
     racine: HTMLElement,
     private readonly options: OptionsInterface,
   ) {
-    installerCurseurs(document.documentElement);
+    installerCurseurs();
     render(<Interface controleur={this} />, racine);
     this.magasin.modifier({ focus: document.hasFocus() });
     this.brancherSouris();
@@ -441,6 +441,7 @@ export class ControleurInterface {
   private majCurseur(curseur: Curseur): void {
     this.curseur = curseur;
     const affiche = this.appui?.mode === 'vue' ? 'poing' : curseur;
-    this.options.scene.canevas.style.cursor = `var(--curseur-${affiche})`;
+    const { dataset } = this.options.scene.canevas;
+    if (dataset.curseur !== affiche) dataset.curseur = affiche;
   }
 }

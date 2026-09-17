@@ -282,14 +282,7 @@
 }
 
 
-/* Curseurs pixel (voir curseurs.ts) ; le canevas choisit sa variante selon ce qui est visé. */
-html,
-body {
-  cursor: var(--curseur-fleche, default);
-}
-.interface.active :is(button:not(:disabled), .carte) {
-  cursor: var(--curseur-main, pointer);
-}
+/* Curseurs pixel : règles injectées par curseurs.ts (le canevas choisit sa variante via `data-curseur`). */
 
 
 /* Paliers et logements */

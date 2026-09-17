@@ -1,5 +1,7 @@
-// Curseurs pixel cerclés de noir, dessinés au démarrage et exposés en variables CSS (`--curseur-…`).
+// Curseurs pixel cerclés de noir, dessinés au démarrage et déclarés dans une feuille de style injectée.
 // Le navigateur ne les applique que dans la fenêtre : dehors, le curseur du système reprend la main.
+// Règles fixes plutôt que variables CSS, pour que WebKit ne recrée pas l'image à chaque changement de curseur.
+// En mode économie d'énergie, macOS montre quand même sa flèche par moments (non résolu).
 
 export type Curseur = 'fleche' | 'main' | 'marteau' | 'poing';
 
@@ -76,12 +78,13 @@ const DESSINS: Record<Curseur, { lignes: string[]; pointe: [number, number] }> =
   },
 };
 
-/** Dessine les curseurs et les déclare sur `racine` ; `nettete` = pixels physiques par pixel CSS. */
-export function installerCurseurs(racine: HTMLElement, nettete = window.devicePixelRatio): void {
+/** Dessine les curseurs et injecte leurs règles ; `nettete` = pixels physiques par pixel CSS. */
+export function installerCurseurs(nettete = window.devicePixelRatio): void {
   const densite = Math.max(1, Math.round(nettete));
   // `image-set` garde les pixels nets sur un écran Retina ; sinon, image à la taille CSS.
   const imageSet = densite > 1 && CSS.supports('cursor', `image-set(url("x.png") ${densite}x) 0 0, auto`);
-  for (const [nom, { lignes, pointe }] of Object.entries(DESSINS)) {
+  const valeurs = {} as Record<Curseur, string>;
+  for (const [nom, { lignes, pointe }] of Object.entries(DESSINS) as [Curseur, (typeof DESSINS)[Curseur]][]) {
     const facteur = ECHELLE * (imageSet ? densite : 1);
     const toile = document.createElement('canvas');
     toile.width = lignes[0]!.length * facteur;
@@ -97,6 +100,13 @@ export function installerCurseurs(racine: HTMLElement, nettete = window.devicePi
     const url = `url("${toile.toDataURL('image/png')}")`;
     const image = imageSet ? `image-set(${url} ${densite}x)` : url;
     const [px, py] = [pointe[0] * ECHELLE, pointe[1] * ECHELLE];
-    racine.style.setProperty(`--curseur-${nom}`, `${image} ${px} ${py}, ${nom === 'poing' ? 'grabbing' : 'default'}`);
+    valeurs[nom] = `${image} ${px} ${py}, ${nom === 'poing' ? 'grabbing' : nom === 'main' ? 'pointer' : 'default'}`;
   }
+  const style = document.createElement('style');
+  style.textContent = [
+    `html, body, [data-curseur="fleche"] { cursor: ${valeurs.fleche}; }`,
+    `.interface.active :is(button:not(:disabled), .carte) { cursor: ${valeurs.main}; }`,
+    ...(Object.keys(valeurs) as Curseur[]).filter((n) => n !== 'fleche').map((n) => `[data-curseur="${n}"] { cursor: ${valeurs[n]}; }`),
+  ].join('\n');
+  document.head.append(style);
 }
