@@ -144,6 +144,18 @@ export const fr = {
   'meteo.vent': 'Vent',
   'meteo.neige': 'Neige',
 
+  // Menu de démarrage
+  'accueil.jouer': 'Jouer',
+  'accueil.continuer': 'Continuer',
+  'accueil.nouvelle': 'Nouvelle partie',
+  'accueil.sonActif': 'Son : oui',
+  'accueil.sonCoupe': 'Son : non',
+  'accueil.quitter': 'Quitter',
+  'accueil.confirmerTitre': 'Tout recommencer ?',
+  'accueil.confirmerTexte': 'L’île, la ville, les graines et les pouvoirs seront effacés pour de bon.',
+  'accueil.annuler': 'Annuler',
+  'accueil.effacer': 'Tout effacer',
+
   // Messages
   'refus.ressourcesInsuffisantes': 'Pas assez de ressources',
   'refus.emplacementOccupe': 'La place est prise',

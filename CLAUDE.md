@@ -121,6 +121,10 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `vX.Y.Z` (dépôt `Magicelian/tiny-shrooms`) ; mises à jour dans `src-tauri/src/mises_a_jour.rs`, clé
   `~/.tauri/tiny-shrooms.key`. Build local : `TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/tiny-shrooms.key)"
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" pnpm --filter desktop tauri build`.
+- **Menu de démarrage** (17/09/2026) : `packages/ui/src/accueil.tsx` (option `demarrage` du contrôleur, `magasin.menu`).
+  Simulation en veille tant qu'il est ouvert, l'île fait un quart de tour toutes les 6 s. « Nouvelle partie » envoie la
+  commande `recommencer` (prestige compris). Son et langue passent par Rust (`regler_son`, `regler_langue`) pour
+  rester d'accord avec le menu de l'icône.
 - **README** : images dans `docs/`. `apps/desktop/demo.html?graine=1&minutes=44` (dev seulement) fait jouer le joueur
   scripté puis ouvre le jeu sur la partie obtenue ; captures prises avec Chrome sans fenêtre piloté par le protocole
   DevTools (320 × 320, échelle 2, fond transparent), GIF assemblé avec ffmpeg. Icône du jeu : pixel art écrit en code,

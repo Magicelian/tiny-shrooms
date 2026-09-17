@@ -3,7 +3,7 @@ import type { Commande, Evenement, Instantane, Quantites, RaisonRefus, Ressource
 import { RESSOURCES } from './contrat';
 import { bonusProduction, coutAmelioration, payer, rembourser } from './ameliorations';
 import { BONUS_PRESTIGE } from './contrat';
-import { coutBatiment, coutBonus, peutRenaitre, renaitre } from './prestige';
+import { coutBatiment, coutBonus, peutRenaitre, recommencer, renaitre } from './prestige';
 import type { Contenu } from './contenu';
 import { plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
@@ -208,6 +208,9 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if (!peutRenaitre(etat)) return refus(etat.batimentsDebloques.includes('sanctuaire') ? 'indisponible' : 'nonDebloque');
       return [{ type: 'renaissance', graines: renaitre(etat, contenu) }];
     }
+    case 'recommencer':
+      recommencer(etat, contenu, Math.max(1, Math.floor(Math.abs(commande.graine))));
+      return [{ type: 'partieRecommencee' }];
     case 'acheterBonus': {
       if (!BONUS_PRESTIGE.includes(commande.bonus)) return refus('introuvable');
       const niveau = etat.prestige.bonus[commande.bonus];

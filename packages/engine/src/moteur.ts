@@ -69,7 +69,7 @@ export class Moteur {
 
   /** Instantané, précédé de la nouvelle île si elle a changé depuis le dernier envoi (souche, case défrichée, renaissance). */
   private publierAvecIle(): MessageDepuisMoteur[] {
-    const changee = this.evenements.some((e) => e.type === 'soucheRetiree' || e.type === 'defriche' || e.type === 'renaissance');
+    const changee = this.evenements.some((e) => e.type === 'soucheRetiree' || e.type === 'defriche' || e.type === 'renaissance' || e.type === 'partieRecommencee');
     const instantane = this.publier();
     return changee ? [{ type: 'ile', ile: this.etat.ile }, instantane] : [instantane];
   }

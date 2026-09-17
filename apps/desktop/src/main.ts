@@ -28,6 +28,10 @@ const stockage = dansTauri
       },
     };
 
+// En développement, `?sansMenu` ouvre directement la partie (captures du README, voir demo/demo.ts).
+const avecMenu = !(import.meta.env.DEV && new URLSearchParams(location.search).has('sansMenu'));
+let fermetureDemandee = false;
+
 const rendu = new Rendu(document.body);
 const moteur = new Worker(new URL('./moteur-worker.ts', import.meta.url), { type: 'module' });
 const envoyer = (message: MessageVersMoteur) => moteur.postMessage(message);
@@ -39,13 +43,25 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
   vignettes: rendu.vignettes,
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
+  demarrage: avecMenu
+    ? {
+        pause: (enPause) => envoyer(enPause ? { type: 'veille', momentMs: Date.now() } : { type: 'reveil' }),
+        son: (actif) => (dansTauri ? void invoke('regler_son', { son: actif }) : ui.signalerSon(actif)),
+        langue: (langue) => (dansTauri ? void invoke('regler_langue', { langue }) : ui.signalerLangue(langue)),
+        quitter: dansTauri ? () => quitter() : undefined,
+      }
+    : undefined,
 });
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });
 
 // Écritures à la file, pour que la rotation des copies ne se chevauche jamais.
 let ecritures = Promise.resolve();
-let fermetureDemandee = false;
 const sauvegarder = () => envoyer({ type: 'sauvegarder' });
+/** La partie est écrite d'abord ; la réponse du moteur déclenche la sortie. */
+function quitter() {
+  fermetureDemandee = true;
+  sauvegarder();
+}
 
 moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'sauvegarde') {
@@ -70,6 +86,8 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   ui.recevoir(data);
 };
 envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []) });
+// Menu de démarrage ouvert : la ville attend qu'on entre.
+if (avecMenu) envoyer({ type: 'veille', momentMs: Date.now() });
 rendu.demarrer();
 window.addEventListener('resize', () => rendu.redimensionner());
 
@@ -90,22 +108,19 @@ if (dansTauri) {
     rendu.reposer(!e.payload);
   });
   await listen<boolean>('verrouillage', (e) => ui.signalerVerrouillage(e.payload));
-  await listen<boolean>('son', (e) => ui.sons.activer(e.payload));
+  await listen<boolean>('son', (e) => ui.signalerSon(e.payload));
   await listen<Langue>('langue', (e) => ui.signalerLangue(e.payload));
   const reglages = await invoke<{ verrouillee: boolean; son: boolean; langue: Langue }>('lire_reglages');
   ui.signalerVerrouillage(reglages.verrouillee);
   ui.signalerLangue(reglages.langue);
-  ui.sons.activer(reglages.son);
+  ui.signalerSon(reglages.son);
   await listen<number>('veille', (e) => {
     envoyer({ type: 'veille', momentMs: e.payload });
     sauvegarder();
   });
-  await listen('reveil', () => envoyer({ type: 'reveil' }));
+  await listen('reveil', () => ui.magasin.valeur.menu === null && envoyer({ type: 'reveil' }));
   await listen('pouls', () => envoyer({ type: 'battre' }));
-  await listen('fermeture-demandee', () => {
-    fermetureDemandee = true;
-    sauvegarder();
-  });
+  await listen('fermeture-demandee', quitter);
 } else {
   addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && sauvegarder());
 }

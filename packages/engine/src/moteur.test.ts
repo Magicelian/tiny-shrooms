@@ -162,7 +162,8 @@ describe('Grille', () => {
   });
 
   it('refuse les emplacements hors île, occupés ou sur la souche-dépôt', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const { ile } = moteur.etatCourant;
     const libre = caseLibre(moteur);
     const foret = ile.terrain.indexOf('foret');
@@ -175,7 +176,8 @@ describe('Grille', () => {
   });
 
   it('déplace un bâtiment seulement vers une case libre', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const [a, b] = moteur.casesLibres();
     commander(moteur, poser('hutte', a!));
     commander(moteur, poser('hutte', b!));
@@ -275,7 +277,8 @@ describe('Commandes', () => {
 
 describe('Moteur', () => {
   it('envoie l’île puis un instantané au démarrage', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const messages = moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
     expect(messages.map((m) => m.type)).toEqual(['ile', 'partieChargee', 'instantane']);
     expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'nouvelle' });
@@ -291,7 +294,8 @@ describe('Moteur', () => {
   });
 
   it('se met en pause pendant la veille', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     expect(instantaneDe(moteur.recevoir({ type: 'veille', momentMs: MINUTE_MS }, MINUTE_MS)).temps).toMatchObject({ enPause: true, pas: PAS_PAR_MINUTE });
     expect(instantaneDe(moteur.battre(30 * MINUTE_MS)).temps.pas).toBe(PAS_PAR_MINUTE);
     moteur.recevoir({ type: 'reveil' }, 30 * MINUTE_MS);
@@ -299,7 +303,8 @@ describe('Moteur', () => {
   });
 
   it('s’arrête à l’instant de la veille même si le message arrive après le réveil', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     expect(instantaneDe(moteur.recevoir({ type: 'veille', momentMs: MINUTE_MS }, 60 * MINUTE_MS)).temps.pas).toBe(PAS_PAR_MINUTE);
     moteur.recevoir({ type: 'reveil' }, 60 * MINUTE_MS);
     expect(instantaneDe(moteur.battre(61 * MINUTE_MS)).temps.pas).toBe(2 * PAS_PAR_MINUTE);
@@ -467,7 +472,8 @@ describe('Saisons et météo', () => {
 
 describe('Améliorations', () => {
   it('se paient à un atelier achevé, de plus en plus cher, jusqu’au niveau maximal', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const ameliorer: Commande = { type: 'ameliorer', cible: { village: 'outils' } };
     expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
     commander(moteur, poser('atelier', caseLibre(moteur)));
@@ -495,7 +501,8 @@ describe('Récolte à la main', () => {
   const premier = (moteur: Moteur, type: string) => moteur.etatCourant.ile.elements.findIndex((e) => e.type === type);
 
   it('sème buissons, bois mort et mousse hors des cases à bâtir', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const { ile } = moteur.etatCourant;
     for (const type of ['buisson', 'boisMort', 'mousse']) expect(premier(moteur, type)).toBeGreaterThanOrEqual(0);
     const element = ile.elements[premier(moteur, 'boisMort')]!;
@@ -503,7 +510,8 @@ describe('Récolte à la main', () => {
   });
 
   it('donne un peu de ressource, épuise l’élément, puis le laisse repousser', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const element = premier(moteur, 'boisMort');
     const recolter: Commande = { type: 'recolter', element };
     expect(commander(moteur, recolter)).toEqual([{ type: 'recolte', element, ressource: 'boisMort', quantite: 2 }]);
@@ -538,7 +546,8 @@ describe('Récolte à la main', () => {
   });
 
   it('migre une sauvegarde de version 4 sans semer sur les bâtiments', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('hutte', caseLibre(moteur)));
     const { ile, pousses: _p, ...reste } = moteur.etatCourant;
     const { elements: _e, ...ileV4 } = ile;
@@ -657,7 +666,8 @@ describe('Logements et paliers', () => {
   });
 
   it('migre une sauvegarde de version 5 en rebloquant les bâtiments de palier', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('hutte', caseLibre(moteur)));
     const { palier: _p, batiments, ...reste } = moteur.etatCourant;
     const v5 = { ...reste, batimentsDebloques: ['hutte', 'sechoir', 'atelier'], batiments: batiments.map(({ besoins: _b, ...b }) => b) };
@@ -791,7 +801,8 @@ describe('Retrait de la souche', () => {
   });
 
   it('migre une sauvegarde de version 7 avec la souche en place', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const { retraitSouche: _r, defrichages: _d, ile, ...reste } = moteur.etatCourant;
     const { soucheEnPlace: _s, ...ileV7 } = ile;
     const etat = charger(JSON.stringify({ version: 7, etat: { ...reste, ile: ileV7 } }));
@@ -802,7 +813,8 @@ describe('Retrait de la souche', () => {
 
 describe('Défrichage', () => {
   it('un arbre se paie, s’abat, rapporte, et laisse une case constructible', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const etat = moteur.etatCourant;
     const { ile } = etat;
     const arbre = ile.terrain.findIndex((t, i) => t === 'foret' && terrainEn(ile, (i % ile.largeur) + 1, Math.floor(i / ile.largeur)) === 'herbe');
@@ -823,7 +835,8 @@ describe('Défrichage', () => {
   });
 
   it('un arrachage annulé est remboursé et laisse l’arbre en place', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const etat = moteur.etatCourant;
     const { ile } = etat;
     const arbre = ile.terrain.indexOf('foret');
@@ -839,7 +852,8 @@ describe('Défrichage', () => {
   });
 
   it('une plante disparaît avec sa repousse', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const etat = moteur.etatCourant;
     const i = etat.ile.elements.findIndex((e) => e.type !== 'buisson');
     const { case: c } = etat.ile.elements[i]!;
@@ -854,7 +868,8 @@ describe('Défrichage', () => {
 
 describe('Renaissance', () => {
   it('exige un sanctuaire achevé', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     expect(commander(moteur, { type: 'renaitre' })[0]).toMatchObject({ raison: 'indisponible' });
   });
 
@@ -903,7 +918,8 @@ describe('Renaissance', () => {
   });
 
   it('se sauvegarde et se recharge à l’identique, et migre une sauvegarde de version 9', () => {
-    const moteur = new Moteur(contenuDeTest(), 0);
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
     const etat = moteur.etatCourant as Etat;
     etat.prestige = { graines: 3, renaissances: 2, bonus: { production: 1, depart: 0, construction: 2, logement: 0 }, populationMax: 7 };
     expect(charger(serialiser(etat))).toEqual(etat);
@@ -911,5 +927,21 @@ describe('Renaissance', () => {
     const migre = charger(JSON.stringify({ version: 9, etat: { ...ancien, palier: 2 } }));
     expect(migre.prestige).toMatchObject({ graines: 0, renaissances: 0, populationMax: 2 });
     expect(migre.batimentsDebloques).toContain('sanctuaire');
+  });
+});
+
+describe('Nouvelle partie', () => {
+  it('efface tout, prestige compris, et renvoie la nouvelle île', () => {
+    const contenu = contenuDeTest();
+    const moteur = new Moteur(contenu, 0);
+    moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
+    const etat = moteur.etatCourant as Etat;
+    etat.prestige.graines = 12;
+    etat.stocks.boisMort = 3;
+    const messages = moteur.recevoir({ type: 'commande', commande: { type: 'recommencer', graine: 7 } }, 0);
+    expect(messages[0]?.type).toBe('ile');
+    expect(etat.graine).toBe(7);
+    expect(etat.prestige.graines).toBe(0);
+    expect(etat.stocks.boisMort).toBe(contenu.stocksDeDepart.boisMort);
   });
 });

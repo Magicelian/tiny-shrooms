@@ -15,4 +15,4 @@ for (let s = 0; s < minutes * 60; s += 5) {
   moteur.simuler(5 * PAS_PAR_SECONDE);
 }
 localStorage.setItem('tiny-shrooms.partie', serialiser(moteur.etatCourant));
-location.replace('/');
+location.replace('/?sansMenu');

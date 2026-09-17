@@ -723,3 +723,115 @@
 .astuce::after {
   background: var(--parchemin-clair);
 }
+
+/* ─── Menu de démarrage : titre cerné au-dessus de l'île, panneau de bois en bas ─────────────── */
+.accueil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 14px;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+.titre-jeu {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: flotter 3s ease-in-out infinite;
+}
+.titre-jeu .vignette {
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 3px 0 rgb(0 0 0 / 0.35));
+}
+.titre-jeu h1 {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font: 700 34px/0.9 'Pixelify Sans', monospace;
+  color: var(--parchemin-clair);
+  text-shadow:
+    2px 0 var(--encre),
+    -2px 0 var(--encre),
+    0 2px var(--encre),
+    0 -2px var(--encre),
+    2px 2px var(--encre),
+    -2px 2px var(--encre),
+    2px -2px var(--encre),
+    -2px -2px var(--encre),
+    0 5px var(--encre);
+}
+.titre-jeu .rouge {
+  color: var(--rouge);
+  padding-left: 14px;
+}
+@keyframes flotter {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.panneau-accueil {
+  width: 216px;
+  padding: 4px;
+  background: var(--bois);
+  box-shadow:
+    inset 0 2px 0 var(--bois-clair),
+    inset 0 -2px 0 var(--bois-fonce),
+    var(--contour),
+    0 5px 0 var(--encre);
+}
+.panneau-accueil .corps {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px 8px 6px;
+  background:
+    repeating-conic-gradient(rgb(122 79 45 / 0.05) 0 25%, transparent 0 50%) 0 0 / 4px 4px,
+    var(--parchemin);
+  box-shadow: inset 0 2px 0 var(--bois-fonce);
+  text-align: center;
+}
+.panneau-accueil .bouton {
+  margin: 2px 2px 6px;
+}
+.panneau-accueil .principal {
+  padding: 6px;
+  font-size: 17px;
+}
+.panneau-accueil h2 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--bois-fonce);
+}
+.panneau-accueil p {
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+.rangee-boutons {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.rangee-boutons > .bouton {
+  flex: 1;
+}
+.langues {
+  display: flex;
+}
+.lien-quitter {
+  align-self: center;
+  font: inherit;
+  font-size: 12px;
+  color: var(--discret);
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.lien-quitter:hover {
+  color: var(--rouge);
+}

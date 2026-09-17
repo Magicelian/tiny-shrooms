@@ -148,6 +148,17 @@ export const en: Record<keyof typeof fr, string> = {
   'meteo.neige': 'Snow',
 
   // Messages
+  'accueil.jouer': 'Play',
+  'accueil.continuer': 'Continue',
+  'accueil.nouvelle': 'New game',
+  'accueil.sonActif': 'Sound: on',
+  'accueil.sonCoupe': 'Sound: off',
+  'accueil.quitter': 'Quit',
+  'accueil.confirmerTitre': 'Start over?',
+  'accueil.confirmerTexte': 'The island, the town, the seeds and the powers will be erased for good.',
+  'accueil.annuler': 'Cancel',
+  'accueil.effacer': 'Erase all',
+
   'refus.ressourcesInsuffisantes': 'Not enough resources',
   'refus.emplacementOccupe': 'This spot is taken',
   'refus.horsIle': 'Off the island',

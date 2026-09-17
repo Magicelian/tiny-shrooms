@@ -157,6 +157,18 @@ pub fn appliquer_langue(app: &AppHandle, langue: &str) {
     let _ = app.emit("langue", langue);
 }
 
+/// Son réglé depuis le menu de démarrage : même chemin que le menu de l'icône.
+#[tauri::command]
+pub fn regler_son(app: AppHandle, son: bool) {
+    appliquer_son(&app, son);
+}
+
+/// Langue choisie depuis le menu de démarrage.
+#[tauri::command]
+pub fn regler_langue(app: AppHandle, langue: String) {
+    appliquer_langue(&app, if langue == "fr" { "fr" } else { "en" });
+}
+
 /// Réglages vus du frontend : la langue y est toujours renseignée.
 #[tauri::command]
 pub fn lire_reglages(app: AppHandle) -> Reglages {

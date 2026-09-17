@@ -9,6 +9,7 @@ import { Icone } from './composants';
 import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 import { BulleBatiment, BulleConstruire, BulleNature, titreNature } from './panneaux';
+import { Accueil } from './accueil';
 
 export interface Props {
   controleur: ControleurInterface;
@@ -20,6 +21,7 @@ export function Interface({ controleur }: Props) {
   const etat = useMagasin(controleur.magasin);
   const { instantane, bulle, deplacement } = etat;
   if (!instantane) return null;
+  if (etat.menu !== null) return <Accueil controleur={controleur} />;
 
   return (
     <div class={`interface ${etat.focus ? 'active' : ''}`}>

@@ -173,6 +173,8 @@ fn main() {
             sauvegarde::ecrire_sauvegarde,
             sauvegarde::archiver_sauvegardes,
             reglages::lire_reglages,
+            reglages::regler_son,
+            reglages::regler_langue,
             quitter
         ])
         .run(tauri::generate_context!())

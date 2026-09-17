@@ -255,6 +255,8 @@ export type Commande =
   | { type: 'renaitre' }
   /** Dépense des graines de prestige ; possible à tout moment (juste après une renaissance notamment). */
   | { type: 'acheterBonus'; bonus: BonusPrestige }
+  /** Menu de démarrage : tout effacer, prestige compris, et repartir sur l'île de cette graine. */
+  | { type: 'recommencer'; graine: number }
   | CommandeReglage;
 
 export type TypeCommande = Commande['type'];
@@ -287,6 +289,7 @@ export type Evenement =
   | { type: 'soucheRetiree' }
   /** Nouvelle île : l'instantané suivant décrit déjà la nouvelle partie. */
   | { type: 'renaissance'; graines: number }
+  | { type: 'partieRecommencee' }
   | { type: 'defriche'; case: Case; nature: Defrichable }
   | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
   | { type: 'commandeRefusee'; commande: Commande; raison: RaisonRefus };

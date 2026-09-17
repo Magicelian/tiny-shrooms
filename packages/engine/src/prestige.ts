@@ -73,6 +73,12 @@ export function peutRenaitre(etat: Etat): boolean {
   return etat.batiments.some((b) => b.type === 'sanctuaire' && b.chantier === null);
 }
 
+/** Nouvelle partie à zéro, prestige compris ; seuls les réglages restent. L'objet `etat` est modifié sur place. */
+export function recommencer(etat: Etat, contenu: Contenu, graine: number): void {
+  const reglages = etat.reglages;
+  Object.assign(etat, creerEtat(contenu, graine), { reglages });
+}
+
 /**
  * Remplace la partie par une nouvelle, sur une autre île ; seul le prestige, enrichi du gain, et les
  * réglages sont gardés. L'objet `etat` est modifié sur place : le moteur et ses caches le gardent.

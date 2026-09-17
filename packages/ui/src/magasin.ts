@@ -46,6 +46,11 @@ export interface EtatInterface {
   bonusVise: number | null;
   messages: Message[];
   envols: Envol[];
+  /** Menu de démarrage ouvert (`confirmer` : demande avant d'effacer la partie), ou `null` en jeu. */
+  menu: 'accueil' | 'confirmer' | null;
+  /** Une partie enregistrée a été reprise : le menu propose « Continuer » plutôt que « Jouer ». */
+  partieReprise: boolean;
+  son: boolean;
 }
 
 type Abonne = () => void;
@@ -66,6 +71,9 @@ export class Magasin {
     bonusVise: null,
     messages: [],
     envols: [],
+    menu: null,
+    partieReprise: false,
+    son: false,
   };
   private readonly abonnes = new Set<Abonne>();
   private prochainMessage = 0;

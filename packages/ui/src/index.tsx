@@ -43,7 +43,20 @@ export interface OptionsInterface {
   };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
+  /** Menu de démarrage : absent, la partie commence tout de suite. */
+  demarrage?: {
+    /** Simulation arrêtée tant que le menu est ouvert. */
+    pause(enPause: boolean): void;
+    /** Réglages demandés depuis le menu ; la valeur retenue revient par `signalerSon` / `signalerLangue`. */
+    son(actif: boolean): void;
+    langue(langue: Langue): void;
+    /** Absent dans un navigateur. */
+    quitter?: () => void;
+  };
 }
+
+/** Pendant le menu de démarrage, l'île fait un quart de tour à ce rythme. */
+const TOUR_ACCUEIL_MS = 6000;
 
 /** Hauteur du surlignage de ce qu'on peut faire arracher. */
 const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, buisson: 0.6, plante: 0.35 };
@@ -100,6 +113,7 @@ export class ControleurInterface {
   private curseur: Curseur = 'fleche';
   /** Point cliqué pour chaque récolte envoyée, d'où partira son chiffre. */
   private readonly recoltes = new Map<number, { x: number; y: number }>();
+  private tourAccueil: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     racine: HTMLElement,
@@ -109,6 +123,53 @@ export class ControleurInterface {
     render(<Interface controleur={this} />, racine);
     this.magasin.modifier({ focus: document.hasFocus() });
     this.brancherSouris();
+    if (options.demarrage) {
+      this.magasin.modifier({ menu: 'accueil' });
+      this.tourAccueil = setInterval(() => this.options.scene.tourner(1), TOUR_ACCUEIL_MS);
+    }
+  }
+
+  get quittable(): boolean {
+    return !!this.options.demarrage?.quitter;
+  }
+
+  /** Ferme le menu de démarrage : la simulation reprend. */
+  continuer(): void {
+    if (this.magasin.valeur.menu === null) return;
+    if (this.tourAccueil !== null) clearInterval(this.tourAccueil);
+    this.tourAccueil = null;
+    this.magasin.modifier({ menu: null });
+    this.options.demarrage?.pause(false);
+    this.sons.jouer('termine');
+  }
+
+  demanderRecommencer(confirmer: boolean): void {
+    this.magasin.modifier({ menu: confirmer ? 'confirmer' : 'accueil' });
+    this.sons.jouer(confirmer ? 'refus' : 'fermer');
+  }
+
+  /** Efface la partie (prestige compris) pour une île tirée au hasard, puis lance le jeu. */
+  recommencer(): void {
+    this.options.envoyer({ type: 'recommencer', graine: Math.floor(Math.random() * 2 ** 31) + 1 });
+    this.magasin.modifier({ astuceSouche: false });
+    this.continuer();
+  }
+
+  reglerSon(): void {
+    this.options.demarrage?.son(!this.magasin.valeur.son);
+  }
+
+  reglerLangue(langue: Langue): void {
+    this.options.demarrage?.langue(langue);
+  }
+
+  quitter(): void {
+    this.options.demarrage?.quitter?.();
+  }
+
+  signalerSon(actif: boolean): void {
+    this.sons.activer(actif);
+    this.magasin.modifier({ son: actif });
   }
 
   get contenu(): Contenu {
@@ -129,6 +190,7 @@ export class ControleurInterface {
       if (message.origine === 'secours') this.magasin.annoncer(t('message.partieSecours'));
       if (message.origine === 'illisible') this.magasin.annoncer(t('message.partieIllisible'));
       if (message.origine === 'ancienne') this.magasin.annoncer(t('message.partieAncienne'));
+      this.magasin.modifier({ partieReprise: message.origine === 'sauvegarde' || message.origine === 'secours' });
     }
     if (message.type !== 'instantane') return;
     this.magasin.modifier({ instantane: message.instantane });
@@ -297,7 +359,7 @@ export class ControleurInterface {
       this.majVisee();
     });
     canevas.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || this.magasin.valeur.menu !== null) return;
       if (!document.hasFocus() || performance.now() - this.focusDepuis < DELAI_FOCUS_MS) {
         this.focusDepuis = performance.now();
         return;
@@ -326,7 +388,7 @@ export class ControleurInterface {
       'wheel',
       (e) => {
         e.preventDefault();
-        if (!this.magasin.valeur.focus) return;
+        if (!this.magasin.valeur.focus || this.magasin.valeur.menu !== null) return;
         const pas = e.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? e.deltaY : e.deltaY * PAS_MOLETTE;
         const m = this.molette;
         if (e.timeStamp - m.dernier > PAUSE_MOLETTE_MS) m.cumul = 0;
@@ -341,6 +403,11 @@ export class ControleurInterface {
       { passive: false },
     );
     window.addEventListener('keydown', (e) => {
+      if (this.magasin.valeur.menu !== null) {
+        if (e.key === 'Enter') this.continuer();
+        else if (e.key === 'Escape') this.demanderRecommencer(false);
+        return;
+      }
       if (e.key === 'Escape') this.fermer();
       else if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
       else if (e.key === 'ArrowLeft' || e.key === 'q') this.tourner(-1);
@@ -394,8 +461,8 @@ export class ControleurInterface {
   /** Met à jour le fantôme, le surlignage et le curseur selon la bulle ouverte et ce qui est sous la souris. */
   private majVisee(): void {
     const { scene } = this.options;
-    const { ile, instantane, bulle, deplacement } = this.magasin.valeur;
-    if (!ile || !instantane) return;
+    const { ile, instantane, bulle, deplacement, menu } = this.magasin.valeur;
+    if (!ile || !instantane || menu !== null) return;
     const { batiments } = instantane;
     // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
     if (bulle?.type === 'construire') {
