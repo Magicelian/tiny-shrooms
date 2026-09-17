@@ -68,23 +68,19 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
           </li>
         ))}
       </ul>
-      <div class="detail">
-        {choix ? (
-          <>
-            {effets(contenu, choix).map((ligne) => (
-              <p key={ligne}>{ligne}</p>
-            ))}
-            {bonusVise !== null && bonusVise > 1 && (
-              <p class="bonus">{t('construction.bonusIci', { pourcent: pourcent(bonusVise - 1) })}</p>
-            )}
-            <button class={`bouton large ${payable ? 'valider' : 'manque'}`} disabled={!payable} onClick={() => controleur.construire()}>
-              {t('construction.poser')}
-            </button>
-          </>
-        ) : (
-          <p class="discret">{t('construction.choisir')}</p>
-        )}
-      </div>
+      {choix && (
+        <div class="detail">
+          {effets(contenu, choix).map((ligne) => (
+            <p key={ligne}>{ligne}</p>
+          ))}
+          {bonusVise !== null && bonusVise > 1 && (
+            <p class="bonus">{t('construction.bonusIci', { pourcent: pourcent(bonusVise - 1) })}</p>
+          )}
+          <button class={`bouton large ${payable ? 'valider' : 'manque'}`} disabled={!payable} onClick={() => controleur.construire()}>
+            {t('construction.poser')}
+          </button>
+        </div>
+      )}
     </>
   );
 }

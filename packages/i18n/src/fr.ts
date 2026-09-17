@@ -69,7 +69,6 @@ export const fr = {
 
   // Construction
   'construction.titre': 'Construire ici',
-  'construction.choisir': 'Choisis un bâtiment.',
   'construction.gratuit': 'Gratuit',
   'construction.bonusIci': 'Ici : +{pourcent} %',
   'construction.poser': 'Construire',

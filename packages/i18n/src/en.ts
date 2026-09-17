@@ -72,7 +72,6 @@ export const en: Record<keyof typeof fr, string> = {
 
   // Construction
   'construction.titre': 'Build here',
-  'construction.choisir': 'Pick a building.',
   'construction.gratuit': 'Free',
   'construction.bonusIci': 'Here: +{pourcent}%',
   'construction.poser': 'Build',
