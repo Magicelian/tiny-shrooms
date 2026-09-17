@@ -72,7 +72,7 @@ export interface Etat {
 }
 
 export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = prestigeNeuf()): Etat {
-  const ile = genererIle(contenu.ile.taille, graine);
+  const ile = genererIle(contenu.ile.taille, graine, prestige.renaissances);
   const effets = effetsPrestige(contenu, prestige.bonus);
   const stocks = { ...contenu.stocksDeDepart };
   for (const r of RESSOURCES) stocks[r] += effets.stocksDeDepart[r] ?? 0;

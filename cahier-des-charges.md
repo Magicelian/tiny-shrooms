@@ -173,6 +173,8 @@ le relais pour la progression longue.
 - **Gain** : des graines de prestige, `floor((population maximale / 10) ^ 1,2)` : 6 au bourg, 15 à
   100 habitants, 25 à 150. Attendre rapporte de plus en plus.
 - **Remise à zéro** : tout, sur une nouvelle île (nouvelle graine), sauf les graines, les bonus et les réglages.
+  Chaque nouvelle île est plus pauvre : 15 % de buissons, de bois mort et de mousse en moins par renaissance
+  (jusqu'à 60 %).
 - **Bonus permanents**, achetés en graines dans la bulle de la souche (rubrique « Pouvoirs », dès qu'on a des graines ou un
   bonus ; le sanctuaire ne sert qu'à renaître). À la première renaissance, une petite bulle
   accrochée à la souche indique où dépenser les graines, jusqu'à ce qu'on l'ouvre :

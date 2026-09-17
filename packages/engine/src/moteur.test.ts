@@ -3,7 +3,7 @@ import type { Contenu, ContenuHabitants, DefinitionBatiment } from './contenu';
 import type { Case, Commande, Evenement, MessageDepuisMoteur, TypeBatiment } from './contrat';
 import { RESSOURCES, TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
-import { terrainEn } from './ile';
+import { genererIle, terrainEn } from './ile';
 import { creerEtat } from './etat';
 import { Moteur } from './moteur';
 import { meteoAu } from './saisons';
@@ -1037,5 +1037,21 @@ describe('Priorité des arrachages', () => {
     commander(moteur, { type: 'defricher', case: { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) } });
     moteur.simuler(PAS_PAR_MINUTE / 60);
     expect(etat.habitants.filter((h) => h.mission?.tache === 'arracher').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Îles des renaissances', () => {
+  it('chaque renaissance donne une île moins riche en ressources naturelles', () => {
+    const compter = (renaissances: number) => {
+      const ile = genererIle(12, 5, renaissances);
+      return { elements: ile.elements.length, buissons: ile.terrain.filter((t) => t === 'buisson').length };
+    };
+    const [a, b, c] = [compter(0), compter(2), compter(6)];
+    expect(b.elements).toBeLessThan(a.elements);
+    expect(c.elements).toBeLessThan(b.elements);
+    expect(c.buissons).toBeLessThan(a.buissons);
+    // Plafonnée : il reste toujours de quoi démarrer.
+    expect(compter(20)).toEqual(c);
+    expect(c.elements).toBeGreaterThan(0);
   });
 });

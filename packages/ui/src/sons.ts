@@ -164,8 +164,8 @@ export class Sons {
     this.ambianceSortie.gain.value = VOLUME_AMBIANCE;
     this.ambianceSortie.connect(this.maitre);
 
-    // Deux secondes de bruit rose approché, bouclées.
-    const longueur = ctx.sampleRate * 2;
+    // Six secondes de bruit rose approché, bouclées ; chaque nappe part d'un endroit différent.
+    const longueur = ctx.sampleRate * 6;
     this.bruit = ctx.createBuffer(1, longueur, ctx.sampleRate);
     const donnees = this.bruit.getChannelData(0);
     let b0 = 0;
@@ -179,7 +179,14 @@ export class Sons {
       donnees[i] = (b0 + b1 + b2 + blanc * 0.02) * 0.9;
     }
     this.vent = this.nappe('bandpass', 400, 0.8);
-    this.pluie = this.nappe('highpass', 2500, 0.3);
+    // Pluie : un souffle grave et feutré, plutôt qu'un sifflement aigu, qui ondule lentement.
+    this.pluie = this.nappe('lowpass', 1400, 0.3, true);
+    const averse = ctx.createOscillator();
+    const ampleurAverse = ctx.createGain();
+    averse.frequency.value = 0.13;
+    ampleurAverse.gain.value = 350;
+    averse.connect(ampleurAverse).connect(this.pluie.filtre.frequency);
+    averse.start();
     // Le vent respire : un oscillateur lent module sa fréquence.
     const respiration = ctx.createOscillator();
     const ampleur = ctx.createGain();
@@ -195,7 +202,7 @@ export class Sons {
     this.planifierPetitsBruits();
   }
 
-  private nappe(type: BiquadFilterType, frequence: number, q: number): Nappe {
+  private nappe(type: BiquadFilterType, frequence: number, q: number, houle = false): Nappe {
     const ctx = this.contexte!;
     const source = ctx.createBufferSource();
     source.buffer = this.bruit;
@@ -206,8 +213,22 @@ export class Sons {
     filtre.Q.value = q;
     const gain = ctx.createGain();
     gain.gain.value = 0;
-    source.connect(filtre).connect(gain).connect(this.ambianceSortie!);
-    source.start();
+    let sortie: AudioNode = filtre;
+    if (houle) {
+      // Le volume monte et descend d'un quart, lentement, pour que la nappe ne semble jamais figée.
+      const modulation = ctx.createGain();
+      const lfo = ctx.createOscillator();
+      const ampleur = ctx.createGain();
+      lfo.frequency.value = 0.07;
+      ampleur.gain.value = 0.25;
+      lfo.connect(ampleur).connect(modulation.gain);
+      lfo.start();
+      filtre.connect(modulation);
+      sortie = modulation;
+    }
+    source.connect(filtre);
+    sortie.connect(gain).connect(this.ambianceSortie!);
+    source.start(0, Math.random() * this.bruit!.duration);
     return { gain, filtre };
   }
 
@@ -225,7 +246,7 @@ export class Sons {
     if (!this.contexte || !this.vent || !this.pluie || !a) return;
     const t = this.contexte.currentTime;
     const vent = a.meteo === 'vent' ? 1 : a.meteo === 'neige' ? 0.55 : a.saison === 'hiver' ? 0.35 : 0.18;
-    const pluie = a.meteo === 'pluie' ? 0.9 : 0;
+    const pluie = a.meteo === 'pluie' ? 0.45 : 0;
     this.vent.gain.gain.setTargetAtTime(vent, t, 2);
     this.pluie.gain.gain.setTargetAtTime(pluie, t, 2);
   }
@@ -237,7 +258,11 @@ export class Sons {
       const a = this.ambiance;
       const ctx = this.pret();
       let attente = 4000 + Math.random() * 6000;
-      if (ctx && a && a.saison !== 'hiver') {
+      if (ctx && a && a.meteo === 'pluie') {
+        // Sous la pluie : des gouttes éparses, jamais deux fois pareilles.
+        this.gouttes(ctx.currentTime);
+        attente = 900 + Math.random() * 1400;
+      } else if (ctx && a && a.saison !== 'hiver') {
         if (a.nuit) {
           this.grillon(ctx.currentTime);
           attente = 1200 + Math.random() * 2500;
@@ -256,6 +281,16 @@ export class Sons {
     for (let i = 0; i < cris; i++) {
       const t = i * (0.11 + Math.random() * 0.05);
       this.note({ f: base, t, d: 0.07, vers: base * (1.2 + Math.random() * 0.3), onde: 'sine', v: 0.35 }, debut, this.ambianceSortie!);
+    }
+  }
+
+  /** Quelques gouttes qui tombent sur les feuilles et les toits, à des hauteurs et des moments variés. */
+  private gouttes(debut: number): void {
+    const nombre = 3 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < nombre; i++) {
+      const f = 1400 + Math.random() * 2200;
+      const t = Math.random() * 0.9;
+      this.note({ f, t, d: 0.025 + Math.random() * 0.03, vers: f * 0.6, onde: 'sine', v: 0.06 + Math.random() * 0.1 }, debut, this.ambianceSortie!);
     }
   }
 
