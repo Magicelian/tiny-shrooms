@@ -70,6 +70,9 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
       </ul>
       {choix && (
         <div class="detail">
+          <button class="bouton fermer fermer-detail" title={t('panneau.fermer')} onClick={() => controleur.choisir(null)}>
+            ✕
+          </button>
           {effets(contenu, choix).map((ligne) => (
             <p key={ligne}>{ligne}</p>
           ))}

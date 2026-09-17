@@ -150,7 +150,9 @@ function arrivees(etat: Etat, contenu: Contenu, capacite: number, evenements: Ev
   if (n >= capacite) return;
   const moyenne = n === 0 ? 1 : etat.habitants.reduce((s, h) => s + h.bienEtre, 0) / n;
   if (moyenne < contenu.habitants.seuilArrivee) return;
-  etat.pasAvantArrivee--;
+  // Le compte à rebours avance plus vite quand beaucoup de places attendent.
+  const regle = contenu.habitants.arriveeSelonPlaces;
+  etat.pasAvantArrivee -= regle ? Math.min(1 / regle.delaiMinimal, (capacite - n + 1) / (regle.placesDeReference + 1)) : 1;
   if (etat.pasAvantArrivee > 0) return;
   const accueil = effetsPrestige(contenu, etat.prestige.bonus).arrivee;
   etat.pasAvantArrivee = (contenu.habitants.delaiArriveeSecondes * accueil * 1000) / PAS_DE_SIMULATION_MS;

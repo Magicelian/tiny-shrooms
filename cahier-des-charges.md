@@ -130,7 +130,8 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
 
 ### 3.4 Habitants
 
-- **Arrivée** : un logement libre attire des habitants tant que la ville a de quoi les nourrir.
+- **Arrivée** : un logement libre attire des habitants tant que la ville a de quoi les nourrir. Plus il y a de places
+  libres, plus ils arrivent vite (1 place : 3 min ; 2 : 2 min ; 5 : 1 min ; 11 et plus : 30 s).
 - **Emplois** : chaque habitant prend seul le poste libre le plus proche de chez lui ; les porteurs
   et bâtisseurs sont pris parmi les sans-emploi. **Aucun réglage**, aucun menu Habitants.
 - **Besoins et montée en gamme** (par logement) :

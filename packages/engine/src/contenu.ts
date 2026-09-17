@@ -60,6 +60,12 @@ export interface ContenuHabitants {
   baiesParMinute: number;
   ouvriersParChantier: number;
   delaiArriveeSecondes: number;
+  /**
+   * Rythme des arrivées selon les places libres : le délai de base vaut pour `placesDeReference` places libres,
+   * il s'allonge en dessous et raccourcit au-dessus (délai × (référence + 1) / (libres + 1)), sans passer sous
+   * `delaiMinimal` × le délai de base. Absent : délai fixe.
+   */
+  arriveeSelonPlaces?: { placesDeReference: number; delaiMinimal: number };
   /** Bien-être moyen minimal pour qu'un nouvel habitant arrive. */
   seuilArrivee: number;
   /** Bien-être à partir duquel un habitant produit des spores ; la production croît jusqu'à 1. */

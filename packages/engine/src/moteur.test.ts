@@ -979,3 +979,25 @@ describe('Bagages', () => {
     expect(etat.habitants.length).toBe(habitants + habitantsDeDepart);
   });
 });
+
+describe('Rythme des arrivées', () => {
+  const arrivesEn = (places: number, secondes: number) => {
+    const contenu = contenuDeTest({}, {
+      auDepart: 0,
+      logementDeBase: places,
+      delaiArriveeSecondes: 120,
+      premiereArriveeSecondes: undefined,
+      arriveeSelonPlaces: { placesDeReference: 2, delaiMinimal: 0.25 },
+    });
+    const moteur = new Moteur(contenu, 0);
+    moteur.simuler((secondes * PAS_PAR_MINUTE) / 60);
+    return moteur.etatCourant.habitants.length;
+  };
+
+  it('beaucoup de places libres : arrivées rapprochées ; une seule : plus espacées', () => {
+    expect(arrivesEn(20, 35)).toBe(1); // 30 s au plus court
+    expect(arrivesEn(2, 125)).toBe(1); // 2 min pour la référence
+    expect(arrivesEn(1, 125)).toBe(0); // 3 min pour une seule place
+    expect(arrivesEn(1, 185)).toBe(1);
+  });
+});

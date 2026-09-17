@@ -52,7 +52,7 @@ describe('Partie neuve', () => {
     const { moteur } = premiereHutte(0);
     expect(moteur.etatCourant.habitants).toHaveLength(1);
     // Il faut aussi de quoi manger : le joueur cueille les buissons prêts, toutes les 5 s.
-    for (let s = 0; s < 300; s += 5) {
+    for (let s = 0; s < 480; s += 5) {
       const { ile, pousses } = moteur.etatCourant;
       ile.elements.forEach((e, element) => {
         if (e.type === 'buisson' && pousses[element]! >= 1) moteur.recevoir({ type: 'commande', commande: { type: 'recolter', element } }, 0);

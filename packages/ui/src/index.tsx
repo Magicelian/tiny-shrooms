@@ -273,7 +273,8 @@ export class ControleurInterface {
   }
 
   /** Choix d'un bâtiment dans la bulle de construction : son fantôme apparaît sur la case. */
-  choisir(type: TypeBatiment): void {
+  /** `null` : referme le détail du bâtiment choisi, la liste reste ouverte. */
+  choisir(type: TypeBatiment | null): void {
     const { bulle } = this.magasin.valeur;
     if (bulle?.type === 'construire') this.ouvrir({ ...bulle, choix: type });
   }
