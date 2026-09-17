@@ -93,27 +93,3 @@ Le **menu de l'icône** permet d'afficher ou de cacher la fenêtre, de verrouill
 apparaît dans le menu de l'icône.
 
 <br clear="right" />
-
-## 🛠️ Développement
-
-Tauri 2, Three.js et Preact, avec un moteur de jeu en TypeScript sans affichage. Il faut Node, pnpm et Rust.
-
-```bash
-pnpm install
-pnpm dev          # lance l'application
-pnpm test         # tests, dont les simulations d'équilibrage
-pnpm typecheck
-```
-
-| Dossier | Contenu |
-|---|---|
-| `apps/desktop` | application : frontend, Worker du moteur, shell Rust (`src-tauri`) |
-| `packages/engine` | moteur de jeu pur |
-| `packages/content` | chiffres d'équilibrage et simulations |
-| `packages/renderer` | île en voxels pixelisée |
-| `packages/ui` · `packages/i18n` | interface · textes FR et EN |
-
-Le [cahier des charges](cahier-des-charges.md) décrit la vision, l'architecture et les étapes du projet.
-
-**Publier une version** : mettre le même numéro dans `apps/desktop/src-tauri/tauri.conf.json` et dans
-`Cargo.toml`, puis pousser l'étiquette `vX.Y.Z`. GitHub Actions construit les installeurs et publie la version.
