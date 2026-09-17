@@ -374,7 +374,8 @@ function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat
 
 function prendre(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat): void {
   const place = placeLibre(etat, contenu);
-  const aPorter = (r: Ressource) => Math.min(b.reserve[r] ?? 0, place[r]);
+  // Au moins une unité dès qu'il reste de la place : sinon le stock finit à quelques centièmes du plafond.
+  const aPorter = (r: Ressource) => Math.min(b.reserve[r] ?? 0, place[r] > 1e-9 ? Math.max(place[r], 1) : 0);
   const ressource = cles(b.reserve)
     .filter((r) => aPorter(r) > 1e-9)
     .sort((x, y) => aPorter(y) - aPorter(x))[0];

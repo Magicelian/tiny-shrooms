@@ -19,7 +19,13 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
   const vignette = controleur.vignettes?.batiment('hutte', 3);
 
   return (
-    <div class="accueil">
+    <div
+      class="accueil"
+      // Hors des boutons, un appui sur le menu fait glisser la fenêtre, comme sur l'île.
+      onPointerDown={(e) => {
+        if (e.button === 0 && !(e.target as Element).closest('button')) controleur.glisserFenetre();
+      }}
+    >
       <div class="titre-jeu">
         {vignette && <img class="vignette" src={vignette} alt="" />}
         <h1>

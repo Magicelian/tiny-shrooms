@@ -3,3 +3,11 @@ dist/
 target/
 *.log
 .DS_Store
+
+# Documents de travail et outils locaux : gardés sur le disque, jamais publiés.
+CLAUDE.md
+cahier-des-charges.md
+.claude/
+.cargo/
+apps/desktop/demo.html
+apps/desktop/demo/

@@ -1,3 +1,0 @@
-# Les compilations Rust pèsent plusieurs Go : on les garde hors de OneDrive.
-[build]
-target-dir = "/Users/celian/Library/Caches/tiny_shrooms/target"

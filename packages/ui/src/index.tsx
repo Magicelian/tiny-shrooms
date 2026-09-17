@@ -157,6 +157,11 @@ export class ControleurInterface {
     this.continuer();
   }
 
+  /** Menu de démarrage : glisser déplace la fenêtre, sauf position verrouillée. */
+  glisserFenetre(): void {
+    if (!this.magasin.valeur.verrouillee) this.options.deplacerFenetre?.();
+  }
+
   reglerSon(): void {
     this.options.demarrage?.son(!this.magasin.valeur.son);
   }

@@ -75,8 +75,9 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   repousser(etat, contenu);
 
   const max = plafonds(etat, contenu);
-  const { direct, production } = fluxParMinute(etat, contenu);
-  ranger(etat, production);
+  const flux = fluxParMinute(etat, contenu);
+  const { direct } = flux;
+  ranger(etat, flux, max);
   const pleins: Ressource[] = [];
   for (const r of RESSOURCES) {
     const avant = etat.stocks[r];
@@ -96,13 +97,18 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
  * Les livraisons entrent dans les stocks au rythme de la production (6/min : une unité toutes les 10 s),
  * plutôt que par charges entières ; un retard sur la production se résorbe en `MINUTES_POUR_RANGER`.
  */
-function ranger(etat: Etat, production: Flux): void {
+function ranger(etat: Etat, flux: { direct: Flux; production: Flux; estime: Flux }, max: Record<Ressource, number>): void {
   for (const r of RESSOURCES) {
     const enAttente = etat.arrivages[r];
     if (enAttente <= 0) continue;
+    // Ce que le village mange ou use par minute : les livraisons entrent au moins aussi vite, sinon le stock
+    // fond sous le plafond pendant que la file attend.
+    const consommation = Math.max(0, flux.direct[r] + flux.production[r] - flux.estime[r]);
     // Au moins une unité par minute, pour que la file se vide même sans production.
-    const parMinute = Math.max(production[r], enAttente / MINUTES_POUR_RANGER, 1);
-    const range = Math.min(enAttente, parMinute / PAS_PAR_MINUTE);
+    const parMinute = Math.max(flux.production[r] + consommation, enAttente / MINUTES_POUR_RANGER, 1);
+    // Jusqu'au plafond exactement ; le surplus attend au dépôt qu'une place se libère.
+    const range = Math.min(enAttente, parMinute / PAS_PAR_MINUTE, Math.max(0, max[r] - etat.stocks[r]));
+    if (range <= 0) continue;
     etat.stocks[r] += range;
     etat.arrivages[r] = enAttente - range < 1e-9 ? 0 : enAttente - range;
   }

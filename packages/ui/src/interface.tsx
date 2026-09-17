@@ -171,11 +171,10 @@ function Population({ controleur, instantane }: Props & { instantane: Instantane
     <Survol
       classe="ecriteau population"
       detail={[
-        t('habitants.detail', { nombre: habitants, places }),
-        t('habitants.bonheur', { pourcent: pourcent(bienEtre) }),
+        `${t('habitants.detail', { nombre: habitants, places })} · ${t('habitants.bonheur', { pourcent: pourcent(bienEtre) })}`,
         ...(instantane.faim ? [t('habitants.faim')] : []),
         prochain,
-      ].join(' · ')}
+      ].join('\n')}
     >
       <span class="palier">{nomPalier(contenu, instantane.palier)}</span>
       <Icone nom="habitant" />

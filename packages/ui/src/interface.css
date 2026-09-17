@@ -299,6 +299,11 @@
 .population .infobulle {
   left: auto;
   right: 0;
+  /* Une information par ligne, pour ne pas déborder de la fenêtre. */
+  white-space: pre-line;
+  width: max-content;
+  max-width: 296px;
+  text-align: right;
 }
 
 /* ─── Habillage des bulles : cadre de bois, parchemin, coins pixel ─────────────────────────────── */
