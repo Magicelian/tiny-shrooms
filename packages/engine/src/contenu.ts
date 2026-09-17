@@ -118,6 +118,8 @@ export interface DefinitionRang {
   cout?: Quantites;
   /** Palier de population à atteindre pour monter à ce rang. */
   palier: number;
+  /** Durée des travaux de montée à ce rang, pour un bâtisseur (absent : immédiat). */
+  agrandissementSecondes?: number;
   /** Spores par minute d'un habitant pleinement heureux. */
   sporesParMinute: number;
   /** Prélevé dans les stocks par minute ; le besoin du même nom n'est satisfait que si tout est servi. */

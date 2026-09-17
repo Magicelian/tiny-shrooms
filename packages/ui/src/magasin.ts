@@ -47,7 +47,7 @@ export interface EtatInterface {
   messages: Message[];
   envols: Envol[];
   /** Menu de démarrage ouvert (`confirmer` : demande avant d'effacer la partie), ou `null` en jeu. */
-  menu: 'accueil' | 'confirmer' | 'commandes' | null;
+  menu: 'accueil' | 'confirmer' | 'parametres' | null;
   /** Une partie enregistrée a été reprise : le menu propose « Continuer » plutôt que « Jouer ». */
   partieReprise: boolean;
   son: boolean;

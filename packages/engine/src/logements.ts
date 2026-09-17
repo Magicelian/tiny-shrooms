@@ -115,9 +115,13 @@ function estRessource(besoin: Besoin): besoin is Besoin & Ressource {
 }
 
 /** Raison qui empêche un logement de monter au rang suivant, ou `null` s'il le peut (coût mis à part). */
-export function refusMontee(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau' | 'chantier' | 'besoins'>, palier: number): RaisonRefus | null {
+export function refusMontee(
+  contenu: Contenu,
+  b: Pick<Batiment, 'type' | 'niveau' | 'chantier' | 'agrandissement' | 'besoins'>,
+  palier: number,
+): RaisonRefus | null {
   const suivant = contenu.logement.rangs[b.niveau];
-  if (!contenu.batiments[b.type].logement || b.chantier !== null || !suivant) return 'indisponible';
+  if (!contenu.batiments[b.type].logement || b.chantier !== null || b.agrandissement !== null || !suivant) return 'indisponible';
   if (suivant.palier > palier) return 'nonDebloque';
   if (besoinsManquants(contenu, b, b.niveau + 1).length > 0) return 'besoinsManquants';
   return null;
@@ -126,16 +130,20 @@ export function refusMontee(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau
 export function monterLogement(etat: Etat, contenu: Contenu, b: BatimentEtat): RaisonRefus | null {
   const refus = refusMontee(contenu, b, etat.palier);
   if (refus) return refus;
-  if (!payer(etat, contenu.logement.rangs[b.niveau]!.cout ?? {})) return 'ressourcesInsuffisantes';
-  b.niveau++;
+  const suivant = contenu.logement.rangs[b.niveau]!;
+  if (!payer(etat, suivant.cout ?? {})) return 'ressourcesInsuffisantes';
+  // Les habitants font les travaux ; le logement garde son rang et ses occupants d'ici là.
+  if (suivant.agrandissementSecondes) b.agrandissement = 0;
+  else b.niveau++;
   return null;
 }
 
 /** Tout ce qu'a coûté un bâtiment : sa construction et, pour un logement, ses montées en gamme. */
-export function coutTotal(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau'>, bonus: Record<BonusPrestige, number>): Quantites {
+export function coutTotal(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau' | 'agrandissement'>, bonus: Record<BonusPrestige, number>): Quantites {
   const total = coutBatiment(contenu, bonus, b.type);
   if (!contenu.batiments[b.type].logement) return total;
-  for (const rang of contenu.logement.rangs.slice(1, b.niveau)) {
+  // Un agrandissement payé mais pas fini compte aussi.
+  for (const rang of contenu.logement.rangs.slice(1, b.niveau + (b.agrandissement !== null ? 1 : 0))) {
     for (const r of RESSOURCES) if (rang.cout?.[r]) total[r] = (total[r] ?? 0) + rang.cout[r];
   }
   return total;

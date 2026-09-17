@@ -113,6 +113,8 @@ export interface Batiment {
   niveau: number;
   /** Avancement du chantier entre 0 et 1, ou `null` une fois construit. */
   chantier: number | null;
+  /** Logements : avancement de la montée au rang suivant, payée et en travaux, ou `null`. */
+  agrandissement: number | null;
   /** Bonus de voisinage appliqué, en multiplicateur (1 = aucun). */
   bonusVoisinage: number;
   /**
@@ -228,6 +230,8 @@ export interface Instantane {
   /** Indice du palier de population atteint dans `contenu.paliers` ; ne redescend jamais. */
   palier: number;
   ameliorations: Record<AmeliorationVillage, number>;
+  /** Plus rien à manger : les habitants travaillent moins vite et leur bien-être baisse. */
+  faim: boolean;
   prestige: Prestige;
   reglages: Reglages;
 }

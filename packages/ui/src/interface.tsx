@@ -154,18 +154,35 @@ function Population({ controleur, instantane }: Props & { instantane: Instantane
   const { contenu } = controleur;
   const places = capaciteLogement(contenu, instantane.batiments, controleur.magasin.valeur.ile?.soucheEnPlace ?? true, instantane.prestige);
   const habitants = instantane.habitants.length;
+  const bienEtre = habitants > 0 ? instantane.habitants.reduce((s, h) => s + h.bienEtre, 0) / habitants : 1;
+  // Les mêmes seuils que le moteur : sous ½, plus d'arrivée ni de spores.
+  const humeur = bienEtre >= 0.7 ? 'contents' : bienEtre >= contenu.habitants.seuilArrivee ? 'mitiges' : 'tristes';
   const suivant = contenu.paliers[instantane.palier + 1];
   const prochain = suivant
     ? t('palier.prochain', { palier: nomPalier(contenu, instantane.palier + 1), population: suivant.population })
     : t('palier.dernier');
   return (
-    <Survol classe="ecriteau population" detail={`${t('habitants.detail', { nombre: habitants, places })} · ${prochain}`}>
+    <Survol
+      classe="ecriteau population"
+      detail={[
+        t('habitants.detail', { nombre: habitants, places }),
+        t('habitants.bonheur', { pourcent: pourcent(bienEtre) }),
+        ...(instantane.faim ? [t('habitants.faim')] : []),
+        prochain,
+      ].join(' · ')}
+    >
       <span class="palier">{nomPalier(contenu, instantane.palier)}</span>
       <Icone nom="habitant" />
       <span>
         {nombre(habitants)}
         <span class="places">/{nombre(places)}</span>
       </span>
+      {habitants > 0 && <Icone nom={humeur} />}
+      {instantane.faim && (
+        <span class="faim">
+          <Icone nom="faim" />
+        </span>
+      )}
     </Survol>
   );
 }
@@ -186,6 +203,7 @@ function Rangee({ instantane }: { instantane: Instantane }) {
             icone={<Icone nom={r} />}
             quantite={Math.floor(stock.quantite)}
             plein={stock.quantite >= stock.plafond}
+            vide={instantane.faim && (r === 'baies' || r === 'baiesSechees')}
             detail={`${nomRessource(r)} ${nombre(Math.floor(stock.quantite))}/${nombre(stock.plafond)} · ${variation >= 0 ? '+' : ''}${t('ressource.parMinute', { valeur: nombre(variation, 1) })}`}
           />
         );
@@ -208,11 +226,11 @@ function Survol(props: { classe: string; detail: string; children: ComponentChil
   );
 }
 
-/** `plein` : stock au plafond. */
-function Planche(props: { icone: ComponentChildren; quantite: number; plein: boolean; detail: string }) {
+/** `plein` : stock au plafond ; `vide` : nourriture épuisée, les habitants ont faim. */
+function Planche(props: { icone: ComponentChildren; quantite: number; plein: boolean; vide?: boolean; detail: string }) {
   const [survol, setSurvol] = useState(false);
   return (
-    <li class={`planche ${props.plein ? 'plein' : ''}`} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}>
+    <li class={`planche ${props.plein ? 'plein' : ''} ${props.vide ? 'vide' : ''}`} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}>
       {props.icone}
       <span class="quantite">{nombre(props.quantite)}</span>
       {survol && <span class="infobulle">{props.detail}</span>}

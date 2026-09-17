@@ -609,6 +609,26 @@ describe('Logements et paliers', () => {
     expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'indisponible' });
   });
 
+  it('avec une durée de travaux, l’agrandissement attend les bâtisseurs', () => {
+    const contenu = contenuVillage();
+    contenu.logement.rangs[1]!.agrandissementSecondes = 20;
+    const moteur = new Moteur(contenu, 0);
+    const c = caseLibre(moteur);
+    commander(moteur, poser('hutte', c));
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    const puits = moteur.casesLibres().find((p) => Math.max(Math.abs(p.x - c.x), Math.abs(p.y - c.y)) <= 2)!;
+    commander(moteur, poser('puits', puits));
+    moteur.simuler(1);
+    const hutte = hutteEt(moteur);
+    expect(monter(moteur, hutte.id)).toEqual([]);
+    expect(hutte.niveau).toBe(1);
+    expect(hutte.agrandissement).toBe(0);
+    expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'indisponible' });
+    const evenements = moteur.simuler(PAS_PAR_MINUTE);
+    expect(evenements).toContainEqual({ type: 'logementAmeliore', id: hutte.id, niveau: 2 });
+    expect(hutte.agrandissement).toBeNull();
+  });
+
   it('un besoin manquant baisse le bien-être sans faire partir personne ni redescendre', () => {
     const moteur = new Moteur(contenuVillage(), 0);
     const c = caseLibre(moteur);

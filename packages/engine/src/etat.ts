@@ -53,6 +53,8 @@ export interface Etat {
   prochainIdHabitant: number;
   pasAvantArrivee: number;
   batimentsDebloques: TypeBatiment[];
+  /** Réserves de baies vides au dernier pas : travail ralenti, bien-être en baisse. Recalculé à chaque pas. */
+  faim?: boolean;
   /** Indice du palier de population atteint. */
   palier: number;
   /** Avancement du retrait de la souche entre 0 et 1, ou `null` s'il n'est pas en cours. */

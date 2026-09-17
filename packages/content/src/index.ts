@@ -37,13 +37,14 @@ export const contenu: Contenu = {
   logement: {
     rangs: [
       { places: 2, besoins: ['nourriture'], palier: 0, sporesParMinute: 0.2 },
-      { places: 4, besoins: ['nourriture', 'chaleur', 'eau'], cout: { boisMort: 40, mousse: 20 }, palier: 1, sporesParMinute: 0.3 },
+      { places: 4, besoins: ['nourriture', 'chaleur', 'eau'], cout: { boisMort: 40, mousse: 20 }, palier: 1, sporesParMinute: 0.3, agrandissementSecondes: 45 },
       {
         places: 8,
         besoins: ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce'],
         cout: { boisMort: 80, mousse: 40, spores: 30 },
         palier: 2,
         sporesParMinute: 0.5,
+        agrandissementSecondes: 90,
         consommation: { mousse: 0.5 },
       },
     ],

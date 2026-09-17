@@ -50,6 +50,7 @@ export function estLaNuit(etat: Etat, contenu: Contenu): boolean {
 
 export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evenement[]): void {
   const nourri = nourrir(etat, contenu);
+  etat.faim = etat.habitants.length > 0 && !nourri;
   preparerGrille(etat);
   evaluerBesoins(etat, contenu, nourri, emploisTenus(etat));
   const { loges, capacite } = logements(etat, contenu);
@@ -70,7 +71,9 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   }
   // Village encore vide : les chantiers avancent seuls, au rythme d'un bâtisseur.
   if (etat.habitants.length === 0) {
-    for (const b of etat.batiments) if (b.chantier !== null) avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements);
+    for (const b of etat.batiments) {
+      if (enTravaux(b)) avancerChantier(etat, contenu, b, cadenceTravail(etat, contenu, centreCase(b), nourri), evenements);
+    }
     if (etat.retraitSouche !== null) avancerRetrait(etat, contenu, cadenceTravail(etat, contenu, centreSouche(etat.ile), nourri), evenements);
     for (const d of [...etat.defrichages]) avancerDefrichage(etat, contenu, d.case, cadenceTravail(etat, contenu, centre(d.case), nourri), evenements);
   }
@@ -98,9 +101,25 @@ function avancerRetrait(etat: Etat, contenu: Contenu, cadence: number, evenement
   evenements.push({ type: 'soucheRetiree' });
 }
 
-/** Fait avancer un chantier d'un pas ; renvoie vrai s'il vient de se terminer. */
+/** Chantier de construction ou agrandissement d'un logement : il faut des bâtisseurs. */
+function enTravaux(b: BatimentEtat): boolean {
+  return b.chantier !== null || b.agrandissement !== null;
+}
+
+/** Fait avancer un chantier (ou un agrandissement) d'un pas ; renvoie vrai s'il vient de se terminer. */
 function avancerChantier(etat: Etat, contenu: Contenu, b: BatimentEtat, cadence: number, evenements: Evenement[]): boolean {
   const vitesse = effetsPrestige(contenu, etat.prestige.bonus).chantier;
+  if (b.chantier === null) {
+    if (b.agrandissement === null) return true;
+    const secondes = contenu.logement.rangs[b.niveau]?.agrandissementSecondes ?? 0;
+    const pas = (secondes * 1000) / PAS_DE_SIMULATION_MS / vitesse;
+    b.agrandissement = pas > 0 ? b.agrandissement + cadence / pas : 1;
+    if (b.agrandissement < 1 - 1e-9) return false;
+    b.agrandissement = null;
+    b.niveau++;
+    evenements.push({ type: 'logementAmeliore', id: b.id, niveau: b.niveau });
+    return true;
+  }
   const pasNecessaires = (contenu.batiments[b.type].constructionSecondes * 1000) / PAS_DE_SIMULATION_MS / vitesse;
   b.chantier = pasNecessaires > 0 ? b.chantier! + cadence / pasNecessaires : 1;
   if (b.chantier < 1 - 1e-9) return false;
@@ -190,8 +209,10 @@ function missionValide(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
       const b = trouver(etat, m.batiment);
       return !reevaluer && !!b && b.chantier === null && productif(etat, contenu, b);
     }
-    case 'construire':
-      return trouver(etat, m.batiment)?.chantier != null;
+    case 'construire': {
+      const b = trouver(etat, m.batiment);
+      return !!b && enTravaux(b);
+    }
     case 'tenir':
       return !reevaluer && trouver(etat, m.batiment)?.chantier === null;
     case 'arracher':
@@ -234,7 +255,7 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
   for (const b of etat.batiments) {
     const def = contenu.batiments[b.type];
     const cible = centreCase(b);
-    if (b.chantier !== null) {
+    if (enTravaux(b)) {
       const batisseurs = occupants(etat, h, 'construire', b.id);
       // Un chantier sans personne passe avant un emploi : sinon un habitant seul et employé ne le finirait jamais.
       if (batisseurs < contenu.habitants.ouvriersParChantier) proposer({ tache: 'construire', batiment: b.id }, batisseurs === 0 ? 1.5 : 1, cible);

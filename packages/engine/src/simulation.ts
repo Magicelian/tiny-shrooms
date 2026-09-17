@@ -136,6 +136,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         orientation: commande.orientation,
         niveau: 1,
         chantier: def.constructionSecondes > 0 ? 0 : null,
+        agrandissement: null,
         bonusVoisinage: 1,
         besoins: {},
         reserve: {},
@@ -237,7 +238,9 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         const b = etat.batiments.find((x) => x.id === batiment);
         if (!b) return refus('introuvable');
         const raison = monterLogement(etat, contenu, b);
-        return raison ? refus(raison) : [{ type: 'logementAmeliore', id: b.id, niveau: b.niveau }];
+        if (raison) return refus(raison);
+        // Sans travaux (rang sans durée), la montée est faite tout de suite.
+        return b.agrandissement === null ? [{ type: 'logementAmeliore', id: b.id, niveau: b.niveau }] : [];
       }
       if (!etat.batiments.some((b) => b.type === 'atelier' && b.chantier === null)) {
         return refus(etat.batimentsDebloques.includes('atelier') ? 'indisponible' : 'nonDebloque');
@@ -295,6 +298,7 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     retraitSouche: etat.retraitSouche,
     defrichages: etat.defrichages.map((d) => ({ ...d, case: { ...d.case } })),
     palier: etat.palier,
+    faim: etat.faim ?? false,
     ameliorations: { ...etat.ameliorations },
     prestige: { ...etat.prestige, bonus: { ...etat.prestige.bonus } },
     reglages: { ...etat.reglages },

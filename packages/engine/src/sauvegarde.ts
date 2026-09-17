@@ -5,7 +5,7 @@ import type { Etat } from './etat';
 import { placerElements } from './ile';
 import { prestigeNeuf } from './prestige';
 
-export const VERSION_SAUVEGARDE = 10;
+export const VERSION_SAUVEGARDE = 11;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -58,6 +58,8 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
     prestige: { ...prestigeNeuf(), populationMax: (etat.habitants as unknown[]).length },
     batimentsDebloques: [...(etat.batimentsDebloques as string[]), ...((etat.palier as number) >= 2 ? ['sanctuaire'] : [])],
   }),
+  // Version 11 : agrandissement des logements par les habitants.
+  10: (etat) => ({ ...etat, batiments: (etat.batiments as object[]).map((b) => ({ ...b, agrandissement: null })) }),
 };
 
 export function serialiser(etat: Etat): string {

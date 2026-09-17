@@ -85,6 +85,7 @@ export const en: Record<keyof typeof fr, string> = {
   // Logements
   'logement.habitants': 'Villagers: {nombre}/{places}',
   'logement.besoins': 'Needs',
+  'logement.agrandissement': 'Upgrading to {rang}: {pourcent}%',
   'logement.pourMonter': 'To become a {rang}',
   'logement.monter': 'Upgrade: {liste}',
   'logement.rangMax': 'Highest rank',
@@ -134,6 +135,8 @@ export const en: Record<keyof typeof fr, string> = {
 
   // Habitants
   'habitants.detail': 'Villagers {nombre}/{places} beds',
+  'habitants.bonheur': 'Average happiness {pourcent}%',
+  'habitants.faim': 'Out of berries: slower work, happiness dropping',
 
   // Temps
   'saison.printemps': 'Spring',
@@ -152,7 +155,7 @@ export const en: Record<keyof typeof fr, string> = {
   'accueil.nouvelle': 'New game',
   'accueil.sonActif': 'Sound: on',
   'accueil.sonCoupe': 'Sound: off',
-  'accueil.commandes': 'Controls',
+  'accueil.parametres': 'Settings',
   'accueil.retour': 'Back',
   'accueil.commande.clic': 'Click',
   'accueil.commande.clicAction': 'build, harvest',

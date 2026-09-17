@@ -1,7 +1,7 @@
 // Petites icônes pixel (9 × 9) dessinées depuis des motifs texte, converties une fois en images.
 import type { Ressource } from '@tiny-shrooms/engine';
 
-export type Icone = Ressource | 'graine' | 'cadenas' | 'habitant' | 'coche' | 'croix';
+export type Icone = Ressource | 'graine' | 'cadenas' | 'habitant' | 'coche' | 'croix' | 'contents' | 'mitiges' | 'tristes' | 'faim';
 
 /** `.` transparent, `#` encre ; les autres lettres renvoient à la palette de l'icône. */
 const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }> = {
@@ -88,6 +88,24 @@ const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }
       '.........',
     ],
     palette: { b: '#b58fd6', w: '#efe4ff', v: '#6fc25a' },
+  },
+  // Humeur moyenne des habitants : visage vert, jaune ou rouge.
+  contents: {
+    motif: ['..#####..', '.#vvvvv#.', '#vv#v#vv#', '#vvvvvvv#', '#v#vvv#v#', '#vv###vv#', '.#vvvvv#.', '..#####..', '.........'],
+    palette: { v: '#6fc25a' },
+  },
+  mitiges: {
+    motif: ['..#####..', '.#jjjjj#.', '#jj#j#jj#', '#jjjjjjj#', '#jjjjjjj#', '#jj###jj#', '.#jjjjj#.', '..#####..', '.........'],
+    palette: { j: '#f2b53a' },
+  },
+  tristes: {
+    motif: ['..#####..', '.#rrrrr#.', '#rr#r#rr#', '#rrrrrrr#', '#rr###rr#', '#r#rrr#r#', '.#rrrrr#.', '..#####..', '.........'],
+    palette: { r: '#e0503f' },
+  },
+  // Bol vide : plus rien à manger.
+  faim: {
+    motif: ['.........', '.........', '.........', '#########', '#bbbbbbb#', '.#bbbbb#.', '..#bbb#..', '...###...', '.........'],
+    palette: { b: '#c98a4a' },
   },
   cadenas: {
     motif: [

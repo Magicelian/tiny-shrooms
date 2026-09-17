@@ -122,9 +122,12 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `~/.tauri/tiny-shrooms.key`. Build local : `TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/tiny-shrooms.key)"
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" pnpm --filter desktop tauri build`.
 - **Menu de démarrage** (17/09/2026) : `packages/ui/src/accueil.tsx` (option `demarrage` du contrôleur, `magasin.menu`).
-  Boutons posés sur l'île, sans fond ni bouton Quitter. Simulation en veille tant qu'il est ouvert, l'île fait un quart de tour toutes les 6 s. « Nouvelle partie » envoie la
+  Boutons posés sur l'île, sans fond ni bouton Quitter ; « Paramètres » regroupe son, langue et commandes. Simulation en veille tant qu'il est ouvert, l'île fait un quart de tour toutes les 6 s. « Nouvelle partie » envoie la
   commande `recommencer` (prestige compris). Son et langue passent par Rust (`regler_son`, `regler_langue`) pour
   rester d'accord avec le menu de l'icône.
+- **Agrandissements** (17/09/2026) : `Batiment.agrandissement` (sauvegarde en version 11), durée `agrandissementSecondes`
+  par rang ; les habitants s'en chargent comme d'un chantier, le logement garde son rang et ses occupants d'ici là.
+  Faim (`instantane.faim`) et bonheur moyen : visage et bol vide sur l'écriteau des habitants.
 - **README** : destiné aux joueurs seulement (pas de partie développement). Images dans `docs/`. `apps/desktop/demo.html?graine=1&minutes=44` (dev seulement) fait jouer le joueur
   scripté puis ouvre le jeu sur la partie obtenue ; captures prises avec Chrome sans fenêtre piloté par le protocole
   DevTools (320 × 320, échelle 2, fond transparent), GIF assemblé avec ffmpeg. Icône du jeu : pixel art écrit en code,

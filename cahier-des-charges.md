@@ -145,7 +145,7 @@ avec des boutons colorés cerclés de noir. Son début de partie aussi : on réc
   Un logement dont un besoin manque ne descend pas en gamme : il cesse seulement de progresser et
   son bonheur baisse, donc il produit moins de spores.
   La montée se fait **au clic, contre paiement**, dans la bulle du logement, une fois les besoins du rang suivant
-  satisfaits. Le logement garde sa case. La mousse du manoir est prélevée dans le stock, un peu chaque minute.
+  satisfaits ; les habitants font ensuite les travaux (45 s pour la maison, 90 s pour le manoir). Le logement garde sa case. La mousse du manoir est prélevée dans le stock, un peu chaque minute.
   Feu, puits et marché couvrent un carré autour d'eux ; la zone s'affiche à la pose et dans leur bulle.
 - **Paliers de population** : hameau (0) → village (15) → bourg (50) → cité (150) → … (seuils à
   régler). Chaque palier débloque bâtiments et améliorations, et s'annonce discrètement.

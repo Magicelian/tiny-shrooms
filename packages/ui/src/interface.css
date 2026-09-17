@@ -774,7 +774,7 @@
   }
 }
 .panneau-accueil {
-  width: 216px;
+  width: 240px;
 }
 /* Pas de fond : boutons et textes posés directement sur l'île, les textes cernés pour rester lisibles. */
 .panneau-accueil .corps {
@@ -791,7 +791,7 @@
 }
 .panneau-accueil .principal {
   padding: 6px;
-  font-size: 17px;
+  font-size: 16px;
 }
 .panneau-accueil h2 {
   margin: 0;
@@ -839,4 +839,17 @@
   height: 16px;
   margin: 2px 0 2px 4px;
   font-size: 9px;
+}
+/* Faim : bol vide qui palpite doucement à côté des habitants. */
+.population .faim {
+  display: inline-flex;
+  animation: palpiter 2s ease-in-out infinite;
+}
+@keyframes palpiter {
+  50% {
+    opacity: 0.35;
+  }
+}
+.planche.vide .quantite {
+  color: #ff8a7a;
 }

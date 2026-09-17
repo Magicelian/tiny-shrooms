@@ -82,6 +82,7 @@ export const fr = {
   // Logements
   'logement.habitants': 'Habitants : {nombre}/{places}',
   'logement.besoins': 'Besoins',
+  'logement.agrandissement': 'Agrandissement en {rang} : {pourcent} %',
   'logement.pourMonter': 'Pour devenir {rang}',
   'logement.monter': 'Agrandir : {liste}',
   'logement.rangMax': 'Rang le plus haut',
@@ -131,6 +132,8 @@ export const fr = {
 
   // Habitants
   'habitants.detail': 'Habitants {nombre}/{places} places',
+  'habitants.bonheur': 'Bonheur moyen {pourcent} %',
+  'habitants.faim': 'Plus de baies : travail ralenti, bonheur en baisse',
 
   // Temps
   'saison.printemps': 'Printemps',
@@ -149,7 +152,7 @@ export const fr = {
   'accueil.nouvelle': 'Nouvelle partie',
   'accueil.sonActif': 'Son : oui',
   'accueil.sonCoupe': 'Son : non',
-  'accueil.commandes': 'Commandes',
+  'accueil.parametres': 'Paramètres',
   'accueil.retour': 'Retour',
   'accueil.commande.clic': 'Clic',
   'accueil.commande.clicAction': 'construire, récolter',

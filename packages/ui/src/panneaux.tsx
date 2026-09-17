@@ -94,10 +94,12 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const def = contenu.batiments[batiment.type];
   const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus);
   const enChantier = batiment.chantier !== null;
-  // Bâtisseurs pendant le chantier, récolteurs ensuite.
-  const postes = enChantier ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
+  // Construction ou agrandissement : il faut des bâtisseurs.
+  const enTravaux = enChantier || batiment.agrandissement !== null;
+  // Bâtisseurs pendant les travaux, récolteurs ensuite.
+  const postes = enTravaux ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
   const pourvus = instantane.habitants.filter(
-    (h) => h.lieu === batiment.id && h.tache === (enChantier ? 'construire' : 'recolter'),
+    (h) => h.lieu === batiment.id && h.tache === (enTravaux ? 'construire' : 'recolter'),
   ).length;
   return (
     <>
@@ -107,7 +109,13 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
           <Jauge valeur={batiment.chantier!} />
         </>
       )}
-      {postes > 0 && <p><strong>{t(enChantier ? 'construction.batisseurs' : 'construction.emplois', { pourvus, postes })}</strong></p>}
+      {batiment.agrandissement !== null && (
+        <>
+          <p>{t('logement.agrandissement', { rang: nomRang(batiment.niveau + 1), pourcent: pourcent(batiment.agrandissement) })}</p>
+          <Jauge valeur={batiment.agrandissement} />
+        </>
+      )}
+      {postes > 0 && <p><strong>{t(enTravaux ? 'construction.batisseurs' : 'construction.emplois', { pourvus, postes })}</strong></p>}
       {!enChantier && def.logement && <Logement controleur={controleur} instantane={instantane} batiment={batiment} />}
       {!def.logement && effets(contenu, batiment.type).map((ligne) => (
         <p key={ligne}>{ligne}</p>
@@ -176,7 +184,7 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
       </p>
       <p class="discret">{t('logement.besoins')}</p>
       <Besoins liste={rang?.besoins ?? []} />
-      {suivant ? (
+      {batiment.agrandissement !== null ? null : suivant ? (
         <>
           <p class="discret">{t('logement.pourMonter', { rang: nomRang(batiment.niveau + 1) })}</p>
           {refus === 'nonDebloque' ? (

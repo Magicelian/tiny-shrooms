@@ -1,4 +1,4 @@
-// Menu de démarrage : titre, reprise ou nouvelle partie, commandes, son et langue. L'île tourne doucement derrière.
+// Menu de démarrage : titre, reprise ou nouvelle partie, paramètres (son, langue, commandes). L'île tourne doucement derrière.
 import { t } from '@tiny-shrooms/i18n';
 import type { ControleurInterface } from './index';
 import { useMagasin } from './magasin';
@@ -29,9 +29,22 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
       </div>
 
       <section class="panneau-accueil">
-        {etat.menu === 'commandes' ? (
+        {etat.menu === 'parametres' ? (
           <div class="corps">
-            <h2>{t('accueil.commandes')}</h2>
+            <h2>{t('accueil.parametres')}</h2>
+            <div class="rangee-boutons">
+              <button class={`bouton ${etat.son ? 'actif' : ''}`} onClick={() => controleur.reglerSon()}>
+                ♪ {t(etat.son ? 'accueil.sonActif' : 'accueil.sonCoupe')}
+              </button>
+              <span class="langues">
+                <button class={`bouton ${etat.langue === 'fr' ? 'actif' : ''}`} onClick={() => controleur.reglerLangue('fr')}>
+                  FR
+                </button>
+                <button class={`bouton ${etat.langue === 'en' ? 'actif' : ''}`} onClick={() => controleur.reglerLangue('en')}>
+                  EN
+                </button>
+              </span>
+            </div>
             <dl class="commandes">
               {COMMANDES.map(([geste, action]) => (
                 <div key={geste}>
@@ -40,7 +53,7 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
                 </div>
               ))}
             </dl>
-            <button class="bouton" onClick={() => controleur.montrerCommandes(false)}>
+            <button class="bouton" onClick={() => controleur.montrerParametres(false)}>
               {t('accueil.retour')}
             </button>
           </div>
@@ -59,29 +72,18 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
           </div>
         ) : (
           <div class="corps">
-            <button class="bouton valider principal" onClick={() => controleur.continuer()}>
-              ▶ {t(etat.partieReprise ? 'accueil.continuer' : 'accueil.jouer')}
-            </button>
-            {etat.partieReprise && (
-              <button class="bouton large" onClick={() => controleur.demanderRecommencer(true)}>
-                {t('accueil.nouvelle')}
-              </button>
-            )}
             <div class="rangee-boutons">
-              <button class={`bouton ${etat.son ? 'actif' : ''}`} onClick={() => controleur.reglerSon()}>
-                ♪ {t(etat.son ? 'accueil.sonActif' : 'accueil.sonCoupe')}
+              <button class="bouton valider principal" onClick={() => controleur.continuer()}>
+                ▶ {t(etat.partieReprise ? 'accueil.continuer' : 'accueil.jouer')}
               </button>
-              <span class="langues">
-                <button class={`bouton ${etat.langue === 'fr' ? 'actif' : ''}`} onClick={() => controleur.reglerLangue('fr')}>
-                  FR
+              {etat.partieReprise && (
+                <button class="bouton" onClick={() => controleur.demanderRecommencer(true)}>
+                  {t('accueil.nouvelle')}
                 </button>
-                <button class={`bouton ${etat.langue === 'en' ? 'actif' : ''}`} onClick={() => controleur.reglerLangue('en')}>
-                  EN
-                </button>
-              </span>
+              )}
             </div>
-            <button class="bouton" onClick={() => controleur.montrerCommandes(true)}>
-              {t('accueil.commandes')}
+            <button class="bouton" onClick={() => controleur.montrerParametres(true)}>
+              {t('accueil.parametres')}
             </button>
           </div>
         )}

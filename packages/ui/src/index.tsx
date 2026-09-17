@@ -137,8 +137,8 @@ export class ControleurInterface {
     this.sons.jouer('termine');
   }
 
-  montrerCommandes(visibles: boolean): void {
-    this.magasin.modifier({ menu: visibles ? 'commandes' : 'accueil' });
+  montrerParametres(visibles: boolean): void {
+    this.magasin.modifier({ menu: visibles ? 'parametres' : 'accueil' });
     this.sons.jouer(visibles ? 'termine' : 'fermer');
   }
 
