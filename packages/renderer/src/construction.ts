@@ -2,7 +2,7 @@
 // Ces objets vivent dans une scène à part, dessinée par-dessus sans contours ni ombres.
 import * as THREE from 'three';
 import type { Case, Ile, TypeBatiment } from '@tiny-shrooms/engine';
-import { HAUTEURS_BATIMENT } from './palette';
+import { modeleBatiment } from './modeles';
 import { centreCase, versMonde } from './repere';
 
 const VERT = 0xb6ff5c;
@@ -17,8 +17,8 @@ const CLAIR = 0xfff6c8;
 export class AidesConstruction {
   readonly scene = new THREE.Scene();
   private grille: THREE.LineSegments | null = null;
-  private readonly materiauFantome = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8, depthWrite: false });
-  private readonly fantome = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.9).translate(0, 0.5, 0), this.materiauFantome);
+  private readonly materiauFantome = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.7, depthWrite: false });
+  private readonly fantome = new THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>(BOITE, this.materiauFantome);
   private readonly materiauSol = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6, depthWrite: false });
   private readonly sol = new THREE.Mesh(SOL, this.materiauSol);
   private readonly materiauPortee = new THREE.MeshBasicMaterial({ color: BLEU, transparent: true, opacity: 0.3, depthWrite: false });
@@ -93,7 +93,7 @@ export class AidesConstruction {
     this.fantome.visible = type !== null;
     if (type) {
       centreCase(c.x, c.y, this.ile, this.fantome.position);
-      this.fantome.scale.y = HAUTEURS_BATIMENT[type];
+      this.fantome.geometry = modeleBatiment(type).geometrie;
     }
   }
 

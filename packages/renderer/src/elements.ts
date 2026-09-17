@@ -1,15 +1,10 @@
 // Éléments naturels récoltables : baies sur les buissons, bois mort, mousse ; ils disparaissent une fois récoltés.
 import * as THREE from 'three';
 import type { Ile, TypeElement } from '@tiny-shrooms/engine';
-import { materiau } from './palette';
+import { modelesElements } from './modeles';
 import { bruit, centreCase } from './repere';
 
-const COULEURS_ELEMENT = { baie: 0xd8335a, bois: 0x8a6440, mousse: 0x3e9a5e } as const;
-
-const BAIE = new THREE.IcosahedronGeometry(0.07, 0);
-const BUCHE = new THREE.CylinderGeometry(0.07, 0.08, 0.6, 6).rotateZ(Math.PI / 2).translate(0, 0.08, 0);
-const TAPIS = new THREE.CylinderGeometry(0.34, 0.38, 0.06, 8).translate(0, 0.03, 0);
-const TOUFFE = new THREE.IcosahedronGeometry(0.1, 0);
+const MODELE_PAR_TYPE = { buisson: 'baies', boisMort: 'bois', mousse: 'mousse' } as const;
 
 interface ElementAffiche {
   type: TypeElement;
@@ -45,26 +40,11 @@ export class ElementsRendu {
 }
 
 function construire(type: TypeElement, b: number): THREE.Group {
+  const modele = modelesElements()[MODELE_PAR_TYPE[type]];
   const groupe = new THREE.Group();
-  const ajouter = (geometrie: THREE.BufferGeometry, couleur: number, x: number, y: number, z: number, angle = 0) => {
-    const m = new THREE.Mesh(geometrie, materiau(couleur));
-    m.position.set(x, y, z);
-    m.rotation.y = angle;
-    groupe.add(m);
-  };
-  if (type === 'buisson') {
-    // Posées sur le buisson sauvage dessiné avec le terrain.
-    for (let i = 0; i < 4; i++) {
-      const angle = i * 1.6 + b * 6;
-      ajouter(BAIE, COULEURS_ELEMENT.baie, Math.cos(angle) * 0.24, 0.3 + (i % 2) * 0.1, Math.sin(angle) * 0.24);
-    }
-  } else if (type === 'boisMort') {
-    ajouter(BUCHE, COULEURS_ELEMENT.bois, 0, 0, -0.08, b * Math.PI);
-    ajouter(BUCHE, COULEURS_ELEMENT.bois, 0, 0.12, 0.04, b * Math.PI + 0.9);
-  } else {
-    ajouter(TAPIS, COULEURS_ELEMENT.mousse, 0, 0, 0);
-    ajouter(TOUFFE, COULEURS_ELEMENT.mousse, 0.12, 0.08, 0.05);
-    ajouter(TOUFFE, COULEURS_ELEMENT.mousse, -0.1, 0.07, -0.1);
-  }
+  const maillage = new THREE.Mesh(modele.geometrie, modele.materiaux);
+  // Quart de tour au hasard : les baies restent sur le buisson, les bûches changent de sens.
+  maillage.rotation.y = Math.floor(b * 4) * (Math.PI / 2);
+  groupe.add(maillage);
   return groupe;
 }

@@ -8,7 +8,7 @@ mod veille;
 use std::time::Duration;
 
 use tauri::{
-    menu::{CheckMenuItem, Menu, MenuItem},
+    menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
@@ -88,16 +88,38 @@ fn main() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let basculer = MenuItem::with_id(app, "basculer", "Afficher / cacher", true, None::<&str>)?;
             let lus = reglages::lire(app.handle());
-            let verrouiller =
-                CheckMenuItem::with_id(app, "verrouiller", "Verrouiller la position", true, lus.verrouillee, None::<&str>)?;
-            let quitter = MenuItem::with_id(app, "quitter", "Quitter", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&basculer, &verrouiller, &quitter])?;
+            let entree = |id: &str| MenuItem::with_id(app, id, id, true, None::<&str>);
+            let case = |id: &str, texte: &str| CheckMenuItem::with_id(app, id, texte, true, false, None::<&str>);
+            let francais = case("langue-fr", "Français")?;
+            let anglais = case("langue-en", "English")?;
+            let entrees = reglages::MenuReglages {
+                basculer: entree("basculer")?,
+                verrouiller: case("verrouiller", "")?,
+                son: case("son", "")?,
+                langue: Submenu::with_id_and_items(app, "langue", "", true, &[&francais, &anglais])?,
+                francais,
+                anglais,
+                quitter: entree("quitter")?,
+            };
+            reglages::preparer_menu(&entrees, &lus);
+            let separation = PredefinedMenuItem::separator(app)?;
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &entrees.basculer,
+                    &entrees.verrouiller,
+                    &separation,
+                    &entrees.son,
+                    &entrees.langue,
+                    &PredefinedMenuItem::separator(app)?,
+                    &entrees.quitter,
+                ],
+            )?;
             reglages::restaurer_position(app.handle(), &lus);
             app.manage(reglages::EtatReglages {
                 reglages: std::sync::Mutex::new(lus),
-                case_menu: verrouiller.clone(),
+                menu: entrees,
             });
 
             let icone = app
@@ -108,9 +130,15 @@ fn main() {
             icone.on_menu_event(|app, evenement| match evenement.id.as_ref() {
                 "basculer" => basculer_fenetre(app),
                 "verrouiller" => {
-                    let coche = app.state::<reglages::EtatReglages>().case_menu.is_checked().unwrap_or(false);
+                    let coche = app.state::<reglages::EtatReglages>().menu.verrouiller.is_checked().unwrap_or(false);
                     reglages::appliquer_verrouillage(app, coche);
                 }
+                "son" => {
+                    let coche = app.state::<reglages::EtatReglages>().menu.son.is_checked().unwrap_or(false);
+                    reglages::appliquer_son(app, coche);
+                }
+                "langue-fr" => reglages::appliquer_langue(app, "fr"),
+                "langue-en" => reglages::appliquer_langue(app, "en"),
                 "quitter" => demander_fermeture(app),
                 _ => {}
             });

@@ -5,7 +5,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { contenu } from '@tiny-shrooms/content';
 import type { MessageDepuisMoteur, MessageVersMoteur } from '@tiny-shrooms/engine';
 import { CHAPEAUX, COULEURS_BATIMENT, Rendu } from '@tiny-shrooms/renderer';
-import { ControleurInterface } from '@tiny-shrooms/ui';
+import { ControleurInterface, type Langue } from '@tiny-shrooms/ui';
 
 const dansTauri = '__TAURI_INTERNALS__' in window;
 const SAUVEGARDE_AUTO_MS = 30_000;
@@ -74,12 +74,22 @@ window.addEventListener('resize', () => rendu.redimensionner());
 
 // Rendu coupé quand la fenêtre est cachée ; la simulation, elle, continue.
 if (dansTauri) {
-  await listen('fenetre-cachee', () => rendu.arreter());
-  await listen('fenetre-affichee', () => rendu.demarrer());
+  await listen('fenetre-cachee', () => {
+    rendu.arreter();
+    ui.sons.suspendre(true);
+  });
+  await listen('fenetre-affichee', () => {
+    rendu.demarrer();
+    ui.sons.suspendre(false);
+  });
   await listen<boolean>('survol', (e) => ui.signalerSurvol(e.payload));
   await listen<boolean>('verrouillage', (e) => ui.signalerVerrouillage(e.payload));
-  const reglages = await invoke<{ verrouillee: boolean }>('lire_reglages');
+  await listen<boolean>('son', (e) => ui.sons.activer(e.payload));
+  await listen<Langue>('langue', (e) => ui.signalerLangue(e.payload));
+  const reglages = await invoke<{ verrouillee: boolean; son: boolean; langue: Langue }>('lire_reglages');
   ui.signalerVerrouillage(reglages.verrouillee);
+  ui.signalerLangue(reglages.langue);
+  ui.sons.activer(reglages.son);
   await listen<number>('veille', (e) => {
     envoyer({ type: 'veille', momentMs: e.payload });
     sauvegarder();

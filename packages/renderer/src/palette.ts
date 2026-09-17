@@ -34,22 +34,6 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   sanctuaire: 0xb58fd6,
 };
 
-/** Hauteur provisoire de chaque bâtiment, en unités de case. */
-export const HAUTEURS_BATIMENT: Record<TypeBatiment, number> = {
-  hutte: 1.1,
-  cueillette: 0.7,
-  tasDeBois: 0.55,
-  tapisDeMousse: 0.2,
-  gardeManger: 0.95,
-  remise: 1.2,
-  sechoir: 0.8,
-  feuDeCamp: 0.35,
-  atelier: 1.35,
-  puits: 0.6,
-  marche: 0.9,
-  sanctuaire: 1.5,
-};
-
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
   herbe: COULEURS.herbe,
   foret: COULEURS.herbe,
@@ -66,11 +50,14 @@ paliers.needsUpdate = true;
 
 const cache = new Map<number, THREE.MeshToonMaterial>();
 
-/** Matériau toon partagé pour une couleur donnée. */
+/**
+ * Matériau toon partagé pour une couleur donnée. L'attribut `color` des géométries nuance la couleur
+ * (voxels) : toute géométrie dessinée avec ces matériaux doit en avoir un (`sansNuance` sinon).
+ */
 export function materiau(couleur: number): THREE.MeshToonMaterial {
   let m = cache.get(couleur);
   if (!m) {
-    m = new THREE.MeshToonMaterial({ color: couleur, gradientMap: paliers });
+    m = new THREE.MeshToonMaterial({ color: couleur, gradientMap: paliers, vertexColors: true });
     cache.set(couleur, m);
   }
   return m;

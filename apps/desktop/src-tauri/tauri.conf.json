@@ -29,7 +29,8 @@
     ],
     "trayIcon": {
       "id": "main",
-      "iconPath": "icons/32x32.png",
+      "iconPath": "icons/barre-menus.png",
+      "iconAsTemplate": true,
       "tooltip": "Tiny Shrooms"
     },
     "security": {

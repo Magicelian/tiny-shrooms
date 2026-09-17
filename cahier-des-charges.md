@@ -544,6 +544,13 @@ son critère n'est pas rempli.
   lisible en 16 px et en modèle monochrome pour suivre le thème clair ou sombre.
 - **Critère** : plus aucune forme provisoire ; FR et EN complets ; son coupé au premier lancement.
 
+- **Résultat (16/09/2026)** : implémenté, à valider en jeu. Choix : modèles en **voxels décrits en code** plutôt que
+  Blockbench ou MagicaVoxel (12 voxels par case, 24 pour les habitants), sons **synthétisés** (Web Audio : effets
+  8-bit, vent, pluie, oiseaux le jour, grillons la nuit), son et langue réglés **dans le menu de l'icône**. Chaque
+  bâtiment a son modèle (la hutte en a un par rang), le chantier monte couche par couche, le feu de camp a des flammes
+  animées ; habitants à yeux, pieds qui marchent, penchés au travail, ballot en portant. Police pixel et style de
+  l'interface déjà en place depuis l'étape 11. Rendu : ~65 000 triangles, ~1,2 ms par image dans le navigateur.
+
 ### Étape 16 — Équilibrage et diffusion → **V1**
 - Simulations accélérées pour régler la courbe (temps jusqu'au palier bourg : cible à définir, base 10-20 h de jeu ouvert).
 - Consommation : CPU et batterie fenêtre visible et cachée.

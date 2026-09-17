@@ -2,6 +2,7 @@
 // Rien ici ne modifie la partie : les changements passent par des commandes envoyées au moteur.
 import { useEffect, useState } from 'preact/hooks';
 import type { Case, IdBatiment, Ile, Instantane, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
+import { langueActuelle, type Langue } from '@tiny-shrooms/i18n';
 
 /**
  * Bulle ouverte au clic. `haut` : la bulle se place dans la moitié haute de la fenêtre,
@@ -34,6 +35,8 @@ export interface EtatInterface {
   focus: boolean;
   /** Position de la fenêtre verrouillée (menu de l'icône) : ⌘ + glisser ne fait rien. */
   verrouillee: boolean;
+  /** Change à chaque changement de langue, pour tout redessiner. */
+  langue: Langue;
   bulle: Bulle | null;
   /** Après la première renaissance : petite bulle au-dessus de la souche, jusqu'à ce qu'on l'ouvre. */
   astuceSouche: boolean;
@@ -56,6 +59,7 @@ export class Magasin {
     instantane: null,
     focus: false,
     verrouillee: false,
+    langue: langueActuelle(),
     bulle: null,
     astuceSouche: false,
     deplacement: null,

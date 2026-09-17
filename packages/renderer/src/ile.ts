@@ -2,15 +2,13 @@
 import * as THREE from 'three';
 import type { Ile } from '@tiny-shrooms/engine';
 import { COULEURS, COULEURS_SURFACE, materiau } from './palette';
+import { modelesDecor } from './modeles';
 import { bruit, centreCase } from './repere';
+import { sansNuance } from './voxels';
 
-const GEOMETRIES = {
-  cube: new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0),
-  cone: new THREE.ConeGeometry(0.5, 1, 6).translate(0, 0.5, 0),
-  boule: new THREE.IcosahedronGeometry(0.5, 0),
-  caillou: new THREE.DodecahedronGeometry(0.5, 0),
-};
-type Forme = keyof typeof GEOMETRIES;
+const CUBE = sansNuance(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0));
+/** `cube` prend la couleur de la pièce ; les autres formes sont des modèles en voxels. */
+type Forme = 'cube' | 'arbre' | 'buisson' | 'caillou';
 
 interface Piece {
   forme: Forme;
@@ -53,12 +51,11 @@ export function construireIle(ile: Ile): THREE.Group {
       const decalage = centre.clone().add(new THREE.Vector3((bruit(x, y, 1) - 0.5) * 0.3, 0, (bruit(x, y, 2) - 0.5) * 0.3));
       if (terrain === 'foret') {
         const t = 0.8 + b * 0.4;
-        poser('cube', COULEURS.tronc, 'porte', decalage, echelle.set(0.16, 0.4 * t, 0.16));
-        poser('cone', COULEURS.feuillage, 'porte', decalage.clone().setY(0.3 * t), echelle.set(0.8 * t, 1 * t, 0.8 * t), b * Math.PI);
+        poser('arbre', 0, 'porte', decalage, echelle.set(t, t * (0.9 + bruit(x, y, 4) * 0.2), t), quart(b));
       } else if (terrain === 'buisson') {
-        poser('boule', COULEURS.buisson, 'porte', decalage.setY(0.2), echelle.setScalar(0.6 + b * 0.2), b * Math.PI);
+        poser('buisson', 0, 'porte', decalage, echelle.setScalar(0.85 + b * 0.25), quart(b));
       } else if (terrain === 'rocher') {
-        poser('caillou', COULEURS.caillou, 'porte', decalage.setY(0.12), echelle.set(0.6, 0.45, 0.6), b * Math.PI);
+        poser('caillou', 0, 'porte', decalage, echelle.set(0.85, 0.75 + b * 0.3, 0.85), quart(b));
       }
     }
   }
@@ -77,13 +74,21 @@ function regrouper(pieces: Piece[]): THREE.Group {
   const groupe = new THREE.Group();
   for (const lot of lots.values()) {
     const { forme, couleur, ombre } = lot[0]!;
-    const maillage = new THREE.InstancedMesh(GEOMETRIES[forme], materiau(couleur), lot.length);
+    const modele = forme === 'cube' ? null : modelesDecor()[forme];
+    const maillage = modele
+      ? new THREE.InstancedMesh(modele.geometrie, modele.materiaux, lot.length)
+      : new THREE.InstancedMesh(CUBE, materiau(couleur), lot.length);
     lot.forEach((piece, i) => maillage.setMatrixAt(i, piece.matrice));
     maillage.castShadow = true;
     maillage.receiveShadow = ombre === 'recoit';
     groupe.add(maillage);
   }
   return groupe;
+}
+
+/** Quart de tour tiré du bruit : les voxels restent alignés sur la grille. */
+function quart(b: number): number {
+  return Math.floor(b * 4) * (Math.PI / 2);
 }
 
 /** Distance de chaque case au vide le plus proche (hors île compris), en pas de grille. */

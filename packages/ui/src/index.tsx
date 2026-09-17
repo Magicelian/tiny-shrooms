@@ -2,11 +2,14 @@
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, Instantane, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
 import { bonusVoisinage, casesCouvertes, centreSouche, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
-import { t } from '@tiny-shrooms/i18n';
+import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
+
+export type { Langue };
 import { installerCurseurs, type Curseur } from './curseurs';
 import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
 import { Interface } from './interface';
 import { Magasin, type Bulle } from './magasin';
+import { Sons, type Effet } from './sons';
 
 /** Ce que l'interface attend du rendu de l'îlot. */
 export interface SceneInteractive {
@@ -70,8 +73,21 @@ interface Appui {
   fenetre: boolean;
 }
 
+/** Son joué dès l'envoi d'une commande (le refus éventuel a le sien). */
+const SON_COMMANDE: Partial<Record<Commande['type'], Effet>> = {
+  poserBatiment: 'poser',
+  demolir: 'demolir',
+  deplacerBatiment: 'poser',
+  defricher: 'arracher',
+  retirerSouche: 'arracher',
+  annulerArrachage: 'fermer',
+  ameliorer: 'termine',
+  acheterBonus: 'termine',
+};
+
 export class ControleurInterface {
   readonly magasin = new Magasin();
+  readonly sons = new Sons();
   private souris: { x: number; y: number } | null = null;
   private appui: Appui | null = null;
   private focusDepuis = -Infinity;
@@ -107,6 +123,7 @@ export class ControleurInterface {
     }
     if (message.type !== 'instantane') return;
     this.magasin.modifier({ instantane: message.instantane });
+    this.sons.ambiancer(message.instantane.temps);
     // Le bâtiment visé a disparu (démoli) : sa bulle ou son déplacement n'ont plus d'objet.
     const { bulle, deplacement } = this.magasin.valeur;
     const vise = bulle?.type === 'batiment' ? bulle.id : deplacement;
@@ -119,27 +136,37 @@ export class ControleurInterface {
         const point = this.recoltes.get(e.element);
         this.recoltes.delete(e.element);
         if (point) this.magasin.envoler({ ...point, ressource: e.ressource, quantite: e.quantite });
+        this.sons.jouer('recolte');
       } else if (e.type === 'commandeRefusee') {
+        this.sons.jouer('refus');
         if (e.commande.type === 'recolter') this.recoltes.delete(e.commande.element);
         this.magasin.annoncer(t(`refus.${e.raison}`));
       }
-      else if (e.type === 'habitantArrive') this.magasin.annoncer(t('message.habitantArrive'));
+      else if (e.type === 'habitantArrive') {
+        this.magasin.annoncer(t('message.habitantArrive'));
+        this.sons.jouer('arrivee');
+      }
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
         if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
+        this.sons.jouer('termine');
       } else if (e.type === 'renaissance') {
         this.fermer();
         this.magasin.annoncer(t('message.renaissance', { graines: e.graines }));
+        this.sons.jouer('renaissance');
         if (message.instantane.prestige.renaissances === 1) this.magasin.modifier({ astuceSouche: true });
       } else if (e.type === 'soucheRetiree') {
         this.magasin.annoncer(t('message.soucheRetiree'));
+        this.sons.jouer('termine');
       } else if (e.type === 'palierAtteint') {
         const palier = nomPalier(this.contenu, e.palier);
         const liste = e.debloques.map((type) => nomBatiment(type)).join(', ');
         this.magasin.annoncer(liste ? t('message.palierAtteint', { palier, liste }) : t('message.palierAtteintSeul', { palier }));
+        this.sons.jouer('palier');
       } else if (e.type === 'logementAmeliore') {
         this.magasin.annoncer(t('message.logementAmeliore', { rang: nomRang(e.niveau) }));
+        this.sons.jouer('termine');
       }
     }
     // Le village a changé : l'aperçu sous la souris aussi.
@@ -148,6 +175,8 @@ export class ControleurInterface {
 
   envoyer(commande: Commande): void {
     this.options.envoyer(commande);
+    const son = SON_COMMANDE[commande.type];
+    if (son) this.sons.jouer(son);
   }
 
   tourner(sens: 1 | -1): void {
@@ -168,6 +197,12 @@ export class ControleurInterface {
   /** Position de la fenêtre verrouillée ou libre, depuis le menu de l'icône. */
   signalerVerrouillage(verrouillee: boolean): void {
     this.magasin.modifier({ verrouillee });
+  }
+
+  /** Langue choisie dans le menu de l'icône (ou celle du système). */
+  signalerLangue(langue: Langue): void {
+    choisirLangue(langue);
+    this.magasin.modifier({ langue });
   }
 
   /** Choix d'un bâtiment dans la bulle de construction : son fantôme apparaît sur la case. */
@@ -207,7 +242,10 @@ export class ControleurInterface {
   }
 
   private ouvrir(bulle: Bulle | null): void {
-    const ile = this.magasin.valeur.ile;
+    const { ile, bulle: avant } = this.magasin.valeur;
+    if (!bulle && avant) this.sons.jouer('fermer');
+    else if (bulle && avant?.type === bulle.type && bulle.type === 'construire') this.sons.jouer('choisir');
+    else if (bulle) this.sons.jouer('ouvrir');
     const souche = bulle?.type === 'nature' && !!ile && dansLaSouche(ile, bulle.case.x, bulle.case.y);
     this.magasin.modifier({ bulle, deplacement: null, bonusVise: null, ...(souche ? { astuceSouche: false } : {}) });
     this.options.scene.afficherGrille(bulle?.type === 'construire' && bulle.choix !== null);
