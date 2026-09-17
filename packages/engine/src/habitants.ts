@@ -22,6 +22,25 @@ const POIDS_TACHE = 0.5;
 /** Un habitant sans rien à faire ne cherche de nouveau qu'après ce délai (en pas), pour ménager le processeur. */
 const PAS_ENTRE_RECHERCHES = 4;
 
+/** Besoin d'un arrachage, au-dessus d'un emploi (1) et d'un chantier vide (1,5). */
+const PRIORITE_ARRACHAGE = 2;
+
+/**
+ * Nouvel arrachage : les habitants occupés à un emploi ou désœuvrés revoient leur choix au pas suivant,
+ * au lieu d'attendre la fin de leur période de réévaluation. Ceux qui portent une charge la déposent d'abord.
+ */
+export function appelerArracheurs(etat: Etat, contenu: Contenu): void {
+  const reevaluation = (contenu.habitants.reevaluationSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  for (const h of etat.habitants) {
+    if (h.charge) continue;
+    const tache = h.mission?.tache;
+    if (tache === undefined || tache === 'recolter' || tache === 'tenir' || tache === 'stocker') {
+      h.pasDepuisChoix = Math.max(h.pasDepuisChoix, reevaluation, PAS_ENTRE_RECHERCHES);
+      if (tache === 'stocker') h.mission = null;
+    }
+  }
+}
+
 export function estLaNuit(etat: Etat, contenu: Contenu): boolean {
   const heure = heureDuJour(etat.pas, contenu.temps);
   const { debut, fin } = contenu.habitants.nuit;
@@ -203,11 +222,14 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
     if (!meilleur || score > meilleur.score) meilleur = { mission, score };
   };
 
+  // Un arrachage a été demandé et payé exprès : il passe avant les emplois et les livraisons.
   if (etat.retraitSouche !== null && arracheurs(etat, h, null) < contenu.habitants.ouvriersParChantier) {
-    proposer({ tache: 'arracher', case: null }, 1, centreSouche(etat.ile));
+    proposer({ tache: 'arracher', case: null }, PRIORITE_ARRACHAGE, centreSouche(etat.ile));
   }
   for (const d of etat.defrichages) {
-    if (arracheurs(etat, h, d.case) < contenu.habitants.ouvriersParChantier) proposer({ tache: 'arracher', case: d.case }, 1, centre(d.case));
+    if (arracheurs(etat, h, d.case) < contenu.habitants.ouvriersParChantier) {
+      proposer({ tache: 'arracher', case: d.case }, PRIORITE_ARRACHAGE, centre(d.case));
+    }
   }
   for (const b of etat.batiments) {
     const def = contenu.batiments[b.type];

@@ -119,11 +119,11 @@ fn main() {
                     &entrees.son,
                     &entrees.langue,
                     &PredefinedMenuItem::separator(app)?,
+                    &entrees.mettre_a_jour,
                     &entrees.quitter,
                 ],
             )?;
             reglages::restaurer_position(app.handle(), &lus);
-            mises_a_jour::surveiller(app.handle().clone(), menu.clone(), entrees.mettre_a_jour.clone());
             app.manage(reglages::EtatReglages {
                 reglages: std::sync::Mutex::new(lus),
                 menu: entrees,
@@ -163,6 +163,7 @@ fn main() {
                     basculer_fenetre(icone.app_handle());
                 }
             });
+            mises_a_jour::surveiller(app.handle().clone());
             surveiller_survol(app.handle().clone());
             veille::surveiller(app.handle().clone());
             pouls::battre_le_pouls(app.handle().clone());

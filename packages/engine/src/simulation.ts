@@ -7,7 +7,7 @@ import { coutBatiment, coutBonus, peutRenaitre, recommencer, renaitre } from './
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type Etat } from './etat';
 import { majBonusVoisinage, verifierEmplacement } from './grille';
-import { avancerHabitants, estLaNuit, logements } from './habitants';
+import { appelerArracheurs, avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
 import { demanderDefrichage, memeCase } from './defrichage';
 import type { BatimentEtat } from './etat';
@@ -186,11 +186,14 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if (!etat.batiments.some((b) => estDepot(contenu, b))) return refus('depotRequis');
       if (!payer(etat, contenu.souche.coutRetrait)) return refus('ressourcesInsuffisantes');
       etat.retraitSouche = 0;
+      appelerArracheurs(etat, contenu);
       return [];
     }
     case 'defricher': {
       const raison = demanderDefrichage(etat, contenu, commande.case);
-      return raison ? refus(raison) : [];
+      if (raison) return refus(raison);
+      appelerArracheurs(etat, contenu);
+      return [];
     }
     case 'annulerArrachage': {
       if (commande.case === null) {

@@ -1001,3 +1001,21 @@ describe('Rythme des arrivées', () => {
     expect(arrivesEn(1, 185)).toBe(1);
   });
 });
+
+describe('Priorité des arrachages', () => {
+  it('des habitants employés quittent leur poste dès qu’un arbre est à abattre', () => {
+    const contenu = contenuDeTest({ cueillette: { production: { baies: 6 }, postes: 2 } }, { auDepart: 2, logementDeBase: 2 });
+    const moteur = new Moteur(contenu, 0);
+    const etat = moteur.etatCourant as Etat;
+    const { ile } = etat;
+    const libre = moteur.casesLibres()[0]!;
+    commander(moteur, poser('cueillette', libre));
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    expect(etat.habitants.some((h) => h.mission?.tache === 'recolter')).toBe(true);
+    for (const h of etat.habitants) h.pasDepuisChoix = 0;
+    const arbre = ile.terrain.indexOf('foret');
+    commander(moteur, { type: 'defricher', case: { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) } });
+    moteur.simuler(PAS_PAR_MINUTE / 60);
+    expect(etat.habitants.filter((h) => h.mission?.tache === 'arracher').length).toBeGreaterThan(0);
+  });
+});
