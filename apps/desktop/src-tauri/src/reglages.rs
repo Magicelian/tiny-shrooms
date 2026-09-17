@@ -1,4 +1,4 @@
-//! Réglages gardés à part de la partie : verrouillage, dernière position, son et langue.
+//! Réglages gardés à part de la partie : verrouillage, dernière position, taille, son et langue.
 //! Tous se changent depuis le menu de l'icône ; le verrouillage aussi depuis l'interface, les deux restent d'accord.
 
 use std::fs;
@@ -7,8 +7,13 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{
     menu::{CheckMenuItem, MenuItem, Submenu},
-    AppHandle, Emitter, Manager, PhysicalPosition, Wry,
+    AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Wry,
 };
+
+/// Côtés proposés pour la fenêtre, en pixels logiques. Le jeu est dessiné pour 320 : les autres
+/// tailles ne montrent pas plus d'île, elles grossissent ses pixels d'un cran entier.
+/// La même liste vit dans `packages/ui/src/index.tsx`.
+pub const TAILLES: [u32; 3] = [320, 640, 960];
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -20,6 +25,8 @@ pub struct Reglages {
     pub son: bool,
     /// `fr` ou `en` ; absente, on suit la langue du système.
     pub langue: Option<String>,
+    /// Côté de la fenêtre, parmi `TAILLES` ; absent, la petite.
+    pub taille: Option<u32>,
 }
 
 /// Langue du système si le jeu la parle, l'anglais sinon.
@@ -32,6 +39,11 @@ impl Reglages {
     pub fn langue_effective(&self) -> String {
         self.langue.clone().unwrap_or_else(langue_systeme)
     }
+
+    /// Taille retenue, ramenée à la petite si le fichier en porte une qu'on ne propose plus.
+    pub fn taille_effective(&self) -> u32 {
+        self.taille.filter(|t| TAILLES.contains(t)).unwrap_or(TAILLES[0])
+    }
 }
 
 /// Libellés du menu de l'icône, dans la langue du jeu.
@@ -39,11 +51,19 @@ pub fn libelle(langue: &str, cle: &str) -> &'static str {
     match (langue, cle) {
         ("fr", "basculer") => "Afficher / cacher",
         ("fr", "verrouiller") => "Verrouiller la position",
+        ("fr", "taille") => "Taille de la fenêtre",
+        ("fr", "taille-0") => "Petite",
+        ("fr", "taille-1") => "Grande",
+        ("fr", "taille-2") => "Géante",
         ("fr", "son") => "Son",
         ("fr", "langue") => "Langue",
         ("fr", "quitter") => "Quitter",
         (_, "basculer") => "Show / hide",
         (_, "verrouiller") => "Lock position",
+        (_, "taille") => "Window size",
+        (_, "taille-0") => "Small",
+        (_, "taille-1") => "Large",
+        (_, "taille-2") => "Huge",
         (_, "son") => "Sound",
         (_, "langue") => "Language",
         (_, "quitter") => "Quit",
@@ -55,6 +75,9 @@ pub fn libelle(langue: &str, cle: &str) -> &'static str {
 pub struct MenuReglages {
     pub basculer: MenuItem<Wry>,
     pub verrouiller: CheckMenuItem<Wry>,
+    pub taille: Submenu<Wry>,
+    /// Une case par entrée de `TAILLES`, dans le même ordre.
+    pub tailles: Vec<CheckMenuItem<Wry>>,
     pub son: CheckMenuItem<Wry>,
     pub langue: Submenu<Wry>,
     pub francais: CheckMenuItem<Wry>,
@@ -68,6 +91,10 @@ impl MenuReglages {
     fn traduire(&self, langue: &str) {
         let _ = self.basculer.set_text(libelle(langue, "basculer"));
         let _ = self.verrouiller.set_text(libelle(langue, "verrouiller"));
+        let _ = self.taille.set_text(libelle(langue, "taille"));
+        for (rang, case) in self.tailles.iter().enumerate() {
+            let _ = case.set_text(libelle(langue, &format!("taille-{rang}")));
+        }
         let _ = self.son.set_text(libelle(langue, "son"));
         let _ = self.langue.set_text(libelle(langue, "langue"));
         let _ = self.quitter.set_text(libelle(langue, "quitter"));
@@ -114,7 +141,30 @@ pub fn restaurer_position(app: &AppHandle, reglages: &Reglages) {
     });
     if visible {
         let _ = fenetre.set_position(PhysicalPosition::new(x, y));
+        // Une grande fenêtre replacée près d'un bord déborderait : on la ramène.
+        garder_visible(&fenetre);
     }
+}
+
+/// Ramène la fenêtre sur son écran quand elle vient de grandir au-delà du bord.
+fn garder_visible(fenetre: &tauri::WebviewWindow) {
+    let (Ok(coin), Ok(taille), Ok(Some(ecran))) = (fenetre.outer_position(), fenetre.outer_size(), fenetre.current_monitor())
+    else {
+        return;
+    };
+    let (p, t) = (ecran.position(), ecran.size());
+    let x = coin.x.min(p.x + t.width as i32 - taille.width as i32).max(p.x);
+    let y = coin.y.min(p.y + t.height as i32 - taille.height as i32).max(p.y);
+    if (x, y) != (coin.x, coin.y) {
+        let _ = fenetre.set_position(PhysicalPosition::new(x, y));
+    }
+}
+
+/// Donne à la fenêtre le côté demandé (elle reste carrée), sans la laisser déborder de l'écran.
+pub fn redimensionner(app: &AppHandle, taille: u32) {
+    let Some(fenetre) = app.get_webview_window("main") else { return };
+    let _ = fenetre.set_size(LogicalSize::new(taille, taille));
+    garder_visible(&fenetre);
 }
 
 /// Retient la position courante de la fenêtre et écrit les réglages (appelé avant de quitter).
@@ -134,6 +184,18 @@ pub fn appliquer_verrouillage(app: &AppHandle, verrouillee: bool) {
     etat.reglages.lock().unwrap().verrouillee = verrouillee;
     enregistrer(app);
     let _ = app.emit("verrouillage", verrouillee);
+}
+
+/// Taille choisie dans le menu de l'icône ou dans les paramètres : la fenêtre grandit,
+/// le frontend s'en aperçoit tout seul par l'événement `resize` de la vue web.
+pub fn appliquer_taille(app: &AppHandle, taille: u32) {
+    let etat = app.state::<EtatReglages>();
+    for (case, cote) in etat.menu.tailles.iter().zip(TAILLES) {
+        let _ = case.set_checked(cote == taille);
+    }
+    etat.reglages.lock().unwrap().taille = Some(taille);
+    redimensionner(app, taille);
+    enregistrer(app);
 }
 
 /// Son allumé ou coupé depuis le menu.
@@ -161,6 +223,14 @@ pub fn regler_son(app: AppHandle, son: bool) {
     appliquer_son(&app, son);
 }
 
+/// Taille réglée depuis le menu de démarrage.
+#[tauri::command]
+pub fn regler_taille(app: AppHandle, taille: u32) {
+    if TAILLES.contains(&taille) {
+        appliquer_taille(&app, taille);
+    }
+}
+
 /// Langue choisie depuis le menu de démarrage.
 #[tauri::command]
 pub fn regler_langue(app: AppHandle, langue: String) {
@@ -178,6 +248,9 @@ pub fn lire_reglages(app: AppHandle) -> Reglages {
 /// Prépare le menu dans la langue des réglages.
 pub fn preparer_menu(menu: &MenuReglages, reglages: &Reglages) {
     let _ = menu.verrouiller.set_checked(reglages.verrouillee);
+    for (case, cote) in menu.tailles.iter().zip(TAILLES) {
+        let _ = case.set_checked(cote == reglages.taille_effective());
+    }
     let _ = menu.son.set_checked(reglages.son);
     menu.traduire(&reglages.langue_effective());
 }

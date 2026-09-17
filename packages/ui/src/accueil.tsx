@@ -17,6 +17,7 @@ const COMMANDES = [
 export function Accueil({ controleur }: { controleur: ControleurInterface }) {
   const etat = useMagasin(controleur.magasin);
   const vignette = controleur.vignettes?.batiment('hutte', 3);
+  const nomTaille = controleur.nomTaille;
 
   return (
     <div
@@ -51,6 +52,11 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
                 </button>
               </span>
             </div>
+            {nomTaille && (
+              <button class="bouton" onClick={() => controleur.changerTaille()}>
+                ⛶ {t('accueil.taille', { taille: nomTaille })}
+              </button>
+            )}
             <dl class="commandes">
               {COMMANDES.map(([geste, action]) => (
                 <div key={geste}>

@@ -4,7 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { contenu } from '@tiny-shrooms/content';
 import type { MessageDepuisMoteur, MessageVersMoteur } from '@tiny-shrooms/engine';
-import { CHAPEAUX, COULEURS_BATIMENT, Rendu } from '@tiny-shrooms/renderer';
+import { CHAPEAUX, COULEURS_BATIMENT, Rendu, echelleAffichage } from '@tiny-shrooms/renderer';
 import { ControleurInterface, type Langue } from '@tiny-shrooms/ui';
 
 const dansTauri = '__TAURI_INTERNALS__' in window;
@@ -48,6 +48,8 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
         pause: (enPause) => envoyer(enPause ? { type: 'veille', momentMs: Date.now() } : { type: 'reveil' }),
         son: (actif) => (dansTauri ? void invoke('regler_son', { son: actif }) : ui.signalerSon(actif)),
         langue: (langue) => (dansTauri ? void invoke('regler_langue', { langue }) : ui.signalerLangue(langue)),
+        // Seule l'application redimensionne sa fenêtre ; dans un navigateur, le réglage n'est pas proposé.
+        taille: dansTauri ? (taille) => void invoke('regler_taille', { taille }) : undefined,
       }
     : undefined,
 });
@@ -88,7 +90,13 @@ envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []) }
 // Menu de démarrage ouvert : la ville attend qu'on entre.
 if (avecMenu) envoyer({ type: 'veille', momentMs: Date.now() });
 rendu.demarrer();
-window.addEventListener('resize', () => rendu.redimensionner());
+// Fenêtre agrandie : l'île et l'interface grossissent ensemble, d'un facteur entier.
+const suivreTaille = () => {
+  rendu.redimensionner();
+  ui.reglerEchelle(echelleAffichage());
+};
+suivreTaille();
+window.addEventListener('resize', suivreTaille);
 
 // Rendu coupé quand la fenêtre est cachée ; la simulation, elle, continue.
 if (dansTauri) {

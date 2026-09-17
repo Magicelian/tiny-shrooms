@@ -24,9 +24,11 @@
   --ombre: 0 2px 0 var(--encre);
 }
 
+/* Fenêtre agrandie : l'interface grossit d'un facteur entier, comme les pixels de l'île. */
 #interface {
   position: fixed;
   inset: 0;
+  zoom: var(--echelle, 1);
   pointer-events: none;
   font: 500 13px/1.25 'Chiffres', 'Pixelify Sans', ui-monospace, monospace;
   color: var(--encre);

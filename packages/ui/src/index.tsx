@@ -50,8 +50,15 @@ export interface OptionsInterface {
     /** Réglages demandés depuis le menu ; la valeur retenue revient par `signalerSon` / `signalerLangue`. */
     son(actif: boolean): void;
     langue(langue: Langue): void;
+    /** Côté de la fenêtre, en pixels ; absent dans un navigateur, qui ne se redimensionne pas lui-même. */
+    taille?(taille: number): void;
   };
 }
+
+/** Côtés proposés pour la fenêtre : mêmes valeurs que `TAILLES` dans `src-tauri/src/reglages.rs`. */
+export const TAILLES = [320, 640, 960] as const;
+/** Nom de chaque taille dans les paramètres, dans l'ordre de `TAILLES`. */
+const NOMS_TAILLE = ['accueil.taillePetite', 'accueil.tailleGrande', 'accueil.tailleGeante'] as const;
 
 /** Pendant le menu de démarrage, l'île fait un quart de tour à ce rythme. */
 const TOUR_ACCUEIL_MS = 6000;
@@ -115,6 +122,8 @@ export class ControleurInterface {
   /** Faim au dernier instantané, et moment du dernier son de faim (une fois par minute au plus). */
   private faim = false;
   private sonFaimMs = -Infinity;
+  /** Grossissement de l'affichage : les points de la fenêtre valent autant de pixels d'interface. */
+  private echelle = 1;
 
   constructor(
     racine: HTMLElement,
@@ -160,6 +169,28 @@ export class ControleurInterface {
   /** Menu de démarrage : glisser déplace la fenêtre, sauf position verrouillée. */
   glisserFenetre(): void {
     if (!this.magasin.valeur.verrouillee) this.options.deplacerFenetre?.();
+  }
+
+  /**
+   * Fenêtre agrandie : l'interface grossit d'autant que les pixels de l'île (feuille de style),
+   * et les points de la fenêtre se convertissent en pixels d'interface.
+   */
+  reglerEchelle(echelle: number): void {
+    this.echelle = echelle;
+    document.documentElement.style.setProperty('--echelle', String(echelle));
+    this.magasin.modifier({ echelle });
+  }
+
+  /** Taille suivante pour la fenêtre, en boucle ; sans effet là où on ne peut pas la redimensionner. */
+  changerTaille(): void {
+    const suivante = TAILLES[this.magasin.valeur.echelle % TAILLES.length] ?? TAILLES[0];
+    this.options.demarrage?.taille?.(suivante);
+  }
+
+  /** Nom de la taille de fenêtre actuelle, pour les paramètres ; `null` si on ne peut pas la changer. */
+  get nomTaille(): string | null {
+    if (!this.options.demarrage?.taille) return null;
+    return t(NOMS_TAILLE[this.magasin.valeur.echelle - 1] ?? NOMS_TAILLE[0]);
   }
 
   reglerSon(): void {
@@ -322,7 +353,8 @@ export class ControleurInterface {
     const ile = this.magasin.valeur.ile;
     if (!ile?.soucheEnPlace) return null;
     const c = centreSouche(ile);
-    return this.options.scene.projeter(c.x, c.y, HAUTEUR_ASTUCE);
+    const point = this.options.scene.projeter(c.x, c.y, HAUTEUR_ASTUCE);
+    return point && { x: point.x / this.echelle, y: point.y / this.echelle };
   }
 
   private ouvrir(bulle: Bulle | null): void {
@@ -450,7 +482,7 @@ export class ControleurInterface {
     if (id !== null) this.ouvrir({ type: 'batiment', id, haut });
     // Un élément prêt se récolte d'un clic ; épuisé ou stock plein, il ouvre sa bulle comme un arbre.
     else if (this.recoltable(ile, instantane, element)) {
-      this.recoltes.set(element, { x, y });
+      this.recoltes.set(element, { x: x / this.echelle, y: y / this.echelle });
       this.envoyer({ type: 'recolter', element });
     } else if (nature) this.ouvrir({ type: 'nature', case: visee.case!, haut });
     else if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case) === null) {

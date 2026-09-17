@@ -17,8 +17,21 @@ export type { VignetteNature, Vignettes } from './vignettes';
 export const IMAGES_PAR_SECONDE = 30;
 /** Cadence quand la souris est loin de la fenêtre : l'île ne sert plus que de décor, la batterie compte davantage. */
 export const IMAGES_PAR_SECONDE_AU_REPOS = 15;
-/** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
+/** Facteur de réduction de la résolution de rendu par rapport à la fenêtre, à l'échelle 1. */
 export const REDUCTION = 2;
+/** Côté de fenêtre pour lequel le jeu est dessiné ; au-delà, les pixels grossissent d'un cran entier. */
+export const TAILLE_BASE = 320;
+/** Plus gros grossissement proposé (fenêtre de 960 px). */
+export const ECHELLE_MAX = 3;
+
+/**
+ * Grossissement de l'affichage, entier pour garder des pixels nets : une fenêtre deux fois
+ * plus grande ne montre pas plus d'île, elle la dessine deux fois plus gros.
+ */
+export function echelleAffichage(): number {
+  const cote = Math.min(window.innerWidth, window.innerHeight);
+  return Math.max(1, Math.min(ECHELLE_MAX, Math.floor(cote / TAILLE_BASE)));
+}
 
 /** Ce qu'on surligne : un bâtiment posé, ou une emprise carrée de `taille` cases à partir de `case`. */
 export type Surlignage = { batiment: IdBatiment } | { case: Case; taille: number; hauteur: number };
@@ -164,8 +177,9 @@ export class Rendu {
   }
 
   redimensionner(): void {
-    const largeur = Math.max(1, Math.ceil(window.innerWidth / REDUCTION));
-    const hauteur = Math.max(1, Math.ceil(window.innerHeight / REDUCTION));
+    const reduction = REDUCTION * echelleAffichage();
+    const largeur = Math.max(1, Math.ceil(window.innerWidth / reduction));
+    const hauteur = Math.max(1, Math.ceil(window.innerHeight / reduction));
     this.moteur.setSize(largeur, hauteur, false);
     this.pixelisation.redimensionner(largeur, hauteur);
     this.vue.redimensionner(largeur / hauteur);

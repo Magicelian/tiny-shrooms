@@ -98,9 +98,21 @@ fn main() {
             let case = |id: &str, texte: &str| CheckMenuItem::with_id(app, id, texte, true, false, None::<&str>);
             let francais = case("langue-fr", "Français")?;
             let anglais = case("langue-en", "English")?;
+            let tailles = reglages::TAILLES
+                .iter()
+                .map(|cote| case(&format!("taille-{cote}"), ""))
+                .collect::<Result<Vec<_>, _>>()?;
             let entrees = reglages::MenuReglages {
                 basculer: entree("basculer")?,
                 verrouiller: case("verrouiller", "")?,
+                taille: Submenu::with_id_and_items(
+                    app,
+                    "taille",
+                    "",
+                    true,
+                    &tailles.iter().map(|c| c as &dyn tauri::menu::IsMenuItem<_>).collect::<Vec<_>>(),
+                )?,
+                tailles,
                 son: case("son", "")?,
                 langue: Submenu::with_id_and_items(app, "langue", "", true, &[&francais, &anglais])?,
                 francais,
@@ -115,6 +127,7 @@ fn main() {
                 &[
                     &entrees.basculer,
                     &entrees.verrouiller,
+                    &entrees.taille,
                     &separation,
                     &entrees.son,
                     &entrees.langue,
@@ -123,6 +136,7 @@ fn main() {
                     &entrees.quitter,
                 ],
             )?;
+            reglages::redimensionner(app.handle(), lus.taille_effective());
             reglages::restaurer_position(app.handle(), &lus);
             app.manage(reglages::EtatReglages {
                 reglages: std::sync::Mutex::new(lus),
@@ -143,6 +157,11 @@ fn main() {
                 "son" => {
                     let coche = app.state::<reglages::EtatReglages>().menu.son.is_checked().unwrap_or(false);
                     reglages::appliquer_son(app, coche);
+                }
+                taille if taille.starts_with("taille-") => {
+                    if let Ok(cote) = taille["taille-".len()..].parse() {
+                        reglages::appliquer_taille(app, cote);
+                    }
                 }
                 "langue-fr" => reglages::appliquer_langue(app, "fr"),
                 "langue-en" => reglages::appliquer_langue(app, "en"),
@@ -174,6 +193,7 @@ fn main() {
             sauvegarde::ecrire_sauvegarde,
             sauvegarde::archiver_sauvegardes,
             reglages::lire_reglages,
+            reglages::regler_taille,
             reglages::regler_son,
             reglages::regler_langue,
             quitter

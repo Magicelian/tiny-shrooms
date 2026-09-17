@@ -53,6 +53,8 @@ export interface EtatInterface {
   /** Une partie enregistrée a été reprise : le menu propose « Continuer » plutôt que « Jouer ». */
   partieReprise: boolean;
   son: boolean;
+  /** Grossissement de l'affichage : 1 pour la petite fenêtre, 2 pour la grande, 3 pour la géante. */
+  echelle: number;
 }
 
 type Abonne = () => void;
@@ -79,6 +81,7 @@ export class Magasin {
     menu: null,
     partieReprise: false,
     son: false,
+    echelle: 1,
   };
   private readonly abonnes = new Set<Abonne>();
   private prochainMessage = 0;

@@ -84,13 +84,16 @@ Pour savoir quel Mac tu as : menu Pomme → **À propos de ce Mac**. « Puce » 
 | Zoomer | **molette** ou `Z` |
 | Tourner l'île | `←` `→` ou `Q` `E` |
 
-Au lancement, un menu propose **Continuer** ou **Nouvelle partie** ; **Paramètres** regroupe le son, la langue et
-le rappel des commandes.
+Au lancement, un menu propose **Continuer** ou **Nouvelle partie** ; **Paramètres** regroupe le son, la langue,
+la taille de la fenêtre et le rappel des commandes.
 
 Si la fenêtre n’est pas active, le premier clic ne fait que l’activer. Position verrouillée (menu de l’icône) : glisser déplace la vue.
 
 Le **menu de l'icône** permet d'afficher ou de cacher la fenêtre, de verrouiller sa position, de régler le son
 (coupé au départ) et la langue, et montre où en est la mise à jour.
+
+🔍 La fenêtre se veut petite et discrète, mais **Taille de la fenêtre** la passe en grande ou en géante : on ne voit
+pas plus d'île, ses pixels grossissent.
 
 💾 La partie s'enregistre toute seule. Appli fermée, le jeu est en pause ; fenêtre cachée, la ville continue de vivre.
 
