@@ -94,8 +94,8 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const def = contenu.batiments[batiment.type];
   const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus);
   const enChantier = batiment.chantier !== null;
-  // Construction ou agrandissement : il faut des bâtisseurs.
-  const enTravaux = enChantier || batiment.agrandissement !== null;
+  // Construction, agrandissement ou amélioration : il faut des bâtisseurs.
+  const enTravaux = enChantier || batiment.agrandissement !== null || batiment.amelioration !== null;
   // Bâtisseurs pendant les travaux, récolteurs ensuite.
   const postes = enTravaux ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
   const pourvus = instantane.habitants.filter(
@@ -308,13 +308,20 @@ function Ameliorations({ controleur, instantane }: Props) {
         const def = controleur.contenu.ameliorations[a];
         const niveau = instantane.ameliorations[a];
         const cout = coutAmelioration(controleur.contenu, a, niveau);
+        // Travaux en cours : la jauge remplace le bouton, ici comme sur un agrandissement.
+        const enCours = instantane.batiments.find((b) => b.amelioration?.village === a);
         return (
           <li key={a}>
             <p>
               <strong>{t(`amelioration.${a}`)}</strong> · {t('amelioration.niveau', { niveau, max: def.niveauMax })}
             </p>
             <p class="discret">{t(`amelioration.effet.${a}`, { pourcent: pourcent(def.effet * niveau) })}</p>
-            {cout ? (
+            {enCours ? (
+              <>
+                <p>{t('amelioration.travaux', { pourcent: pourcent(enCours.amelioration!.avancement) })}</p>
+                <Jauge valeur={enCours.amelioration!.avancement} />
+              </>
+            ) : cout ? (
               <button
                 class={`bouton large ${abordable(cout, instantane.stocks) ? '' : 'manque'}`}
                 onClick={() => {

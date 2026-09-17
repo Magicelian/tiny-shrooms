@@ -112,6 +112,7 @@ export const en: Record<keyof typeof fr, string> = {
   'amelioration.niveau': 'lvl {niveau}/{max}',
   'amelioration.max': 'Maxed out',
   'amelioration.acheter': 'Upgrade: {liste}',
+  'amelioration.travaux': 'Work: {pourcent}%',
 
   // Renaissance
   'prestige.gain': 'Yields {gain} seeds (record: {population} villagers)',
@@ -189,10 +190,10 @@ export const en: Record<keyof typeof fr, string> = {
   'message.palierAtteint': '{palier}! New plans: {liste}',
   'message.palierAtteintSeul': 'The village becomes a {palier}!',
   'message.logementAmeliore': '{rang} finished',
+  'message.villageAmeliore': '{amelioration}: lvl {niveau}',
   'message.soucheRetiree': 'Stump uprooted: the spot is free',
   'message.habitantArrive': 'A new villager arrives!',
   'message.constructionTerminee': '{batiment} finished',
-  'message.stockPlein': 'Storage full: {ressource}',
   'message.faim': 'Out of berries!',
   'message.partieSecours': 'Damaged save: game resumed from a backup copy',
   'message.partieIllisible': 'No readable save: new game',

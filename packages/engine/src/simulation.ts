@@ -78,18 +78,12 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const flux = fluxParMinute(etat, contenu);
   const { direct } = flux;
   ranger(etat, flux, max);
-  const pleins: Ressource[] = [];
   for (const r of RESSOURCES) {
     const avant = etat.stocks[r];
     const apres = avant + direct[r] / PAS_PAR_MINUTE;
     // Un plafond abaissé (démolition) ne retire rien : il bloque seulement les gains.
     etat.stocks[r] = direct[r] >= 0 ? Math.min(apres, Math.max(max[r], avant)) : Math.max(0, apres);
-    if (etat.stocks[r] >= max[r]) {
-      pleins.push(r);
-      if (!etat.stocksPleins.includes(r)) evenements.push({ type: 'stockPlein', ressource: r });
-    }
   }
-  etat.stocksPleins = pleins;
   return evenements;
 }
 
@@ -143,6 +137,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         niveau: 1,
         chantier: def.constructionSecondes > 0 ? 0 : null,
         agrandissement: null,
+        amelioration: null,
         bonusVoisinage: 1,
         besoins: {},
         reserve: {},
@@ -248,15 +243,22 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         // Sans travaux (rang sans durée), la montée est faite tout de suite.
         return b.agrandissement === null ? [{ type: 'logementAmeliore', id: b.id, niveau: b.niveau }] : [];
       }
-      if (!etat.batiments.some((b) => b.type === 'atelier' && b.chantier === null)) {
+      const ateliers = etat.batiments.filter((b) => b.type === 'atelier' && b.chantier === null);
+      if (ateliers.length === 0) {
         return refus(etat.batimentsDebloques.includes('atelier') ? 'indisponible' : 'nonDebloque');
       }
       const amelioration = commande.cible.village;
       const cout = coutAmelioration(contenu, amelioration, etat.ameliorations[amelioration]);
       if (!cout) return refus('indisponible');
+      // Un atelier ne mène qu'une amélioration à la fois, et jamais deux fois la même.
+      const atelier = ateliers.find((b) => b.amelioration === null);
+      if (!atelier || ateliers.some((b) => b.amelioration?.village === amelioration)) return refus('indisponible');
       if (!payer(etat, cout)) return refus('ressourcesInsuffisantes');
-      etat.ameliorations[amelioration]++;
-      return [];
+      // Les habitants font les travaux ; sans durée, l'amélioration prend tout de suite.
+      const secondes = contenu.ameliorations[amelioration].travauxSecondes ?? 0;
+      if (secondes > 0) atelier.amelioration = { village: amelioration, avancement: 0 };
+      else etat.ameliorations[amelioration]++;
+      return secondes > 0 ? [] : [{ type: 'villageAmeliore', amelioration, niveau: etat.ameliorations[amelioration] }];
     }
   }
 }

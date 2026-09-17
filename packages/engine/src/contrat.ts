@@ -115,6 +115,8 @@ export interface Batiment {
   chantier: number | null;
   /** Logements : avancement de la montée au rang suivant, payée et en travaux, ou `null`. */
   agrandissement: number | null;
+  /** Atelier : amélioration du village payée, avec l'avancement de ses travaux, ou `null`. */
+  amelioration: { village: AmeliorationVillage; avancement: number } | null;
   /** Bonus de voisinage appliqué, en multiplicateur (1 = aucun). */
   bonusVoisinage: number;
   /**
@@ -285,11 +287,11 @@ export type RaisonRefus =
 
 export type Evenement =
   | { type: 'saisonChangee'; saison: Saison }
-  | { type: 'stockPlein'; ressource: Ressource }
   | { type: 'habitantArrive'; id: IdHabitant }
   | { type: 'constructionTerminee'; id: IdBatiment }
   | { type: 'palierAtteint'; palier: number; debloques: TypeBatiment[] }
   | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }
+  | { type: 'villageAmeliore'; amelioration: AmeliorationVillage; niveau: number }
   | { type: 'soucheRetiree' }
   /** Nouvelle île : l'instantané suivant décrit déjà la nouvelle partie. */
   | { type: 'renaissance'; graines: number }

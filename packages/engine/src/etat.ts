@@ -65,8 +65,6 @@ export interface Etat {
   /** Gardé d'une renaissance à l'autre. */
   prestige: Prestige;
   reglages: Reglages;
-  /** Ressources dont le stock était plein au pas précédent, pour n'annoncer `stockPlein` qu'une fois. */
-  stocksPleins: Ressource[];
   /** Livraisons posées au dépôt, rangées dans les stocks peu à peu, au rythme de la production. */
   arrivages: Record<Ressource, number>;
 }
@@ -101,7 +99,6 @@ export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = pre
       toujoursAuDessus: true,
       lancementAuDemarrage: false,
     },
-    stocksPleins: [],
     arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
   };
   for (let i = 0; i < contenu.habitants.auDepart + effets.habitantsDeDepart; i++) ajouterHabitant(etat);

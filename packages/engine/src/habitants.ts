@@ -101,15 +101,25 @@ function avancerRetrait(etat: Etat, contenu: Contenu, cadence: number, evenement
   evenements.push({ type: 'soucheRetiree' });
 }
 
-/** Chantier de construction ou agrandissement d'un logement : il faut des bâtisseurs. */
+/** Chantier, agrandissement d'un logement ou amélioration à l'atelier : il faut des bâtisseurs. */
 function enTravaux(b: BatimentEtat): boolean {
-  return b.chantier !== null || b.agrandissement !== null;
+  return b.chantier !== null || b.agrandissement !== null || b.amelioration !== null;
 }
 
-/** Fait avancer un chantier (ou un agrandissement) d'un pas ; renvoie vrai s'il vient de se terminer. */
+/** Fait avancer des travaux (chantier, agrandissement, amélioration) d'un pas ; renvoie vrai s'ils viennent de finir. */
 function avancerChantier(etat: Etat, contenu: Contenu, b: BatimentEtat, cadence: number, evenements: Evenement[]): boolean {
   const vitesse = effetsPrestige(contenu, etat.prestige.bonus).chantier;
   if (b.chantier === null) {
+    if (b.amelioration !== null) {
+      const { village } = b.amelioration;
+      const pas = ((contenu.ameliorations[village].travauxSecondes ?? 0) * 1000) / PAS_DE_SIMULATION_MS / vitesse;
+      b.amelioration.avancement = pas > 0 ? b.amelioration.avancement + cadence / pas : 1;
+      if (b.amelioration.avancement < 1 - 1e-9) return false;
+      b.amelioration = null;
+      etat.ameliorations[village]++;
+      evenements.push({ type: 'villageAmeliore', amelioration: village, niveau: etat.ameliorations[village] });
+      return true;
+    }
     if (b.agrandissement === null) return true;
     const secondes = contenu.logement.rangs[b.niveau]?.agrandissementSecondes ?? 0;
     const pas = (secondes * 1000) / PAS_DE_SIMULATION_MS / vitesse;

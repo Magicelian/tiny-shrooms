@@ -5,7 +5,7 @@ import type { Etat } from './etat';
 import { placerElements } from './ile';
 import { prestigeNeuf } from './prestige';
 
-export const VERSION_SAUVEGARDE = 11;
+export const VERSION_SAUVEGARDE = 12;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -60,6 +60,11 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
   }),
   // Version 11 : agrandissement des logements par les habitants.
   10: (etat) => ({ ...etat, batiments: (etat.batiments as object[]).map((b) => ({ ...b, agrandissement: null })) }),
+  // Version 12 : améliorations de l'atelier construites par les habitants ; plus d'annonce de stock plein.
+  11: ({ stocksPleins: _stocksPleins, ...etat }) => ({
+    ...etat,
+    batiments: (etat.batiments as object[]).map((b) => ({ ...b, amelioration: null })),
+  }),
 };
 
 export function serialiser(etat: Etat): string {
@@ -108,7 +113,7 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
 function verifier(etat: Record<string, unknown>): void {
   const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier'];
-  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'stocksPleins', 'defrichages'];
+  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'defrichages'];
   const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages', 'prestige'];
   const manquant =
     nombres.find((cle) => !Number.isFinite(etat[cle])) ??

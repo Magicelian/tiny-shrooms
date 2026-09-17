@@ -6,7 +6,7 @@ import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
 
 export type { Langue };
 import { installerCurseurs, type Curseur } from './curseurs';
-import { abordable, nomBatiment, nomPalier, nomPose, nomRang, nomRessource } from './format';
+import { abordable, nomBatiment, nomPalier, nomPose, nomRang } from './format';
 import { Interface } from './interface';
 import { Magasin, type Bulle } from './magasin';
 import { Sons, type Effet } from './sons';
@@ -260,7 +260,6 @@ export class ControleurInterface {
         this.sons.jouer('arrivee');
       }
       else if (e.type === 'saisonChangee') this.magasin.annoncerSaison(t(`saison.${e.saison}`));
-      else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
         if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
@@ -280,6 +279,9 @@ export class ControleurInterface {
         this.sons.jouer('palier');
       } else if (e.type === 'logementAmeliore') {
         this.magasin.annoncer(t('message.logementAmeliore', { rang: nomRang(e.niveau) }));
+        this.sons.jouer('termine');
+      } else if (e.type === 'villageAmeliore') {
+        this.magasin.annoncer(t('message.villageAmeliore', { amelioration: t(`amelioration.${e.amelioration}`), niveau: e.niveau }));
         this.sons.jouer('termine');
       }
     }

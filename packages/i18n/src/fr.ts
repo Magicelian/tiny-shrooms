@@ -109,6 +109,7 @@ export const fr = {
   'amelioration.niveau': 'niv. {niveau}/{max}',
   'amelioration.max': 'Au maximum',
   'amelioration.acheter': 'Améliorer : {liste}',
+  'amelioration.travaux': 'Travaux : {pourcent} %',
 
   // Renaissance
   'prestige.gain': 'Rapporte {gain} graines (record : {population} habitants)',
@@ -187,10 +188,10 @@ export const fr = {
   'message.palierAtteint': '{palier} ! Nouveaux plans : {liste}',
   'message.palierAtteintSeul': 'Le village devient {palier} !',
   'message.logementAmeliore': '{rang} achevé',
+  'message.villageAmeliore': '{amelioration} : niv. {niveau}',
   'message.soucheRetiree': 'Souche arrachée : la place est libre',
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
-  'message.stockPlein': 'Stock plein : {ressource}',
   'message.faim': 'Plus de baies en stock !',
   'message.partieSecours': 'Sauvegarde abîmée : partie reprise sur une copie de secours',
   'message.partieIllisible': 'Aucune sauvegarde lisible : nouvelle partie',

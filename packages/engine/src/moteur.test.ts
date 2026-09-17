@@ -477,11 +477,30 @@ describe('Améliorations', () => {
     const ameliorer: Commande = { type: 'ameliorer', cible: { village: 'outils' } };
     expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
     commander(moteur, poser('atelier', caseLibre(moteur)));
-    expect(commander(moteur, ameliorer)).toEqual([]);
-    expect(commander(moteur, ameliorer)).toEqual([]);
+    // Sans durée de travaux, l'amélioration prend tout de suite.
+    expect(commander(moteur, ameliorer)).toEqual([{ type: 'villageAmeliore', amelioration: 'outils', niveau: 1 }]);
+    expect(commander(moteur, ameliorer)).toEqual([{ type: 'villageAmeliore', amelioration: 'outils', niveau: 2 }]);
     expect(moteur.etatCourant.stocks.boisMort).toBe(70);
     expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
     expect(instantaneDe(moteur.recevoir({ type: 'battre' }, 0)).ameliorations).toEqual({ vitesse: 0, outils: 2 });
+  });
+
+  it('avec une durée de travaux, l’amélioration attend les bâtisseurs', () => {
+    const contenu = contenuDeTest();
+    contenu.ameliorations.outils.travauxSecondes = 20;
+    const moteur = new Moteur(contenu, 0);
+    const ameliorer: Commande = { type: 'ameliorer', cible: { village: 'outils' } };
+    commander(moteur, poser('atelier', caseLibre(moteur)));
+    expect(commander(moteur, ameliorer)).toEqual([]);
+    const atelier = moteur.etatCourant.batiments[0]!;
+    expect(atelier.amelioration).toMatchObject({ village: 'outils', avancement: 0 });
+    expect(moteur.etatCourant.ameliorations.outils).toBe(0);
+    // Une seconde fois : les travaux en cours occupent l'atelier.
+    expect(commander(moteur, ameliorer)[0]).toMatchObject({ raison: 'indisponible' });
+    const evenements = moteur.simuler(PAS_PAR_MINUTE);
+    expect(evenements).toContainEqual({ type: 'villageAmeliore', amelioration: 'outils', niveau: 1 });
+    expect(atelier.amelioration).toBeNull();
+    expect(moteur.etatCourant.ameliorations.outils).toBe(1);
   });
 
   it('les outils accélèrent la récolte', () => {

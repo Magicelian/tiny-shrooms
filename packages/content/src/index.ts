@@ -89,8 +89,8 @@ export const contenu: Contenu = {
     bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, minutesPourSeStabiliser: 3 },
   },
   ameliorations: {
-    vitesse: { cout: { spores: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
-    outils: { cout: { spores: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+    vitesse: { cout: { spores: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 45 },
+    outils: { cout: { spores: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 60 },
   },
   // Bourg (50 habitants) → 6 graines, 100 → 15, 150 → 25 : attendre rapporte de plus en plus.
   prestige: {

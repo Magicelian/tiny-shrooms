@@ -108,6 +108,8 @@ export interface DefinitionAmelioration {
   /** Gain par niveau : +`effet` de vitesse de marche ou de production. */
   effet: number;
   niveauMax: number;
+  /** Durée des travaux à l'atelier, pour un bâtisseur (absent : effet immédiat). */
+  travauxSecondes?: number;
 }
 
 /** Rang d'un logement ; le premier est celui d'un logement neuf. */
