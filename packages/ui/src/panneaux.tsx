@@ -317,7 +317,11 @@ function Ameliorations({ controleur, instantane }: Props) {
             {cout ? (
               <button
                 class={`bouton large ${abordable(cout, instantane.stocks) ? '' : 'manque'}`}
-                onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { village: a } })}
+                onClick={() => {
+                  controleur.envoyer({ type: 'ameliorer', cible: { village: a } });
+                  // Comme pour les logements : payable, la bulle se referme.
+                  if (abordable(cout, instantane.stocks)) controleur.fermer();
+                }}
               >
                 <Phrase texte={(liste) => t('amelioration.acheter', { liste })}>
                   <Cout quantites={cout} stocks={instantane.stocks} />
