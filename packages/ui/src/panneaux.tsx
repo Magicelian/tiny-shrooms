@@ -187,7 +187,11 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
           <button
             class={`bouton large ${refus === null && abordable(cout, instantane.stocks) ? 'valider' : 'manque'}`}
             disabled={refus !== null}
-            onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { batiment: batiment.id } })}
+            onClick={() => {
+              controleur.envoyer({ type: 'ameliorer', cible: { batiment: batiment.id } });
+              // Payable : l'agrandissement part, la bulle se referme. Sinon elle reste, avec le refus annoncé.
+              if (abordable(cout, instantane.stocks)) controleur.fermer();
+            }}
           >
             <Phrase texte={(liste) => t('logement.monter', { liste })}>
               <Cout quantites={cout} stocks={instantane.stocks} />
