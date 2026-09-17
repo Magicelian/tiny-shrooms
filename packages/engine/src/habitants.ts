@@ -447,6 +447,8 @@ function destination(etat: Etat, m: Mission): [Position, number] {
 function marcherVers(etat: Etat, h: HabitantEtat, cible: Position, rayon: number, contenu: Contenu): boolean {
   if (distance(h.position, cible) - rayon <= 1e-6) return true;
   const etape = etapeVers(etat, h, cible, rayon);
+  // Cible inaccessible et habitant au plus près : il travaille d'ici plutôt que de traverser l'eau.
+  if (etape === null) return true;
   // Point de passage : on le rejoint exactement ; cible : on s'arrête à `rayon`.
   const marge = etape === cible ? rayon : 0;
   const dx = etape.x - h.position.x;

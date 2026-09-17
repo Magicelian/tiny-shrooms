@@ -853,3 +853,45 @@
 .planche.vide .quantite {
   color: #ff8a7a;
 }
+/* Chaque chiffre occupe la même largeur : la planche ne change de taille qu'avec le nombre de chiffres. */
+.planche .chiffre {
+  display: inline-block;
+  width: 0.62em;
+  text-align: center;
+}
+/* Nom de la saison, en grand au milieu, le temps d'un souffle. */
+.titre-saison {
+  position: absolute;
+  top: 36%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 700 28px/1 'Pixelify Sans', monospace;
+  color: var(--parchemin-clair);
+  text-shadow:
+    2px 0 var(--encre),
+    -2px 0 var(--encre),
+    0 2px var(--encre),
+    0 -2px var(--encre),
+    2px 2px var(--encre),
+    -2px 2px var(--encre),
+    2px -2px var(--encre),
+    -2px -2px var(--encre);
+  pointer-events: none;
+  animation: titre-saison 3.5s ease-in-out forwards;
+}
+@keyframes titre-saison {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15%,
+  75% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

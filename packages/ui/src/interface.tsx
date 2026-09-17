@@ -39,6 +39,12 @@ export function Interface({ controleur }: Props) {
         </span>
       ))}
 
+      {etat.saison && (
+        <div key={etat.saison.id} class="titre-saison">
+          {etat.saison.texte}
+        </div>
+      )}
+
       <div class="messages">
         {etat.messages.map((m) => (
           <div key={m.id} class="message">
@@ -232,7 +238,13 @@ function Planche(props: { icone: ComponentChildren; quantite: number; plein: boo
   return (
     <li class={`planche ${props.plein ? 'plein' : ''} ${props.vide ? 'vide' : ''}`} onMouseEnter={() => setSurvol(true)} onMouseLeave={() => setSurvol(false)}>
       {props.icone}
-      <span class="quantite">{nombre(props.quantite)}</span>
+      <span class="quantite">
+        {[...nombre(props.quantite)].map((c, i) => (
+          <span key={i} class="chiffre">
+            {c}
+          </span>
+        ))}
+      </span>
       {survol && <span class="infobulle">{props.detail}</span>}
     </li>
   );

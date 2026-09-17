@@ -85,7 +85,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   Livraisons : une charge déposée passe par `etat.arrivages`, rangés dans le stock au rythme de la production
   (6/min → +1 toutes les 10 s).
 - **Chemins** : `packages/engine/src/chemins.ts` (A* sur la grille, caches hors sauvegarde) ; bâtiments, souche,
-  eau et rochers sont infranchissables, la forêt non. Sans chemin possible, l'habitant marche droit.
+  eau et rochers sont infranchissables, la forêt non. Sans chemin possible, l'habitant va au plus près et travaille de
+  là (jamais sur l'eau, vérifié par `bourg.test.ts`).
 - **Souche et défrichage** : `retirerSouche` (20 spores, exige un garde-manger ou une remise ; le dernier dépôt ne se
   démolit plus ensuite) et `defricher` (arbre, buisson sauvage, plante : `packages/engine/src/defrichage.ts`). Les
   habitants y travaillent (tâche `arracher`) ; une fois fini, le moteur renvoie l'île (`publierAvecIle`). Chiffres :

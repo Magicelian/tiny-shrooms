@@ -45,6 +45,8 @@ export interface EtatInterface {
   /** Bonus de voisinage à l'emplacement visé, pendant le déplacement ou le choix d'un bâtiment. */
   bonusVise: number | null;
   messages: Message[];
+  /** Nom de la nouvelle saison, affiché en grand quelques secondes. */
+  saison: Message | null;
   envols: Envol[];
   /** Menu de démarrage ouvert (`confirmer` : demande avant d'effacer la partie), ou `null` en jeu. */
   menu: 'accueil' | 'confirmer' | 'parametres' | null;
@@ -57,6 +59,8 @@ type Abonne = () => void;
 
 /** Doit suivre la durée de l'animation `envol` dans interface.css. */
 const DUREE_ENVOL_MS = 900;
+/** Doit suivre la durée de l'animation `titre-saison` dans interface.css. */
+const DUREE_SAISON_MS = 3500;
 
 export class Magasin {
   private etat: EtatInterface = {
@@ -70,6 +74,7 @@ export class Magasin {
     deplacement: null,
     bonusVise: null,
     messages: [],
+    saison: null,
     envols: [],
     menu: null,
     partieReprise: false,
@@ -92,8 +97,16 @@ export class Magasin {
 
   annoncer(texte: string): void {
     const message = { id: this.prochainMessage++, texte };
-    this.modifier({ messages: [...this.etat.messages.slice(-1), message] });
+    // Un message identique encore affiché est remplacé (son délai repart), jamais empilé.
+    const autres = this.etat.messages.filter((m) => m.texte !== texte);
+    this.modifier({ messages: [...autres.slice(-1), message] });
     setTimeout(() => this.modifier({ messages: this.etat.messages.filter((m) => m !== message) }), 2500);
+  }
+
+  annoncerSaison(texte: string): void {
+    const saison = { id: this.prochainMessage++, texte };
+    this.modifier({ saison });
+    setTimeout(() => this.etat.saison === saison && this.modifier({ saison: null }), DUREE_SAISON_MS);
   }
 
   envoler(envol: Omit<Envol, 'id'>): void {

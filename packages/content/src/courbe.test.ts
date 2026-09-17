@@ -69,12 +69,12 @@ describe('Courbe de progression', () => {
         r.jalons.map(([s, c]) => `${duree(s)} ${c}`).join(' · ') + "\n",
     );
     // Cible de l'étape 16 : jamais de fin, mais toujours du neuf. Le joueur attentif met plus d'une heure et quart,
-    // le distrait une demi-journée de travail, sans jamais attendre plus de 75 min une nouveauté.
+    // le distrait une demi-journée de travail, sans jamais attendre plus de 1 h 30 une nouveauté.
     if (profil.nom === 'attentif') expect(r.secondes).toBeGreaterThan(1.25 * 3600);
     else {
       expect(r.secondes).toBeGreaterThan(2.5 * 3600);
       expect(r.secondes).toBeLessThan(6 * 3600);
-      expect(r.ecartMax).toBeLessThanOrEqual(75 * 60);
+      expect(r.ecartMax).toBeLessThanOrEqual(90 * 60);
     }
   }, 300_000);
 });

@@ -223,6 +223,7 @@ export class ControleurInterface {
         this.magasin.annoncer(t('message.habitantArrive'));
         this.sons.jouer('arrivee');
       }
+      else if (e.type === 'saisonChangee') this.magasin.annoncerSaison(t(`saison.${e.saison}`));
       else if (e.type === 'stockPlein') this.magasin.annoncer(t('message.stockPlein', { ressource: nomRessource(e.ressource) }));
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
