@@ -48,7 +48,6 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
         pause: (enPause) => envoyer(enPause ? { type: 'veille', momentMs: Date.now() } : { type: 'reveil' }),
         son: (actif) => (dansTauri ? void invoke('regler_son', { son: actif }) : ui.signalerSon(actif)),
         langue: (langue) => (dansTauri ? void invoke('regler_langue', { langue }) : ui.signalerLangue(langue)),
-        quitter: dansTauri ? () => quitter() : undefined,
       }
     : undefined,
 });

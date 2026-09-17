@@ -152,7 +152,6 @@ export const en: Record<keyof typeof fr, string> = {
   'accueil.nouvelle': 'New game',
   'accueil.sonActif': 'Sound: on',
   'accueil.sonCoupe': 'Sound: off',
-  'accueil.quitter': 'Quit',
   'accueil.commandes': 'Controls',
   'accueil.retour': 'Back',
   'accueil.commande.clic': 'Click',

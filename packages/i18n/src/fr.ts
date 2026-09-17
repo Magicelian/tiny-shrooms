@@ -149,7 +149,6 @@ export const fr = {
   'accueil.nouvelle': 'Nouvelle partie',
   'accueil.sonActif': 'Son : oui',
   'accueil.sonCoupe': 'Son : non',
-  'accueil.quitter': 'Quitter',
   'accueil.commandes': 'Commandes',
   'accueil.retour': 'Retour',
   'accueil.commande.clic': 'Clic',

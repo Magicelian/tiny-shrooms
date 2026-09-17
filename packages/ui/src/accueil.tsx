@@ -1,4 +1,4 @@
-// Menu de démarrage : titre, reprise ou nouvelle partie, son et langue. L'île tourne doucement derrière.
+// Menu de démarrage : titre, reprise ou nouvelle partie, commandes, son et langue. L'île tourne doucement derrière.
 import { t } from '@tiny-shrooms/i18n';
 import type { ControleurInterface } from './index';
 import { useMagasin } from './magasin';
@@ -83,11 +83,6 @@ export function Accueil({ controleur }: { controleur: ControleurInterface }) {
             <button class="bouton" onClick={() => controleur.montrerCommandes(true)}>
               {t('accueil.commandes')}
             </button>
-            {controleur.quittable && (
-              <button class="lien-quitter" onClick={() => controleur.quitter()}>
-                {t('accueil.quitter')}
-              </button>
-            )}
           </div>
         )}
       </section>

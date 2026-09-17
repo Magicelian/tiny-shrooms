@@ -775,25 +775,16 @@
 }
 .panneau-accueil {
   width: 216px;
-  padding: 4px;
-  background: var(--bois);
-  box-shadow:
-    inset 0 2px 0 var(--bois-clair),
-    inset 0 -2px 0 var(--bois-fonce),
-    var(--contour),
-    0 5px 0 var(--encre);
 }
+/* Pas de fond : boutons et textes posés directement sur l'île, les textes cernés pour rester lisibles. */
 .panneau-accueil .corps {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  padding: 8px 8px 6px;
-  background:
-    repeating-conic-gradient(rgb(122 79 45 / 0.05) 0 25%, transparent 0 50%) 0 0 / 4px 4px,
-    var(--parchemin);
-  box-shadow: inset 0 2px 0 var(--bois-fonce);
   text-align: center;
+  color: var(--parchemin-clair);
+  text-shadow: var(--texte-cerne);
 }
 .panneau-accueil .bouton {
   margin: 2px 2px 6px;
@@ -804,8 +795,7 @@
 }
 .panneau-accueil h2 {
   margin: 0;
-  font-size: 15px;
-  color: var(--bois-fonce);
+  font-size: 16px;
 }
 .panneau-accueil p {
   margin: 0 0 4px;
@@ -822,19 +812,6 @@
 .langues {
   display: flex;
 }
-.lien-quitter {
-  align-self: center;
-  font: inherit;
-  font-size: 12px;
-  color: var(--discret);
-  background: none;
-  border: none;
-  padding: 2px 6px;
-  cursor: pointer;
-}
-.lien-quitter:hover {
-  color: var(--rouge);
-}
 .commandes {
   margin: 2px 0 4px;
   font-size: 12px;
@@ -845,7 +822,7 @@
   justify-content: space-between;
   gap: 6px;
   padding: 2px 0;
-  border-bottom: 2px dotted var(--papier-fonce);
+  border-bottom: 2px dotted rgb(251 243 220 / 0.5);
 }
 .commandes dt {
   font-weight: 700;
@@ -853,6 +830,5 @@
 }
 .commandes dd {
   margin: 0;
-  color: var(--bois-fonce);
   text-align: right;
 }

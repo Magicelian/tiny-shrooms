@@ -3791,7 +3791,7 @@ dependencies = [
 
 [[package]]
 name = "tiny-shrooms"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "block2",
  "objc2-app-kit",

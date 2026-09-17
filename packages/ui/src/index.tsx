@@ -50,8 +50,6 @@ export interface OptionsInterface {
     /** Réglages demandés depuis le menu ; la valeur retenue revient par `signalerSon` / `signalerLangue`. */
     son(actif: boolean): void;
     langue(langue: Langue): void;
-    /** Absent dans un navigateur. */
-    quitter?: () => void;
   };
 }
 
@@ -129,10 +127,6 @@ export class ControleurInterface {
     }
   }
 
-  get quittable(): boolean {
-    return !!this.options.demarrage?.quitter;
-  }
-
   /** Ferme le menu de démarrage : la simulation reprend. */
   continuer(): void {
     if (this.magasin.valeur.menu === null) return;
@@ -166,10 +160,6 @@ export class ControleurInterface {
 
   reglerLangue(langue: Langue): void {
     this.options.demarrage?.langue(langue);
-  }
-
-  quitter(): void {
-    this.options.demarrage?.quitter?.();
   }
 
   signalerSon(actif: boolean): void {
