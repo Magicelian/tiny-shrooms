@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod mises_a_jour;
 mod pouls;
 mod reglages;
 mod sauvegarde;
@@ -64,25 +65,29 @@ fn demander_fermeture(app: &AppHandle) {
             let app = app.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_secs(3));
-                reglages::enregistrer(&app);
-                app.exit(0);
+                sortir(&app);
             });
         }
-        _ => {
-            reglages::enregistrer(app);
-            app.exit(0);
-        }
+        _ => sortir(app),
     }
+}
+
+/// Dernière étape : réglages écrits, puis mise à jour installée si elle a été demandée.
+fn sortir(app: &AppHandle) {
+    reglages::enregistrer(app);
+    mises_a_jour::installer_si_demande(app);
+    app.exit(0);
 }
 
 #[tauri::command]
 fn quitter(app: AppHandle) {
-    reglages::enregistrer(&app);
-    app.exit(0);
+    sortir(&app);
 }
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(mises_a_jour::EtatMiseAJour::default())
         .setup(|app| {
             // Pas d'icône dans le Dock : l'application vit dans la barre des menus.
             #[cfg(target_os = "macos")]
@@ -101,6 +106,7 @@ fn main() {
                 francais,
                 anglais,
                 quitter: entree("quitter")?,
+                mettre_a_jour: entree("mettre-a-jour")?,
             };
             reglages::preparer_menu(&entrees, &lus);
             let separation = PredefinedMenuItem::separator(app)?;
@@ -117,6 +123,7 @@ fn main() {
                 ],
             )?;
             reglages::restaurer_position(app.handle(), &lus);
+            mises_a_jour::surveiller(app.handle().clone(), menu.clone(), entrees.mettre_a_jour.clone());
             app.manage(reglages::EtatReglages {
                 reglages: std::sync::Mutex::new(lus),
                 menu: entrees,
@@ -140,6 +147,10 @@ fn main() {
                 "langue-fr" => reglages::appliquer_langue(app, "fr"),
                 "langue-en" => reglages::appliquer_langue(app, "en"),
                 "quitter" => demander_fermeture(app),
+                "mettre-a-jour" => {
+                    mises_a_jour::demander(app);
+                    demander_fermeture(app);
+                }
                 _ => {}
             });
             icone.on_tray_icon_event(|icone, evenement| {

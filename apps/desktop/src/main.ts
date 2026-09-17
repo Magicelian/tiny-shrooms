@@ -75,6 +75,8 @@ window.addEventListener('resize', () => rendu.redimensionner());
 
 // Rendu coupé quand la fenêtre est cachée ; la simulation, elle, continue.
 if (dansTauri) {
+  // Rust ne signale le survol qu'à son changement : la souris part donc du dehors.
+  rendu.reposer(true);
   await listen('fenetre-cachee', () => {
     rendu.arreter();
     ui.sons.suspendre(true);
@@ -83,7 +85,10 @@ if (dansTauri) {
     rendu.demarrer();
     ui.sons.suspendre(false);
   });
-  await listen<boolean>('survol', (e) => ui.signalerSurvol(e.payload));
+  await listen<boolean>('survol', (e) => {
+    ui.signalerSurvol(e.payload);
+    rendu.reposer(!e.payload);
+  });
   await listen<boolean>('verrouillage', (e) => ui.signalerVerrouillage(e.payload));
   await listen<boolean>('son', (e) => ui.sons.activer(e.payload));
   await listen<Langue>('langue', (e) => ui.signalerLangue(e.payload));

@@ -15,6 +15,8 @@ export { CHAPEAUX, COULEURS_BATIMENT } from './palette';
 export type { VignetteNature, Vignettes } from './vignettes';
 
 export const IMAGES_PAR_SECONDE = 30;
+/** Cadence quand la souris est loin de la fenêtre : l'île ne sert plus que de décor, la batterie compte davantage. */
+export const IMAGES_PAR_SECONDE_AU_REPOS = 15;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
 export const REDUCTION = 2;
 
@@ -49,6 +51,7 @@ export class Rendu {
   private decor: THREE.Group | null = null;
   private actif = false;
   private derniereImage = 0;
+  private imagesParSeconde = IMAGES_PAR_SECONDE;
 
   constructor(conteneur: HTMLElement) {
     this.moteur = new THREE.WebGLRenderer({ alpha: true, antialias: false });
@@ -176,6 +179,11 @@ export class Rendu {
     requestAnimationFrame(this.boucle);
   }
 
+  /** Au repos (souris hors de la fenêtre), l'île est dessinée moins souvent. */
+  reposer(auRepos: boolean): void {
+    this.imagesParSeconde = auRepos ? IMAGES_PAR_SECONDE_AU_REPOS : IMAGES_PAR_SECONDE;
+  }
+
   /** Coupe le rendu (fenêtre cachée) : plus aucune image. */
   arreter(): void {
     this.actif = false;
@@ -185,7 +193,7 @@ export class Rendu {
     if (!this.actif) return;
     requestAnimationFrame(this.boucle);
     const ecart = instant - this.derniereImage;
-    if (ecart < 1000 / IMAGES_PAR_SECONDE - 2) return;
+    if (ecart < 1000 / this.imagesParSeconde - 2) return;
     const dt = this.derniereImage === 0 ? 0 : ecart / 1000;
     this.derniereImage = instant;
     this.vue.animer(dt);

@@ -42,11 +42,13 @@ pub fn libelle(langue: &str, cle: &str) -> &'static str {
         ("fr", "son") => "Son",
         ("fr", "langue") => "Langue",
         ("fr", "quitter") => "Quitter",
+        ("fr", "mettre-a-jour") => "Redémarrer pour mettre à jour",
         (_, "basculer") => "Show / hide",
         (_, "verrouiller") => "Lock position",
         (_, "son") => "Sound",
         (_, "langue") => "Language",
         (_, "quitter") => "Quit",
+        (_, "mettre-a-jour") => "Restart to update",
         _ => "",
     }
 }
@@ -60,6 +62,8 @@ pub struct MenuReglages {
     pub francais: CheckMenuItem<Wry>,
     pub anglais: CheckMenuItem<Wry>,
     pub quitter: MenuItem<Wry>,
+    /// Absente du menu tant qu'aucune mise à jour n'est téléchargée.
+    pub mettre_a_jour: MenuItem<Wry>,
 }
 
 impl MenuReglages {
@@ -69,6 +73,7 @@ impl MenuReglages {
         let _ = self.son.set_text(libelle(langue, "son"));
         let _ = self.langue.set_text(libelle(langue, "langue"));
         let _ = self.quitter.set_text(libelle(langue, "quitter"));
+        let _ = self.mettre_a_jour.set_text(libelle(langue, "mettre-a-jour"));
         let _ = self.francais.set_checked(langue == "fr");
         let _ = self.anglais.set_checked(langue == "en");
     }

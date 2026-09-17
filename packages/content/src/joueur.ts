@@ -88,32 +88,46 @@ export class Joueur {
     return this.etat.batiments.filter((b) => b.chantier !== null && (!type || b.type === type)).length;
   }
 
-  jouer(): void {
+  /** Renvoie vrai si une action a été lancée. */
+  jouer(): boolean {
     const { etat } = this;
     etat.ile.elements.forEach((_, element) => {
       if (etat.pousses[element]! >= 1) this.commander({ type: 'recolter', element });
     });
     const population = etat.habitants.length;
     const capacite = capaciteLogement(contenu, etat.batiments, etat.ile.soucheEnPlace, etat.prestige);
-    if (this.chantiers() >= 2) return;
+    // Montées en gamme et améliorations ne sont pas des chantiers : elles passent avant la limite.
+    if (this.monter() || this.ameliorerAtelier()) return true;
+    if (this.chantiers() >= 2) return false;
 
-    if (nombre(etat, 'hutte') === 0) {
-      this.poser('hutte');
-      return;
-    }
+    if (nombre(etat, 'hutte') === 0) return this.poser('hutte');
     const actions: (() => boolean)[] = [
       () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.production('cueillette', 'buisson'),
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       () => population >= 4 && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
+      // Un bâtiment qui vient d'être débloqué est essayé tout de suite.
+      () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 && this.production('sechoir', 'herbe'),
+      () => etat.palier >= 1 && nombre(etat, 'atelier') < 1 && this.production('atelier', 'herbe'),
       () => capacite - population < 2 && this.chantiers('hutte') === 0 && this.poser('hutte'),
       () => this.service('chaleur'),
       () => this.service('eau'),
       () => this.service('commerce'),
-      () => this.monter(),
-      () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 && this.production('sechoir', 'herbe'),
       () => this.stockage(),
+      // Île pleine et logements pleins : on abat un arbre, en gardant un bout de forêt pour le sanctuaire.
+      () => capacite - population < 2 && this.forets() > 3 && this.faireDeLaPlace(),
     ];
-    for (const action of actions) if (action()) return;
+    return actions.some((action) => action());
+  }
+
+  private forets(): number {
+    const { ile } = this.etat;
+    let n = 0;
+    for (let y = 0; y < ile.profondeur; y++) for (let x = 0; x < ile.largeur; x++) if (terrainEn(ile, x, y) === 'foret') n++;
+    return n;
+  }
+
+  private ameliorerAtelier(): boolean {
+    return (['outils', 'vitesse'] as const).some((a) => this.commander({ type: 'ameliorer', cible: { village: a } }));
   }
 
   private monter(): boolean {

@@ -558,6 +558,23 @@ son critère n'est pas rempli.
 - Vérification sous Windows : transparence, toujours au-dessus, zone de notification.
 - **Critère** : Celian installe la V1 depuis le .dmg et la garde ouverte une journée entière.
 
+- **Résultat (17/09/2026)** : implémenté, à valider (installation et journée d'usage). Cible décidée : **pas de fin, mais
+  toujours du neuf** ; seul le rythme est réglé, la variété entre îles reste pour après la V1.
+  Courbe (`packages/content/src/courbe.test.ts`) : un joueur **attentif** (agit toutes les 5 s) et un **distrait**
+  (de près le premier quart d'heure, puis un coup d'œil toutes les 10 min). Bourg en ~1 h 45 (attentif) et 3 h 15 à
+  3 h 50 (distrait), jamais plus d'une heure sans nouveauté (palier, bâtiment, rang, amélioration). Renaissances :
+  bourg en 104 → 88 → 75 min. Réglages : un habitant arrive toutes les 2 min (au lieu d'1) ; améliorations de l'atelier
+  payées en **spores** (25 et 35, ×1,6) ; plafond de spores 40, +60 par atelier (le manoir, à 30 spores, était
+  inatteignable avec un plafond de 20). Défaut corrigé : un habitant seul et employé ne construisait jamais (un chantier
+  vide passe désormais avant un emploi).
+  Consommation (Mac Apple Silicon, version compilée) : ~27 % d'un cœur à 30 i/s ; le rendu passe à **15 i/s quand la
+  souris est hors de la fenêtre** → ~15 % ; fenêtre cachée ~3 %.
+  Diffusion : `.github/workflows/publier.yml` (étiquette `vX.Y.Z` → .dmg Apple Silicon et Intel, .exe NSIS, `latest.json`).
+  Application signée ad hoc seulement. Mises à jour : `src-tauri/src/mises_a_jour.rs` (recherche au lancement puis toutes
+  les 6 h, téléchargement silencieux, entrée « Redémarrer pour mettre à jour » dans le menu de l'icône, partie écrite
+  avant l'installation). Clé de signature des mises à jour : `~/.tauri/tiny-shrooms.key` (sans mot de passe), copiée dans
+  le secret `TAURI_SIGNING_PRIVATE_KEY` du dépôt. **À ne pas perdre.** Windows : compilé par la CI, pas encore essayé.
+
 ### Après la V1
 1. Nouveaux paliers, bâtiments et ressources (pierre, champignons lumineux…), chemins et décorations.
 2. Biomes sur les îles des renaissances suivantes (marais, rochers…).

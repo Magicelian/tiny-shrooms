@@ -211,9 +211,9 @@ function choisirMission(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
     const def = contenu.batiments[b.type];
     const cible = centreCase(b);
     if (b.chantier !== null) {
-      if (occupants(etat, h, 'construire', b.id) < contenu.habitants.ouvriersParChantier) {
-        proposer({ tache: 'construire', batiment: b.id }, 1, cible);
-      }
+      const batisseurs = occupants(etat, h, 'construire', b.id);
+      // Un chantier sans personne passe avant un emploi : sinon un habitant seul et employé ne le finirait jamais.
+      if (batisseurs < contenu.habitants.ouvriersParChantier) proposer({ tache: 'construire', batiment: b.id }, batisseurs === 0 ? 1.5 : 1, cible);
       continue;
     }
     if (

@@ -1,0 +1,62 @@
+# Publie une version : pousser une étiquette `vX.Y.Z` (identique à la version de tauri.conf.json)
+# construit les installeurs Mac (Apple Silicon et Intel) et Windows, signe les mises à jour et crée la version GitHub.
+name: Publier
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  installeurs:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            cible: aarch64-apple-darwin
+          - os: macos-latest
+            cible: x86_64-apple-darwin
+          - os: windows-latest
+            cible: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    env:
+      # `.cargo/config.toml` range la compilation dans le cache du Mac de Celian : on la ramène ici.
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.cible }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> ${{ github.workspace }}/target
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+        if: matrix.os == 'windows-latest'
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        with:
+          projectPath: apps/desktop
+          tauriScript: pnpm tauri
+          args: --target ${{ matrix.cible }}
+          tagName: ${{ github.ref_name }}
+          releaseName: Tiny Shrooms ${{ github.ref_name }}
+          releaseBody: |
+            Mac : télécharger le .dmg (`aarch64` pour Apple Silicon, `x64` pour Intel). L'application n'est pas signée :
+            au premier lancement, clic droit sur l'application → Ouvrir, ou `xattr -cr "/Applications/Tiny Shrooms.app"`.
+            Windows : lancer le `-setup.exe` (SmartScreen : « Informations complémentaires » → « Exécuter quand même »).
+            Les versions suivantes s'installent ensuite toutes seules, depuis le menu de l'icône.
+          releaseDraft: false
+          includeUpdaterJson: true

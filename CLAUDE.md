@@ -115,7 +115,12 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   modèles rendues par `packages/renderer/src/vignettes.ts` (option `vignettes` de l'interface), icônes pixel des
   ressources dans `packages/ui/src/icones.ts`, coûts illustrés et phrases à trou dans `composants.tsx` (`Cout`, `Phrase`).
   La nuit teinte aussi pluie, neige et feuilles (`TEINTES_PARTICULES` dans `ambiance.ts`).
-- **Prochaine étape : 16** (équilibrage et diffusion).
+- **Étape 16 implémentée, à valider** (cahier §7). Courbe : `packages/content/src/courbe.test.ts` (joueurs attentif et
+  distrait, ~1 min ; `process.stderr.write` car vitest tait `console.log`). Rendu à 15 i/s souris dehors
+  (`rendu.reposer`). Publier : monter la version dans `tauri.conf.json` et `Cargo.toml`, puis pousser l'étiquette
+  `vX.Y.Z` (dépôt `Magicelian/tiny-shrooms`) ; mises à jour dans `src-tauri/src/mises_a_jour.rs`, clé
+  `~/.tauri/tiny-shrooms.key`. Build local : `TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/tiny-shrooms.key)"
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" pnpm --filter desktop tauri build`.
 
 ## Retouches du 16/09/2026 (faites, vérifiées dans le navigateur)
 

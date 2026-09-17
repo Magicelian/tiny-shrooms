@@ -1,11 +1,11 @@
-// Valeurs d'équilibrage de la V1 : premier jet, à régler à l'étape 16.
+// Valeurs d’équilibrage de la V1, réglées à l’étape 16 (`courbe.test.ts`).
 import type { Contenu } from '@tiny-shrooms/engine';
 
 export const contenu: Contenu = {
   ile: { taille: 12 },
   // Partie neuve : rien en stock, tout commence par la récolte à la main.
   stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
-  plafondsDeBase: { baies: 50, baiesSechees: 20, boisMort: 80, mousse: 30, spores: 20 },
+  plafondsDeBase: { baies: 50, baiesSechees: 20, boisMort: 80, mousse: 30, spores: 40 },
   batiments: {
     hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: true },
     cueillette: { cout: { boisMort: 15 }, constructionSecondes: 20, production: { baies: 6 }, voisinage: [{ voisin: 'buisson', bonus: 0.25 }] },
@@ -29,7 +29,7 @@ export const contenu: Contenu = {
       voisinage: [{ voisin: 'gardeManger', bonus: 0.25 }],
     },
     feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20, portee: 2 },
-    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60 },
+    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60, stockage: { spores: 60 } },
     puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
     marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
     sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90 },
@@ -76,7 +76,7 @@ export const contenu: Contenu = {
     reserveMax: 10,
     baiesParMinute: 0.5,
     ouvriersParChantier: 2,
-    delaiArriveeSecondes: 60,
+    delaiArriveeSecondes: 120,
     seuilArrivee: 0.5,
     seuilBonheur: 0.5,
     reevaluationSecondes: 30,
@@ -86,8 +86,8 @@ export const contenu: Contenu = {
     bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, minutesPourSeStabiliser: 3 },
   },
   ameliorations: {
-    vitesse: { cout: { boisMort: 50, mousse: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
-    outils: { cout: { boisMort: 70, mousse: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+    vitesse: { cout: { spores: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
+    outils: { cout: { spores: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3 },
   },
   // Bourg (50 habitants) → 6 graines, 100 → 15, 150 → 25 : attendre rapporte de plus en plus.
   prestige: {
