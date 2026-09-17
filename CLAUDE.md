@@ -121,6 +121,11 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `vX.Y.Z` (dépôt `Magicelian/tiny-shrooms`) ; mises à jour dans `src-tauri/src/mises_a_jour.rs`, clé
   `~/.tauri/tiny-shrooms.key`. Build local : `TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/tiny-shrooms.key)"
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" pnpm --filter desktop tauri build`.
+- **README** : images dans `docs/`. `apps/desktop/demo.html?graine=1&minutes=44` (dev seulement) fait jouer le joueur
+  scripté puis ouvre le jeu sur la partie obtenue ; captures prises avec Chrome sans fenêtre piloté par le protocole
+  DevTools (320 × 320, échelle 2, fond transparent), GIF assemblé avec ffmpeg. Icône du jeu : pixel art écrit en code,
+  `apps/desktop/src-tauri/icons/dessiner-icone.py`, puis `pnpm --filter desktop tauri icon src-tauri/icons/icone.png`
+  (supprimer les dossiers `android` et `ios` générés).
 
 ## Retouches du 16/09/2026 (faites, vérifiées dans le navigateur)
 
