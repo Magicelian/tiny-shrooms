@@ -16,12 +16,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Un seul .dmg universel, pour Apple Silicon comme pour Intel.
           - os: macos-latest
-            cible: aarch64-apple-darwin
-          - os: macos-latest
-            cible: x86_64-apple-darwin
+            cible: universal-apple-darwin
+            outils: aarch64-apple-darwin,x86_64-apple-darwin
           - os: windows-latest
             cible: x86_64-pc-windows-msvc
+            outils: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     env:
       # `.cargo/config.toml` range la compilation dans le cache du Mac de Celian : on la ramène ici.
@@ -35,7 +36,7 @@ jobs:
           cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.cible }}
+          targets: ${{ matrix.outils }}
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> ${{ github.workspace }}/target
@@ -54,9 +55,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Tiny Shrooms ${{ github.ref_name }}
           releaseBody: |
-            Mac : télécharger le .dmg (`aarch64` pour Apple Silicon, `x64` pour Intel). L'application n'est pas signée :
-            au premier lancement, clic droit sur l'application → Ouvrir, ou `xattr -cr "/Applications/Tiny Shrooms.app"`.
-            Windows : lancer le `-setup.exe` (SmartScreen : « Informations complémentaires » → « Exécuter quand même »).
-            Les versions suivantes s'installent ensuite toutes seules, depuis le menu de l'icône.
+            **Mac** : `Tiny.Shrooms_…_universal.dmg` · **Windows** : `Tiny.Shrooms_…_x64-setup.exe`.
+            Les autres fichiers servent aux mises à jour automatiques. Installation détaillée : voir le README.
           releaseDraft: false
           includeUpdaterJson: true

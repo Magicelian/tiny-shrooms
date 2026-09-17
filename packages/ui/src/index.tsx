@@ -302,7 +302,7 @@ export class ControleurInterface {
         this.focusDepuis = performance.now();
         return;
       }
-      this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: e.metaKey };
+      this.appui = { x: e.clientX, y: e.clientY, mode: 'attente', fenetre: e.metaKey || e.ctrlKey };
       canevas.setPointerCapture(e.pointerId);
       this.majCurseur(this.curseur);
     });
