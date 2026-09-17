@@ -571,7 +571,7 @@ son critère n'est pas rempli.
   souris est hors de la fenêtre** → ~15 % ; fenêtre cachée ~3 %.
   Diffusion : `.github/workflows/publier.yml` (étiquette `vX.Y.Z` → .dmg Apple Silicon et Intel, .exe NSIS, `latest.json`).
   Application signée ad hoc seulement. Mises à jour : `src-tauri/src/mises_a_jour.rs` (recherche au lancement puis toutes
-  les 6 h, téléchargement silencieux, entrée « Redémarrer pour mettre à jour » dans le menu de l'icône, partie écrite
+  les 30 min, téléchargement silencieux, entrée « Redémarrer pour mettre à jour » dans le menu de l'icône, partie écrite
   avant l'installation). Clé de signature des mises à jour : `~/.tauri/tiny-shrooms.key` (sans mot de passe), copiée dans
   le secret `TAURI_SIGNING_PRIVATE_KEY` du dépôt. **À ne pas perdre.** Windows : compilé par la CI, pas encore essayé.
 

@@ -1,4 +1,4 @@
-//! Mises à jour automatiques : cherchées au lancement puis toutes les 6 h et téléchargées en silence.
+//! Mises à jour automatiques : cherchées au lancement puis toutes les 30 min et téléchargées en silence.
 //! Une entrée du menu de l'icône propose alors de redémarrer ; la partie est écrite avant l'installation.
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,7 +9,7 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::{AppHandle, Manager, Wry};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
-const INTERVALLE: Duration = Duration::from_secs(6 * 3600);
+const INTERVALLE: Duration = Duration::from_secs(30 * 60);
 
 #[derive(Default)]
 pub struct EtatMiseAJour {
