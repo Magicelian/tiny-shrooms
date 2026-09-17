@@ -6,8 +6,9 @@
 
 **Une petite ville de champignons sur une île flottante, qui vit dans un coin de ton écran.**
 
-[![Télécharger pour Mac](https://img.shields.io/badge/Mac-Télécharger-d8423a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Magicelian/tiny-shrooms/releases/latest)
-[![Télécharger pour Windows](https://img.shields.io/badge/Windows-Télécharger-3d8fe8?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Magicelian/tiny-shrooms/releases/latest)
+[![Mac Apple Silicon](https://img.shields.io/badge/Mac_Apple_Silicon-Télécharger-d8423a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Mac-Apple-Silicon.dmg)
+[![Mac Intel](https://img.shields.io/badge/Mac_Intel-Télécharger-e8a33d?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Mac-Intel.dmg)
+[![Windows](https://img.shields.io/badge/Windows-Télécharger-3d8fe8?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Windows.exe)
 
 ![Dernière version](https://img.shields.io/github/v/release/Magicelian/tiny-shrooms?label=version&color=7cc452)
 ![Français · English](https://img.shields.io/badge/langues-FR%20·%20EN-e8a33d)
@@ -38,14 +39,15 @@ C'est un jeu **idle** et apaisant : on n'y perd jamais rien, et on y jette un œ
 
 ## 📦 Installer
 
-Dans la **[dernière version](https://github.com/Magicelian/tiny-shrooms/releases/latest)**, prends un seul fichier :
+Un clic sur le lien qui correspond à ton ordinateur, et le téléchargement démarre :
 
-| | Fichier à télécharger |
+| Ordinateur | Télécharger |
 |---|---|
-| 🍎 **Mac** (Apple Silicon ou Intel) | `Tiny.Shrooms_…_universal.dmg` |
-| 🪟 **Windows** | `Tiny.Shrooms_…_x64-setup.exe` |
+| 🍎 **Mac Apple Silicon** (puce M1, M2, M3, M4…) | [Tiny-Shrooms-Mac-Apple-Silicon.dmg](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Mac-Apple-Silicon.dmg) |
+| 🍏 **Mac Intel** (Mac d'avant fin 2020) | [Tiny-Shrooms-Mac-Intel.dmg](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Mac-Intel.dmg) |
+| 🪟 **Windows** | [Tiny-Shrooms-Windows.exe](https://github.com/Magicelian/tiny-shrooms/releases/latest/download/Tiny-Shrooms-Windows.exe) |
 
-Les autres fichiers de la page servent aux mises à jour automatiques.
+Pour savoir quel Mac tu as : menu Pomme → **À propos de ce Mac**. « Puce » = Apple Silicon, « Processeur Intel » = Intel.
 
 <details>
 <summary><b>🍎 Mac : installation pas à pas</b></summary>
@@ -64,7 +66,7 @@ Les autres fichiers de la page servent aux mises à jour automatiques.
 <details>
 <summary><b>🪟 Windows : installation pas à pas</b></summary>
 
-1. Lance le `-setup.exe`.
+1. Lance `Tiny-Shrooms-Windows.exe`.
 2. Si SmartScreen affiche un avertissement : **Informations complémentaires**, puis **Exécuter quand même**.
 3. L'icône du jeu apparaît dans la zone de notification, en bas à droite.
 

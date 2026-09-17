@@ -1,29 +1,37 @@
-# Publie une version : pousser une étiquette `vX.Y.Z` (identique à la version de tauri.conf.json)
-# construit les installeurs Mac (Apple Silicon et Intel) et Windows, signe les mises à jour et crée la version GitHub.
+# Publie une version : pousser une étiquette `vX.Y.Z` (identique à la version de tauri.conf.json).
+# Trois installeurs aux noms fixes, que le README peut lier directement (…/releases/latest/download/<nom>),
+# plus les archives signées et `latest.json` des mises à jour automatiques.
 name: Publier
 
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
 
 permissions:
   contents: write
 
+env:
+  NOM: Tiny-Shrooms
+
 jobs:
-  installeurs:
+  construire:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
-          # Un seul .dmg universel, pour Apple Silicon comme pour Intel.
           - os: macos-latest
-            cible: universal-apple-darwin
-            outils: aarch64-apple-darwin,x86_64-apple-darwin
+            cible: aarch64-apple-darwin
+            systeme: Mac-Apple-Silicon
+          - os: macos-latest
+            cible: x86_64-apple-darwin
+            systeme: Mac-Intel
           - os: windows-latest
             cible: x86_64-pc-windows-msvc
-            outils: x86_64-pc-windows-msvc
+            systeme: Windows
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     env:
       # `.cargo/config.toml` range la compilation dans le cache du Mac de Celian : on la ramène ici.
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
@@ -36,26 +44,61 @@ jobs:
           cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.outils }}
+          targets: ${{ matrix.cible }}
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> ${{ github.workspace }}/target
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
         if: matrix.os == 'windows-latest'
-      - uses: tauri-apps/tauri-action@v0
+      - name: Compiler et signer
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: pnpm --filter desktop tauri build --target ${{ matrix.cible }}
+      - name: Renommer
+        run: |
+          paquets="target/${{ matrix.cible }}/release/bundle"
+          base="$NOM-${{ matrix.systeme }}"
+          mkdir sortie
+          if [ "${{ matrix.systeme }}" = Windows ]; then
+            cp "$paquets"/nsis/*-setup.exe "sortie/$base.exe"
+            cp "$paquets"/nsis/*-setup.exe.sig "sortie/$base.exe.sig"
+          else
+            cp "$paquets"/dmg/*.dmg "sortie/$base.dmg"
+            cp "$paquets"/macos/*.app.tar.gz "sortie/$base.app.tar.gz"
+            cp "$paquets"/macos/*.app.tar.gz.sig "sortie/$base.app.tar.gz.sig"
+          fi
+          ls -la sortie
+      - uses: actions/upload-artifact@v4
         with:
-          projectPath: apps/desktop
-          tauriScript: pnpm tauri
-          args: --target ${{ matrix.cible }}
-          tagName: ${{ github.ref_name }}
-          releaseName: Tiny Shrooms ${{ github.ref_name }}
-          releaseBody: |
-            **Mac** : `Tiny.Shrooms_…_universal.dmg` · **Windows** : `Tiny.Shrooms_…_x64-setup.exe`.
-            Les autres fichiers servent aux mises à jour automatiques. Installation détaillée : voir le README.
-          releaseDraft: false
-          includeUpdaterJson: true
+          name: ${{ matrix.systeme }}
+          path: sortie/*
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: sortie
+          merge-multiple: true
+      - name: Décrire la mise à jour
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          adresse="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          plateforme() { jq -n --arg url "$adresse/$2" --rawfile sig "sortie/$2.sig" '{($ARGS.positional[0]): {url: $url, signature: ($sig | rtrimstr("\n"))}}' --args "$1"; }
+          jq -s --arg version "$version" --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $version, notes: "", pub_date: $date, platforms: add}' \
+            <(plateforme darwin-aarch64 "$NOM-Mac-Apple-Silicon.app.tar.gz") \
+            <(plateforme darwin-x86_64 "$NOM-Mac-Intel.app.tar.gz") \
+            <(plateforme windows-x86_64 "$NOM-Windows.exe") > sortie/latest.json
+          cat sortie/latest.json
+      - name: Créer la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" sortie/* -R "$GITHUB_REPOSITORY" \
+            --title "Tiny Shrooms $GITHUB_REF_NAME" \
+            --notes "**Mac Apple Silicon** : \`$NOM-Mac-Apple-Silicon.dmg\` · **Mac Intel** : \`$NOM-Mac-Intel.dmg\` · **Windows** : \`$NOM-Windows.exe\`
+          Les autres fichiers servent aux mises à jour automatiques. Installation détaillée : voir le README."

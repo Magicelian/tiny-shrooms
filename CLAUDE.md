@@ -118,7 +118,8 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
 - **Étape 16 implémentée, à valider** (cahier §7). Courbe : `packages/content/src/courbe.test.ts` (joueurs attentif et
   distrait, ~1 min ; `process.stderr.write` car vitest tait `console.log`). Rendu à 15 i/s souris dehors
   (`rendu.reposer`). Publier : monter la version dans `tauri.conf.json` et `Cargo.toml`, puis pousser l'étiquette
-  `vX.Y.Z` (dépôt `Magicelian/tiny-shrooms`) ; mises à jour dans `src-tauri/src/mises_a_jour.rs`, clé
+  `vX.Y.Z` (installeurs aux noms fixes `Tiny-Shrooms-Mac-Apple-Silicon.dmg`, `-Mac-Intel.dmg`, `-Windows.exe`, liés
+  directement par le README ; `latest.json` écrit par le workflow) (dépôt `Magicelian/tiny-shrooms`) ; mises à jour dans `src-tauri/src/mises_a_jour.rs`, clé
   `~/.tauri/tiny-shrooms.key`. Build local : `TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/tiny-shrooms.key)"
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" pnpm --filter desktop tauri build`.
 - **Menu de démarrage** (17/09/2026) : `packages/ui/src/accueil.tsx` (option `demarrage` du contrôleur, `magasin.menu`).
