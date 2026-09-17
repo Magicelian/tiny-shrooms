@@ -36,6 +36,11 @@ export interface OptionsInterface {
   envoyer(commande: Commande): void;
   /** Couleurs du rendu, pour que les pastilles de l'interface y correspondent. */
   couleurs: { batiments: Record<TypeBatiment, number>; chapeaux: readonly number[] };
+  /** Images des modèles pour les bulles ; absentes, les bulles s'en passent. */
+  vignettes?: {
+    batiment(type: TypeBatiment, niveau?: number): string;
+    nature(nom: 'arbre' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
+  };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
 }
@@ -108,6 +113,10 @@ export class ControleurInterface {
 
   get contenu(): Contenu {
     return this.options.contenu;
+  }
+
+  get vignettes(): OptionsInterface['vignettes'] {
+    return this.options.vignettes;
   }
 
   get couleurs(): OptionsInterface['couleurs'] {

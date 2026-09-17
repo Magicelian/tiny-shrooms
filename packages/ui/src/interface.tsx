@@ -2,10 +2,11 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Instantane, Meteo, Ressource } from '@tiny-shrooms/engine';
-import { capaciteLogement } from '@tiny-shrooms/engine';
+import { capaciteLogement, elementEn } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { nomPalier, nomPose, nomRessource, pourcent } from './format';
-import type { ControleurInterface } from './index';
+import { Icone } from './composants';
+import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 import { BulleBatiment, BulleConstruire, BulleNature, titreNature } from './panneaux';
 
@@ -14,14 +15,6 @@ export interface Props {
 }
 
 const ICONES_METEO: Record<Meteo, string> = { soleil: '☀', pluie: '☂', vent: '≋', neige: '❄' };
-
-const COULEURS_RESSOURCE: Record<Ressource, string> = {
-  baies: '#c2358a',
-  baiesSechees: '#8e3a5c',
-  boisMort: '#9c6b3f',
-  mousse: '#5fae6e',
-  spores: '#e8d56a',
-};
 
 export function Interface({ controleur }: Props) {
   const etat = useMagasin(controleur.magasin);
@@ -40,7 +33,7 @@ export function Interface({ controleur }: Props) {
 
       {etat.envols.map((e) => (
         <span key={e.id} class="envol" style={{ left: `${e.x}px`, top: `${e.y}px` }}>
-          <span class="pastille" style={{ background: COULEURS_RESSOURCE[e.ressource] }} />+{nombre(e.quantite)}
+          <Icone nom={e.ressource} />+{nombre(e.quantite)}
         </span>
       ))}
 
@@ -67,7 +60,12 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
     const { ile } = controleur.magasin.valeur;
     if (!ile) return null;
     return (
-      <Cadre titre={titreNature(ile, instantane, bulle.case)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+      <Cadre
+        titre={titreNature(ile, instantane, bulle.case)}
+        vignette={vignetteNature(controleur, bulle.case)}
+        fermer={fermer}
+        position={bulle.haut ? 'haut' : 'bas'}
+      >
         <BulleNature controleur={controleur} instantane={instantane} ile={ile} case={bulle.case} />
       </Cadre>
     );
@@ -75,7 +73,12 @@ function ContenuBulle({ controleur, bulle, instantane }: Props & { bulle: Bulle;
   const batiment = controleur.batiment(bulle.id);
   if (!batiment) return null;
   return (
-    <Cadre titre={nomPose(controleur.contenu, batiment)} fermer={fermer} position={bulle.haut ? 'haut' : 'bas'}>
+    <Cadre
+      titre={nomPose(controleur.contenu, batiment)}
+      vignette={controleur.vignettes?.batiment(batiment.type, batiment.niveau)}
+      fermer={fermer}
+      position={bulle.haut ? 'haut' : 'bas'}
+    >
       <BulleBatiment key={batiment.id} controleur={controleur} instantane={instantane} batiment={batiment} />
     </Cadre>
   );
@@ -105,10 +108,24 @@ function AstuceSouche({ controleur }: Props) {
   );
 }
 
-function Cadre(props: { titre: string; fermer: () => void; position: 'haut' | 'bas'; children: ComponentChildren }) {
+/** Vignette de ce que montre une bulle nature : souche, arbre, buisson ou élément récoltable. */
+function vignetteNature(controleur: ControleurInterface, c: { x: number; y: number }): string | undefined {
+  const { vignettes } = controleur;
+  const ile = controleur.magasin.valeur.ile;
+  if (!vignettes || !ile) return undefined;
+  const nature = natureVisee(ile, c);
+  if (nature === 'souche' || nature === 'arbre' || nature === 'buisson') return vignettes.nature(nature);
+  const element = elementEn(ile, c.x, c.y);
+  const type = element >= 0 ? ile.elements[element]!.type : null;
+  if (type === 'buisson') return vignettes.nature('baies');
+  return type ? vignettes.nature(type) : undefined;
+}
+
+function Cadre(props: { titre: string; vignette?: string; fermer: () => void; position: 'haut' | 'bas'; children: ComponentChildren }) {
   return (
     <section class={`bulle commande ${props.position}`}>
       <header>
+        {props.vignette && <img class="vignette" src={props.vignette} alt="" />}
         <h2>{props.titre}</h2>
         <button class="bouton fermer" title={t('panneau.fermer')} onClick={props.fermer}>
           ✕
@@ -142,7 +159,7 @@ function Population({ controleur, instantane }: Props & { instantane: Instantane
   return (
     <Survol classe="ecriteau population" detail={`${t('habitants.detail', { nombre: habitants, places })} · ${prochain}`}>
       <span class="palier">{nomPalier(contenu, instantane.palier)}</span>
-      <span class="pastille chapeau" />
+      <Icone nom="habitant" />
       <span>
         {nombre(habitants)}
         <span class="places">/{nombre(places)}</span>
@@ -164,7 +181,7 @@ function Rangee({ instantane }: { instantane: Instantane }) {
         return (
           <Planche
             key={r}
-            icone={<span class="pastille" style={{ background: COULEURS_RESSOURCE[r] }} />}
+            icone={<Icone nom={r} />}
             quantite={Math.floor(stock.quantite)}
             plein={stock.quantite >= stock.plafond}
             detail={`${nomRessource(r)} ${nombre(Math.floor(stock.quantite))}/${nombre(stock.plafond)} · ${variation >= 0 ? '+' : ''}${t('ressource.parMinute', { valeur: nombre(variation, 1) })}`}

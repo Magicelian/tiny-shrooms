@@ -37,6 +37,7 @@ const ui = new ControleurInterface(document.getElementById('interface')!, {
   contenu,
   envoyer: (commande) => envoyer({ type: 'commande', commande }),
   couleurs: { batiments: COULEURS_BATIMENT, chapeaux: CHAPEAUX },
+  vignettes: rendu.vignettes,
   deplacerFenetre: dansTauri ? () => void getCurrentWindow().startDragging() : undefined,
 });
 if (import.meta.env.DEV) Object.assign(globalThis, { rendu, ui, moteur });

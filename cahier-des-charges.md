@@ -544,7 +544,7 @@ son critère n'est pas rempli.
   lisible en 16 px et en modèle monochrome pour suivre le thème clair ou sombre.
 - **Critère** : plus aucune forme provisoire ; FR et EN complets ; son coupé au premier lancement.
 
-- **Résultat (16/09/2026)** : implémenté, à valider en jeu. Choix : modèles en **voxels décrits en code** plutôt que
+- **Résultat (16/09/2026)** : validé. Choix : modèles en **voxels décrits en code** plutôt que
   Blockbench ou MagicaVoxel (12 voxels par case, 24 pour les habitants), sons **synthétisés** (Web Audio : effets
   8-bit, vent, pluie, oiseaux le jour, grillons la nuit), son et langue réglés **dans le menu de l'icône**. Chaque
   bâtiment a son modèle (la hutte en a un par rang), le chantier monte couche par couche, le feu de camp a des flammes

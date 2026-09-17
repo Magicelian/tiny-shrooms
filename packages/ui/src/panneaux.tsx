@@ -19,6 +19,7 @@ import {
 } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, pourcent } from './format';
+import { Cout, Icone, Phrase } from './composants';
 import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 
@@ -27,10 +28,8 @@ interface Props {
   instantane: Instantane;
 }
 
-const hex = (couleur: number) => `#${couleur.toString(16).padStart(6, '0')}`;
-
 export function BulleConstruire({ controleur, instantane, bulle }: Props & { bulle: Extract<Bulle, { type: 'construire' }> }) {
-  const { contenu, couleurs } = controleur;
+  const { contenu } = controleur;
   const { bonusVise } = useMagasin(controleur.magasin);
   const { choix } = bulle;
   const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix), instantane.stocks);
@@ -49,9 +48,9 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
                 class={`carte ${abordable(cout, instantane.stocks) ? '' : 'manque'} ${type === choix ? 'choisie' : ''}`}
                 onClick={() => controleur.choisir(type)}
               >
-                <span class="pastille" style={{ background: hex(couleurs.batiments[type]) }} />
+                <Vignette controleur={controleur} type={type} />
                 <span class="nom">{nomBatiment(type)}</span>
-                <span class="cout">{listeQuantites(cout) || t('construction.gratuit')}</span>
+                <Cout quantites={cout} stocks={instantane.stocks} />
               </button>
             </li>
           );
@@ -59,9 +58,12 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
         {verrouilles.map(([type, palier]) => (
           <li key={type}>
             <button class="carte verrou" disabled>
-              <span class="pastille" style={{ background: hex(couleurs.batiments[type]) }} />
+              <Vignette controleur={controleur} type={type} />
               <span class="nom">{nomBatiment(type)}</span>
-              <span class="cout">{t('logement.palierRequis', { palier: nomPalier(contenu, palier) })}</span>
+              <span class="cout">
+                <Icone nom="cadenas" />
+                {nomPalier(contenu, palier)}
+              </span>
             </button>
           </li>
         ))}
@@ -91,7 +93,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const [confirmer, setConfirmer] = useState(false);
   const { contenu } = controleur;
   const def = contenu.batiments[batiment.type];
-  const remboursement = listeQuantites(coutTotal(contenu, batiment, instantane.prestige.bonus), contenu.remboursementDemolition);
+  const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus);
   const enChantier = batiment.chantier !== null;
   // Bâtisseurs pendant le chantier, récolteurs ensuite.
   const postes = enChantier ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
@@ -126,7 +128,13 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
             controleur.fermer();
           }}
         >
-          {confirmer ? t('construction.confirmer', { liste: remboursement }) : t('construction.demolir')}
+          {confirmer ? (
+            <Phrase texte={(liste) => t('construction.confirmer', { liste })}>
+              <Cout quantites={remboursement} facteur={contenu.remboursementDemolition} />
+            </Phrase>
+          ) : (
+            t('construction.demolir')
+          )}
         </button>
       </div>
     </>
@@ -156,14 +164,17 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
         .filter((b) => liste.includes(b))
         .map((b) => (
           <li key={b} class={batiment.besoins[b] ? 'bonus' : 'manque'}>
-            {batiment.besoins[b] ? '✓' : '✗'} {nomBesoin(b)}
+            <Icone nom={batiment.besoins[b] ? 'coche' : 'croix'} /> {nomBesoin(b)}
           </li>
         ))}
     </ul>
   );
   return (
     <>
-      <p><strong>{t('logement.habitants', { nombre: loges, places })}</strong></p>
+      <p class="titre-ligne">
+        <Icone nom="habitant" />
+        <strong>{t('logement.habitants', { nombre: loges, places })}</strong>
+      </p>
       <p class="discret">{t('logement.besoins')}</p>
       <Besoins liste={rang?.besoins ?? []} />
       {suivant ? (
@@ -179,7 +190,9 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
             disabled={refus !== null}
             onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { batiment: batiment.id } })}
           >
-            {t('logement.monter', { liste: listeQuantites(cout) })}
+            <Phrase texte={(liste) => t('logement.monter', { liste })}>
+              <Cout quantites={cout} stocks={instantane.stocks} />
+            </Phrase>
           </button>
         </>
       ) : (
@@ -240,12 +253,24 @@ export function BulleNature({ controleur, instantane, ile, case: c }: Props & { 
               controleur.fermer();
             }}
           >
-            {listeQuantites(def.cout) ? t('nature.annulerRembourse', { liste: listeQuantites(def.cout) }) : t('nature.annuler')}
+            {listeQuantites(def.cout) ? (
+              <Phrase texte={(liste) => t('nature.annulerRembourse', { liste })}>
+                <Cout quantites={def.cout} />
+              </Phrase>
+            ) : (
+              t('nature.annuler')
+            )}
           </button>
         </>
       ) : (
         <>
-          {def.gain && <p class="bonus">{t('nature.gain', { liste: listeQuantites(def.gain) })}</p>}
+          {def.gain && (
+            <p class="bonus">
+              <Phrase texte={(liste) => t('nature.gain', { liste })}>
+                <Cout quantites={def.gain} signe="+" />
+              </Phrase>
+            </p>
+          )}
           {!possible && <p class="manque">{t('refus.depotRequis')}</p>}
           <button
             class={`bouton large ${possible && payable ? 'valider' : 'manque'}`}
@@ -255,7 +280,9 @@ export function BulleNature({ controleur, instantane, ile, case: c }: Props & { 
               if (payable) controleur.fermer();
             }}
           >
-            {t(souche ? 'nature.retirer' : 'nature.arracher', { liste: listeQuantites(def.cout) || t('construction.gratuit') })}
+            <Phrase texte={(liste) => t(souche ? 'nature.retirer' : 'nature.arracher', { liste })}>
+              <Cout quantites={def.cout} stocks={instantane.stocks} />
+            </Phrase>
           </button>
         </>
       )}
@@ -281,7 +308,9 @@ function Ameliorations({ controleur, instantane }: Props) {
                 class={`bouton large ${abordable(cout, instantane.stocks) ? '' : 'manque'}`}
                 onClick={() => controleur.envoyer({ type: 'ameliorer', cible: { village: a } })}
               >
-                {t('amelioration.acheter', { liste: listeQuantites(cout) })}
+                <Phrase texte={(liste) => t('amelioration.acheter', { liste })}>
+                  <Cout quantites={cout} stocks={instantane.stocks} />
+                </Phrase>
               </button>
             ) : (
               <p class="bonus">{t('amelioration.max')}</p>
@@ -318,7 +347,8 @@ function ArbreBonus({ controleur, instantane }: Props) {
   const { prestige } = instantane;
   return (
     <>
-      <p>
+      <p class="titre-ligne">
+        <Icone nom="graine" />
         <strong>{t('prestige.graines', { graines: prestige.graines })}</strong>
       </p>
       <ul class="ameliorations">
@@ -339,7 +369,7 @@ function ArbreBonus({ controleur, instantane }: Props) {
                   class={`bouton large ${prestige.graines >= prix ? '' : 'manque'}`}
                   onClick={() => controleur.envoyer({ type: 'acheterBonus', bonus: b })}
                 >
-                  {t('prestige.acheter', { prix })}
+                  <Icone nom="graine" /> {t('prestige.acheter', { prix })}
                 </button>
               )}
             </li>
@@ -362,6 +392,12 @@ function descriptionBonus(b: (typeof BONUS_PRESTIGE)[number], e: ReturnType<type
     case 'logement':
       return t('bonus.effet.logement', { pourcent: pourcent(e.bienEtre), places: e.places, accueil: pourcent(1 - e.arrivee) });
   }
+}
+
+/** Vignette du modèle en voxels, rendue par la scène. */
+function Vignette({ controleur, type }: { controleur: ControleurInterface; type: TypeBatiment }) {
+  const url = controleur.vignettes?.batiment(type, 1);
+  return url ? <img class="vignette" src={url} alt="" /> : <span class="vignette" />;
 }
 
 function Jauge({ valeur }: { valeur: number }) {

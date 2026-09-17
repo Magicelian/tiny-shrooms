@@ -26,7 +26,8 @@ const CREPUSCULE_S = 3;
 /** Lumières de nuit : un ciel bleu sombre, un soleil devenu lune. */
 const CIEL_NUIT = new THREE.Color(0x5a6ab8);
 const LUNE = new THREE.Color(0x8fa6ff);
-const PART_NUIT = { ciel: 0.45, soleil: 0.2 };
+/** Part de la lumière de jour gardée la nuit ; `particules` : part du glissement vers le bleu de nuit. */
+const PART_NUIT = { ciel: 0.45, soleil: 0.2, particules: 0.7 };
 
 interface Lumieres {
   ciel: THREE.HemisphereLight;
@@ -43,6 +44,14 @@ interface Particules {
   nombre: number;
   phases: Float32Array;
 }
+
+/** Couleur de jour de chaque type de particule (les feuilles gardent la leur par sommet, multipliée par celle-ci). */
+const TEINTES_PARTICULES = [
+  ['pluie', new THREE.Color(0x9fd0f2)],
+  ['neige', new THREE.Color(0xffffff)],
+  ['feuilles', new THREE.Color(0xffffff)],
+] as const;
+const NUIT_PARTICULES = new THREE.Color(0x2c3354);
 
 export class Ambiance {
   /** Scène dessinée après la pixelisation, sans contours. */
@@ -125,9 +134,13 @@ export class Ambiance {
     // Premier affichage (dt nul) : on part directement de la bonne lumière.
     const pas = dt === 0 ? 1 : dt / CREPUSCULE_S;
     this.obscurite += Math.sign(cible - this.obscurite) * Math.min(pas, Math.abs(cible - this.obscurite));
+    const o = this.obscurite;
+    // Particules : dessinées sans éclairage, on les teinte nous-mêmes vers le bleu de la nuit.
+    for (const [p, jour] of TEINTES_PARTICULES) {
+      (this[p].objet.material as THREE.LineBasicMaterial | THREE.PointsMaterial).color.lerpColors(jour, NUIT_PARTICULES, o * PART_NUIT.particules);
+    }
     const l = this.lumieres;
     if (!l) return;
-    const o = this.obscurite;
     l.ciel.intensity = l.intensites.ciel * (1 - (1 - PART_NUIT.ciel) * o);
     l.soleil.intensity = l.intensites.soleil * (1 - (1 - PART_NUIT.soleil) * o);
     l.ciel.color.lerpColors(l.couleurs.ciel, CIEL_NUIT, o);

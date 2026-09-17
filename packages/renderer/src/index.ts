@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Case, IdBatiment, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
 import { Ambiance } from './ambiance';
 import { CameraIso } from './camera';
+import { Vignettes } from './vignettes';
 import { AidesConstruction } from './construction';
 import { ElementsRendu } from './elements';
 import { Entites } from './entites';
@@ -11,6 +12,7 @@ import { Pixelisation } from './pixelisation';
 import { versMonde } from './repere';
 
 export { CHAPEAUX, COULEURS_BATIMENT } from './palette';
+export type { VignetteNature, Vignettes } from './vignettes';
 
 export const IMAGES_PAR_SECONDE = 30;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre. */
@@ -34,6 +36,8 @@ export class Rendu {
   private readonly scene = new THREE.Scene();
   private readonly vue = new CameraIso();
   private readonly pixelisation: Pixelisation;
+  /** Petites images des modèles, pour l'interface. */
+  readonly vignettes: Vignettes;
   private readonly entites = new Entites();
   private readonly elements = new ElementsRendu();
   private readonly aides = new AidesConstruction();
@@ -56,6 +60,7 @@ export class Rendu {
     conteneur.prepend(this.canevas);
 
     this.pixelisation = new Pixelisation(this.moteur);
+    this.vignettes = new Vignettes(this.moteur);
     const ciel = new THREE.HemisphereLight(0xfff4e0, 0x5a4a6a, 1.2);
     this.scene.add(ciel);
     const soleil = new THREE.DirectionalLight(0xfff0d0, 2.2);

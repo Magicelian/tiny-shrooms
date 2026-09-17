@@ -50,46 +50,6 @@
   pointer-events: auto;
 }
 
-/* Boutons */
-.bouton {
-  font: inherit;
-  font-weight: 700;
-  color: var(--encre);
-  background: var(--papier);
-  border: var(--trait);
-  border-radius: 6px;
-  box-shadow: var(--ombre);
-  cursor: pointer;
-  padding: 2px 6px;
-}
-.bouton:hover {
-  background: #fff;
-}
-.bouton:active {
-  transform: translateY(2px);
-  box-shadow: none;
-}
-.bouton.actif {
-  background: var(--accent);
-}
-.bouton.large {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  padding: 5px;
-}
-.bouton.danger {
-  background: var(--rouge);
-  color: #fff;
-}
-.fermer {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  font-size: 11px;
-  line-height: 1;
-}
-
 /* Décor : bois sombre, texte clair cerclé de noir, lisible sur toutes les saisons. */
 .ecriteau,
 .planche {
@@ -244,27 +204,6 @@
   font-weight: 700;
 }
 
-/* Bulles : dans la moitié de la fenêtre opposée à la case visée, au-dessus de la rangée des ressources */
-.bulle {
-  position: absolute;
-  right: 6px;
-  width: min(250px, calc(100% - 12px));
-  max-height: 58%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  background: var(--papier);
-  border: var(--trait);
-  border-radius: 8px;
-  box-shadow: 0 3px 0 var(--encre);
-  pointer-events: auto;
-}
-.bulle.haut {
-  top: 6px;
-}
-.bulle.bas {
-  bottom: 28px;
-}
 /* Astuce accrochée à la souche : la pointe vise le sommet, la position est mise à jour à chaque image */
 .astuce {
   position: absolute;
@@ -299,104 +238,6 @@
     margin-top: -12px;
   }
 }
-.bulle header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 4px 3px 8px;
-  background: var(--accent);
-  border-bottom: var(--trait);
-  border-radius: 6px 6px 0 0;
-}
-.bulle h2 {
-  margin: 0;
-  font-size: 15px;
-}
-.bulle h3 {
-  margin: 6px 0 2px;
-  font-size: 13px;
-}
-.bulle .corps {
-  overflow-y: auto;
-  padding: 4px 8px 8px;
-}
-.bulle p {
-  margin: 3px 0;
-  font-size: 12px;
-}
-.discret {
-  color: var(--discret);
-}
-
-.catalogue {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-}
-.carte {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 4px;
-  align-items: center;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  background: #fff;
-  border: var(--trait);
-  border-radius: 6px;
-  padding: 2px 4px;
-  cursor: pointer;
-}
-.carte:hover {
-  background: var(--papier-fonce);
-}
-.carte .nom {
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-.carte .cout {
-  grid-column: 1 / -1;
-  font-size: 10px;
-}
-.carte.choisie {
-  background: var(--accent);
-}
-.carte.manque {
-  background: #efe6d6;
-}
-.carte.manque .cout {
-  color: #b5402f;
-}
-.detail {
-  position: sticky;
-  bottom: -8px;
-  min-height: 3.2em;
-  margin: 4px -8px -8px;
-  padding: 2px 8px 6px;
-  border-radius: 0 0 6px 6px;
-  background: var(--papier);
-  border-top: 2px dashed var(--papier-fonce);
-}
-
-.jauge {
-  height: 8px;
-  border: var(--trait);
-  border-radius: 4px;
-  background: #fff;
-  overflow: hidden;
-}
-.jauge div {
-  height: 100%;
-  background: var(--vert);
-}
-
 /* Chiffre de récolte : part du point cliqué et s'envole (900 ms, voir DUREE_ENVOL_MS) */
 .envol {
   position: absolute;
@@ -439,45 +280,6 @@
   align-items: flex-end;
   gap: 3px;
 }
-.message {
-  background: var(--encre);
-  color: var(--papier);
-  border-radius: 5px;
-  padding: 2px 6px;
-  font-size: 11px;
-}
-
-.bouton.manque {
-  background: #eee4d8;
-}
-.bouton.valider {
-  background: var(--vert);
-}
-.bouton:disabled {
-  cursor: inherit;
-  transform: none;
-}
-.actions {
-  display: flex;
-  gap: 4px;
-  margin-top: 6px;
-}
-.actions .bouton {
-  flex: 1;
-  padding: 4px;
-}
-
-/* Atelier */
-.ameliorations {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.ameliorations li + li {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--papier-fonce);
-}
 
 
 /* Curseurs pixel (voir curseurs.ts) ; le canevas choisit sa variante selon ce qui est visé. */
@@ -495,18 +297,6 @@ body {
   margin-right: 4px;
   color: var(--accent);
 }
-.carte.verrou {
-  opacity: 0.5;
-  cursor: default;
-}
-.besoins {
-  list-style: none;
-  margin: 0 0 4px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 8px;
-}
 /* Infobulle des écriteaux du haut : sous l'écriteau, alignée sur son bord extérieur */
 .ecriteau .infobulle {
   top: calc(100% + 4px);
@@ -516,4 +306,427 @@ body {
 .population .infobulle {
   left: auto;
   right: 0;
+}
+
+/* ─── Habillage des bulles : cadre de bois, parchemin, coins pixel ─────────────────────────────── */
+:root {
+  --bois: #7a4f2d;
+  --bois-clair: #a0703f;
+  --bois-fonce: #4f301a;
+  --parchemin: #f7ecd0;
+  --parchemin-clair: #fdf7e6;
+  /* Contour de 2 px sans les coins : l'arrondi « pixel ». */
+  --contour: 0 -2px 0 var(--encre), 0 2px 0 var(--encre), -2px 0 0 var(--encre), 2px 0 0 var(--encre);
+  --texte-cerne:
+    1px 0 var(--encre),
+    -1px 0 var(--encre),
+    0 1px var(--encre),
+    0 -1px var(--encre);
+}
+
+.icone {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  image-rendering: pixelated;
+  vertical-align: -4px;
+}
+.planche .icone {
+  width: 14px;
+  height: 14px;
+}
+.envol .icone {
+  width: 18px;
+  height: 18px;
+}
+.ecriteau .icone {
+  width: 14px;
+  height: 14px;
+}
+.vignette {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  image-rendering: pixelated;
+}
+
+/* Boutons : planchettes biseautées qui s'enfoncent au clic */
+.bouton {
+  font: inherit;
+  font-weight: 700;
+  color: var(--encre);
+  background: var(--parchemin-clair);
+  border: none;
+  border-radius: 0;
+  margin: 2px;
+  padding: 3px 7px 4px;
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 0.16),
+    inset 0 2px 0 rgb(255 255 255 / 0.7),
+    var(--contour),
+    0 4px 0 var(--encre);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.bouton:hover {
+  filter: brightness(1.06);
+}
+.bouton:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 0 rgb(0 0 0 / 0.16),
+    var(--contour);
+}
+.bouton.large {
+  display: flex;
+  width: calc(100% - 4px);
+  margin: 10px 2px 4px;
+  padding: 5px;
+}
+.bouton.actif {
+  background: var(--accent);
+}
+.bouton.valider {
+  background: var(--vert);
+  color: var(--parchemin-clair);
+  text-shadow: var(--texte-cerne);
+}
+.bouton.danger {
+  background: var(--rouge);
+  color: var(--parchemin-clair);
+  text-shadow: var(--texte-cerne);
+}
+.bouton.manque {
+  background: #e6dccb;
+  color: var(--discret);
+}
+.bouton.manque .qte.manque {
+  color: #b5402f;
+}
+.bouton:disabled {
+  cursor: inherit;
+  filter: saturate(0.4);
+}
+.bouton .cout {
+  display: inline-flex;
+  margin: 0 2px;
+}
+.valider .qte,
+.danger .qte {
+  text-shadow: var(--texte-cerne);
+}
+.fermer {
+  width: 20px;
+  height: 20px;
+  margin: 2px 4px 4px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--parchemin-clair);
+  background: #b5402f;
+  text-shadow: var(--texte-cerne);
+}
+
+/* Bulle : cadre de bois (bordure claire à l'intérieur), parchemin tramé */
+.bulle {
+  position: absolute;
+  right: 8px;
+  width: min(256px, calc(100% - 16px));
+  max-height: 58%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--bois);
+  box-shadow:
+    inset 0 2px 0 var(--bois-clair),
+    inset 0 -2px 0 var(--bois-fonce),
+    var(--contour),
+    0 5px 0 var(--encre);
+  pointer-events: auto;
+}
+.bulle.haut {
+  top: 8px;
+}
+.bulle.bas {
+  bottom: 32px;
+}
+/* En-tête : planche avec vignette et clous */
+.bulle header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 0 4px 8px;
+  color: var(--parchemin-clair);
+  text-shadow: var(--texte-cerne);
+}
+.bulle header .vignette {
+  margin: -18px 0 -4px -6px;
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35));
+}
+.bulle h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.bulle header::before,
+.bulle header::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 2px;
+  height: 2px;
+  background: var(--bois-fonce);
+  box-shadow: 0 1px 0 var(--bois-clair);
+}
+.bulle header::before {
+  left: -1px;
+}
+.bulle header::after {
+  right: -1px;
+}
+.bulle .corps {
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+  background:
+    repeating-conic-gradient(rgb(122 79 45 / 0.05) 0 25%, transparent 0 50%) 0 0 / 4px 4px,
+    var(--parchemin);
+  box-shadow:
+    inset 0 2px 0 var(--bois-fonce),
+    inset 2px 0 0 rgb(0 0 0 / 0.08);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bois) transparent;
+}
+.bulle h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+  font-size: 13px;
+  color: var(--bois-fonce);
+}
+.bulle h3::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--bois-clair) 0 4px, transparent 4px 6px);
+}
+.bulle p {
+  margin: 4px 0;
+  font-size: 12px;
+}
+.titre-ligne {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.discret {
+  color: var(--discret);
+}
+
+/* Coûts illustrés */
+.cout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.qte {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  white-space: nowrap;
+}
+.qte.manque {
+  color: #b5402f;
+}
+.qte .icone {
+  width: 14px;
+  height: 14px;
+}
+
+/* Catalogue : tuiles avec la vignette du bâtiment */
+.catalogue {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 8px;
+}
+.carte {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 4px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--parchemin-clair);
+  border: none;
+  border-radius: 0;
+  padding: 3px 4px 4px 2px;
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 0.08),
+    var(--contour),
+    0 3px 0 var(--encre);
+  cursor: pointer;
+}
+.carte:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-1px);
+}
+.carte .vignette {
+  grid-row: 1 / span 2;
+  width: 34px;
+  height: 34px;
+}
+.carte .nom {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+.carte .cout {
+  font-size: 11px;
+  gap: 0 4px;
+}
+.carte.choisie {
+  background: #ffe7a3;
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    var(--contour),
+    0 3px 0 var(--encre);
+}
+.carte.manque {
+  background: #efe6d6;
+}
+.carte.manque .vignette {
+  opacity: 0.75;
+}
+.carte.verrou {
+  background: #e3dac8;
+  color: var(--discret);
+  cursor: default;
+}
+.carte.verrou .vignette {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.55;
+}
+.carte.verrou .cout {
+  font-weight: 500;
+}
+
+/* Détail du choix, collé au bas de la bulle */
+.detail {
+  position: sticky;
+  bottom: -8px;
+  min-height: 3.2em;
+  margin: 10px -8px -8px;
+  padding: 4px 8px 6px;
+  background: var(--parchemin);
+  box-shadow: 0 -2px 0 var(--bois-clair);
+}
+
+/* Jauge : réservoir cerclé, remplissage en crans */
+.jauge {
+  height: 8px;
+  margin: 2px 2px 6px;
+  background: var(--bois-fonce);
+  box-shadow: var(--contour);
+  overflow: hidden;
+}
+.jauge div {
+  height: 100%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 6px, rgb(0 0 0 / 0.18) 6px 8px),
+    linear-gradient(var(--vert) 0 60%, #4f9a3f 60%);
+  transition: width 0.3s steps(4);
+}
+
+/* Besoins d'un logement */
+.besoins {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 12px;
+}
+.besoins li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.besoins .icone {
+  width: 14px;
+  height: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.actions .bouton {
+  flex: 1;
+  padding: 4px;
+}
+
+/* Atelier et pouvoirs : fiches séparées par un pointillé */
+.ameliorations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ameliorations li {
+  padding: 4px 0;
+}
+.ameliorations li + li {
+  border-top: 2px dashed var(--papier-fonce);
+}
+
+/* Messages et bandeau dans le même habit */
+.message {
+  background: var(--bois);
+  color: var(--parchemin-clair);
+  text-shadow: var(--texte-cerne);
+  padding: 2px 6px;
+  font-size: 11px;
+  box-shadow:
+    inset 0 2px 0 var(--bois-clair),
+    var(--contour);
+}
+.bandeau {
+  border: none;
+  border-radius: 0;
+  background: var(--parchemin);
+  box-shadow:
+    var(--contour),
+    0 4px 0 var(--encre);
+}
+.astuce {
+  border: none;
+  border-radius: 0;
+  background: var(--parchemin-clair);
+  box-shadow: var(--contour);
+}
+.astuce::after {
+  background: var(--parchemin-clair);
 }

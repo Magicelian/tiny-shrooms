@@ -100,7 +100,7 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   `packages/ui/src/panneaux.tsx`). Sauvegarde en version 10. Critère : `packages/content/src/renaissance.test.ts`
   (joueur scripté commun : `joueur.ts`). Dans le navigateur, la partie en cours réécrit `localStorage` au
   rechargement : bloquer `Storage.prototype.setItem` avant de recharger une partie préparée.
-- **Étape 15 implémentée, à valider** (habillage). Modèles en voxels écrits en code : `packages/renderer/src/voxels.ts`
+- **Étape 15 validée** (habillage). Modèles en voxels écrits en code : `packages/renderer/src/voxels.ts`
   (primitives → maillage à faces visibles, un groupe par couleur avec le matériau partagé, donc teinté par les saisons ;
   l'attribut `color` ne fait que nuancer : toute géométrie dessinée avec `materiau()` en exige un, `sansNuance` sinon)
   et `modeles.ts` (bâtiments par rang, souche, décor, éléments, habitants à 24 voxels/unité). Chantier : couches
@@ -109,6 +109,10 @@ Jeu idle de bureau (Tauri 2 + Three.js + Preact, Mac d'abord). Le **cahier des c
   Son (coupé par défaut) et langue (celle du système par défaut) dans le menu de l'icône : `reglages.rs`, événements
   `son` et `langue`. Icône de la barre des menus : `icons/barre-menus.png` (modèle monochrome, 16 px ×2).
   Pour inspecter les modèles dans le navigateur : envelopper `moteur.onmessage` et ajouter des bâtiments à l'instantané.
+- **Bulles habillées** (17/09/2026) : cadre de bois et coins pixel (`--contour`, fin de `interface.css`), vignettes des
+  modèles rendues par `packages/renderer/src/vignettes.ts` (option `vignettes` de l'interface), icônes pixel des
+  ressources dans `packages/ui/src/icones.ts`, coûts illustrés et phrases à trou dans `composants.tsx` (`Cout`, `Phrase`).
+  La nuit teinte aussi pluie, neige et feuilles (`TEINTES_PARTICULES` dans `ambiance.ts`).
 - **Prochaine étape : 16** (équilibrage et diffusion).
 
 ## Retouches du 16/09/2026 (faites, vérifiées dans le navigateur)
