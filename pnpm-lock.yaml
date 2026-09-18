@@ -177,6 +177,9 @@ importers:
       '@tiny-shrooms/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@tiny-shrooms/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@tiny-shrooms/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod mises_a_jour;
+mod pastille;
 mod pouls;
 mod reglages;
 mod sauvegarde;
@@ -193,6 +194,7 @@ fn main() {
             sauvegarde::lire_sauvegardes,
             sauvegarde::ecrire_sauvegarde,
             sauvegarde::archiver_sauvegardes,
+            pastille::signaler_problemes,
             reglages::lire_reglages,
             reglages::regler_taille,
             reglages::regler_son,

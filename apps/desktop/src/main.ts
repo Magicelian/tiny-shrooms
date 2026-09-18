@@ -3,7 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { contenu } from '@tiny-shrooms/content';
-import type { MessageDepuisMoteur, MessageVersMoteur } from '@tiny-shrooms/engine';
+import { problemes, type MessageDepuisMoteur, type MessageVersMoteur, type Probleme } from '@tiny-shrooms/engine';
+import { surLangue, t } from '@tiny-shrooms/i18n';
 import { CHAPEAUX, COULEURS_BATIMENT, Rendu, echelleAffichage } from '@tiny-shrooms/renderer';
 import { ControleurInterface, type Langue } from '@tiny-shrooms/ui';
 
@@ -64,6 +65,17 @@ function quitter() {
   sauvegarder();
 }
 
+// Pastille sur l'icône de la barre des menus tant qu'un problème dure ; l'infobulle les énumère.
+let problemesSignales = '';
+function signalerProblemes(liste: Probleme[], forcer = false) {
+  const cle = liste.join(',');
+  if (!dansTauri || (cle === problemesSignales && !forcer)) return;
+  problemesSignales = cle;
+  const infobulle = ['Tiny Shrooms', ...liste.map((p) => `• ${t(`probleme.${p}`)}`)].join('\n');
+  invoke('signaler_problemes', { actif: liste.length > 0, infobulle }).catch((erreur) => console.error('pastille impossible', erreur));
+}
+surLangue(() => signalerProblemes(problemesSignales ? (problemesSignales.split(',') as Probleme[]) : [], true));
+
 moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'sauvegarde') {
     ecritures = ecritures
@@ -83,6 +95,7 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'ile') rendu.appliquerIle(data.ile);
   else if (data.type === 'instantane') {
     rendu.appliquerInstantane(data.instantane);
+    signalerProblemes(problemes(data.instantane));
   }
   ui.recevoir(data);
 };

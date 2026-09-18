@@ -7,6 +7,7 @@ export { centreSouche, dansLaSouche, elementEn, genererIle, placerElements, terr
 export { bonusVoisinage, casesLibres, dejaConstruit, emplacementRefuse, verifierEmplacement } from './grille';
 export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
+export { problemes, type Probleme } from './problemes';
 export { coutAmelioration, effetAmelioration } from './ameliorations';
 export { demanderDefrichage, natureEn } from './defrichage';
 export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutTotal, placesLogement, placesSouche, rangLogement, refusMontee } from './logements';

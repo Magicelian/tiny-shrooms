@@ -194,6 +194,8 @@ export const fr = {
   'message.habitantArrive': 'Un nouvel habitant arrive !',
   'message.constructionTerminee': '{batiment} terminé',
   'message.faim': 'Plus de baies en stock !',
+  'probleme.faim': 'Plus de baies en stock',
+  'probleme.froid': "L'hiver est là et aucun feu ne réchauffe le village",
   'message.partieSecours': 'Sauvegarde abîmée : partie reprise sur une copie de secours',
   'message.partieIllisible': 'Aucune sauvegarde lisible : nouvelle partie',
   'message.partieAncienne': 'Le jeu a changé : nouvelle partie (l’ancienne est archivée)',
