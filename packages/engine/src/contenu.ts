@@ -88,9 +88,10 @@ export interface ContenuHabitants {
   valeurBaieSechee: number;
   /**
    * Bien-être visé : `base`, plus `loge` et `besoins` × part des besoins satisfaits pour un habitant logé,
-   * plus `affame` quand le village manque de nourriture.
+   * plus `affame` quand le village manque de nourriture ; un village affamé ne vise alors jamais plus que
+   * `plafondAffame`, si confortables que soient ses logements.
    */
-  bienEtre: { base: number; loge: number; besoins: number; affame: number; minutesPourSeStabiliser: number };
+  bienEtre: { base: number; loge: number; besoins: number; affame: number; plafondAffame: number; minutesPourSeStabiliser: number };
 }
 
 export interface ContenuSaisons {

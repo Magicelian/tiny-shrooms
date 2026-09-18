@@ -89,7 +89,8 @@ export const contenu: Contenu = {
     nuit: { debut: 0.85, fin: 0.05 },
     travailAffame: 0.5,
     valeurBaieSechee: 3,
-    bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, minutesPourSeStabiliser: 3 },
+    // Affamé, le village glisse vers 35 % au plus : il passe sous le seuil de départ en ~4 min.
+    bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, plafondAffame: 0.35, minutesPourSeStabiliser: 3 },
   },
   ameliorations: {
     vitesse: { cout: { spores: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 45 },

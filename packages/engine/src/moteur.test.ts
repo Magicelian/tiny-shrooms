@@ -62,7 +62,7 @@ function contenuDeTest(
       nuit: { debut: 0, fin: 0 },
       travailAffame: 1,
       valeurBaieSechee: 1,
-      bienEtre: { base: 0.4, loge: 0.2, besoins: 0.2, affame: -0.4, minutesPourSeStabiliser: 1 },
+      bienEtre: { base: 0.4, loge: 0.2, besoins: 0.2, affame: -0.4, plafondAffame: 1, minutesPourSeStabiliser: 1 },
       ...habitants,
     },
     ameliorations: {

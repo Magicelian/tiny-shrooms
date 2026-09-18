@@ -182,7 +182,7 @@ function majBienEtre(h: HabitantEtat, contenu: Contenu, logement: BatimentEtat |
   const c = contenu.habitants.bienEtre;
   let cible = c.base + bonus + (nourri ? 0 : c.affame);
   if (logement) cible += c.loge + c.besoins * partSatisfaite(contenu, logement, nourri);
-  cible = Math.min(1, Math.max(0, cible));
+  cible = Math.min(nourri ? 1 : c.plafondAffame, Math.max(0, cible));
   h.bienEtre += (cible - h.bienEtre) / (c.minutesPourSeStabiliser * PAS_PAR_MINUTE);
 }
 
