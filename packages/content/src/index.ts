@@ -80,6 +80,9 @@ export const contenu: Contenu = {
     delaiArriveeSecondes: 120,
     // 1 place libre : 3 min ; 2 : 2 min ; 5 : 1 min ; 11 et plus : 30 s.
     arriveeSelonPlaces: { placesDeReference: 2, delaiMinimal: 0.25 },
+    // Faim ou besoins négligés : un départ toutes les 2 min tant que le bonheur moyen reste sous 50 %
+    // (le joueur distrait en voit quelques-uns sans retard sur le bourg, voir courbe.test.ts).
+    depart: { seuil: 0.5, delaiSecondes: 120, minimum: 1 },
     seuilArrivee: 0.5,
     seuilBonheur: 0.5,
     reevaluationSecondes: 30,

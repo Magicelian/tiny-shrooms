@@ -266,6 +266,10 @@ export class ControleurInterface {
         this.magasin.annoncer(t('message.habitantArrive'));
         this.sons.jouer('arrivee');
       }
+      else if (e.type === 'habitantParti') {
+        this.magasin.annoncer(t('message.habitantParti'));
+        this.sons.jouer('refus');
+      }
       else if (e.type === 'saisonChangee') this.magasin.annoncerSaison(t(`saison.${e.saison}`));
       else if (e.type === 'constructionTerminee') {
         const b = message.instantane.batiments.find((x) => x.id === e.id);

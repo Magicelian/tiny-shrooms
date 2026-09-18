@@ -41,13 +41,14 @@ function jouer(graine: number, profil: Profil) {
   const jalons: [number, string][] = [];
   let secondes = 0;
   let prochaineVisite = 0;
+  let departs = 0;
   while (secondes < HEURES_MAX * 3600 && moteur.etatCourant.palier < BOURG) {
     if (secondes >= prochaineVisite) {
       // Une visite : le joueur lance tout ce qu'il peut (deux chantiers au plus à la fois).
       for (let n = 0; n < 20 && joueur.jouer(); n++);
       prochaineVisite = secondes + profil.intervalle(secondes);
     }
-    moteur.simuler(5 * PAS_PAR_SECONDE);
+    departs += moteur.simuler(5 * PAS_PAR_SECONDE).filter((e) => e.type === 'habitantParti').length;
     for (const cle of nouveautes(moteur)) {
       if (vus.has(cle)) continue;
       vus.add(cle);
@@ -56,7 +57,7 @@ function jouer(graine: number, profil: Profil) {
     secondes += 5;
   }
   const ecarts = jalons.map(([s], i) => s - (i > 0 ? jalons[i - 1]![0] : 0));
-  return { secondes, bourg: secondes, jalons, ecartMax: Math.max(...ecarts), population: moteur.etatCourant.habitants.length };
+  return { secondes, bourg: secondes, jalons, ecartMax: Math.max(...ecarts), population: moteur.etatCourant.habitants.length, departs };
 }
 
 const duree = (s: number) => `${Math.floor(s / 3600)} h ${String(Math.round((s % 3600) / 60)).padStart(2, '0')}`;
@@ -65,7 +66,7 @@ describe('Courbe de progression', () => {
   it.each(PROFILS.flatMap((p) => [1, 2, 3].map((g) => [p.nom, g, p] as const)))('%s, graine %i', (_, graine, profil) => {
     const r = jouer(graine, profil);
     process.stderr.write(
-      `${profil.nom} ${graine} : bourg à ${duree(r.bourg)}, plus long creux ${duree(r.ecartMax)}\n  ` +
+      `${profil.nom} ${graine} : bourg à ${duree(r.bourg)}, plus long creux ${duree(r.ecartMax)}, ${r.departs} départ(s)\n  ` +
         r.jalons.map(([s, c]) => `${duree(s)} ${c}`).join(' · ') + "\n",
     );
     // Cible de l'étape 16 : jamais de fin, mais toujours du neuf. Le joueur attentif met plus d'une heure et quart,

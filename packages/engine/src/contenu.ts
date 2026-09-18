@@ -68,6 +68,12 @@ export interface ContenuHabitants {
    * `delaiMinimal` × le délai de base. Absent : délai fixe.
    */
   arriveeSelonPlaces?: { placesDeReference: number; delaiMinimal: number };
+  /**
+   * Bien-être moyen sous `seuil` : au bout de `delaiSecondes`, le moins heureux quitte le village, puis un
+   * autre à chaque nouveau délai tant que la moyenne reste basse. Jamais en dessous de `minimum` habitants.
+   * Absent : personne ne part.
+   */
+  depart?: { seuil: number; delaiSecondes: number; minimum: number };
   /** Bien-être moyen minimal pour qu'un nouvel habitant arrive. */
   seuilArrivee: number;
   /** Bien-être à partir duquel un habitant produit des spores ; la production croît jusqu'à 1. */

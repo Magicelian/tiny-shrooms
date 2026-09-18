@@ -52,6 +52,8 @@ export interface Etat {
   pousses: number[];
   prochainIdHabitant: number;
   pasAvantArrivee: number;
+  /** Compte à rebours du prochain départ, tant que le bien-être moyen est trop bas ; absent sinon. */
+  pasAvantDepart?: number;
   batimentsDebloques: TypeBatiment[];
   /** Réserves de baies vides au dernier pas : travail ralenti, bien-être en baisse. Recalculé à chaque pas. */
   faim?: boolean;

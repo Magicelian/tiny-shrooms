@@ -290,6 +290,8 @@ export type RaisonRefus =
 export type Evenement =
   | { type: 'saisonChangee'; saison: Saison }
   | { type: 'habitantArrive'; id: IdHabitant }
+  /** Bien-être moyen trop bas : cet habitant a quitté le village. */
+  | { type: 'habitantParti'; id: IdHabitant }
   | { type: 'constructionTerminee'; id: IdBatiment }
   | { type: 'palierAtteint'; palier: number; debloques: TypeBatiment[] }
   | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }

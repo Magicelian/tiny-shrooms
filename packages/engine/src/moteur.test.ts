@@ -242,6 +242,25 @@ describe('Habitants', () => {
     expect(moteur.etatCourant.habitants[0]!.bienEtre).toBeLessThan(0.3);
   });
 
+  it('quittent un village trop malheureux, un à la fois et jamais tous', () => {
+    const depart = { seuil: 0.5, delaiSecondes: 60, minimum: 1 };
+    const contenu = contenuDeTest({}, { auDepart: 4, logementDeBase: 4, baiesParMinute: 1, depart });
+    contenu.stocksDeDepart.baies = 0;
+    const moteur = new Moteur(contenu, 0);
+    expect(moteur.simuler(PAS_PAR_MINUTE / 2).filter((e) => e.type === 'habitantParti')).toHaveLength(0);
+    moteur.simuler(PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.habitants).toHaveLength(3);
+    moteur.simuler(10 * PAS_PAR_MINUTE);
+    expect(moteur.etatCourant.habitants).toHaveLength(1);
+  });
+
+  it('restent dans un village heureux', () => {
+    const depart = { seuil: 0.5, delaiSecondes: 60, minimum: 1 };
+    const moteur = new Moteur(contenuDeTest({}, { auDepart: 4, logementDeBase: 4, depart }), 0);
+    const evenements = moteur.simuler(10 * PAS_PAR_MINUTE);
+    expect(evenements.filter((e) => e.type === 'habitantParti')).toHaveLength(0);
+  });
+
   it('dorment la nuit', () => {
     const moteur = new Moteur(contenuDeTest({}, { nuit: { debut: 0.5, fin: 0 } }), 0);
     moteur.simuler(6 * PAS_PAR_MINUTE);

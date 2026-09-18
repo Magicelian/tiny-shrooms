@@ -95,7 +95,7 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'ile') rendu.appliquerIle(data.ile);
   else if (data.type === 'instantane') {
     rendu.appliquerInstantane(data.instantane);
-    signalerProblemes(problemes(data.instantane));
+    signalerProblemes(problemes(data.instantane, contenu));
   }
   ui.recevoir(data);
 };

@@ -77,6 +77,7 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
     if (etat.retraitSouche !== null) avancerRetrait(etat, contenu, cadenceTravail(etat, contenu, centreSouche(etat.ile), nourri), evenements);
     for (const d of [...etat.defrichages]) avancerDefrichage(etat, contenu, d.case, cadenceTravail(etat, contenu, centre(d.case), nourri), evenements);
   }
+  departs(etat, contenu, evenements);
   arrivees(etat, contenu, capacite, evenements);
 }
 
@@ -193,11 +194,34 @@ function partSatisfaite(contenu: Contenu, logement: BatimentEtat | true, nourri:
   return 1 - besoinsManquants(contenu, logement, logement.niveau).length / besoins.length;
 }
 
+function bienEtreMoyen(etat: Etat): number {
+  const n = etat.habitants.length;
+  return n === 0 ? 1 : etat.habitants.reduce((s, h) => s + h.bienEtre, 0) / n;
+}
+
+/** Village malheureux : le moins heureux s'en va, un seul à la fois, tant que la moyenne reste basse. */
+function departs(etat: Etat, contenu: Contenu, evenements: Evenement[]): void {
+  const regle = contenu.habitants.depart;
+  if (!regle || etat.habitants.length <= regle.minimum || bienEtreMoyen(etat) >= regle.seuil) {
+    delete etat.pasAvantDepart;
+    return;
+  }
+  const delai = (regle.delaiSecondes * 1000) / PAS_DE_SIMULATION_MS;
+  etat.pasAvantDepart = (etat.pasAvantDepart ?? delai) - 1;
+  if (etat.pasAvantDepart > 0) return;
+  etat.pasAvantDepart = delai;
+  let partant = 0;
+  etat.habitants.forEach((h, i) => {
+    if (h.bienEtre < etat.habitants[partant]!.bienEtre) partant = i;
+  });
+  const [parti] = etat.habitants.splice(partant, 1);
+  evenements.push({ type: 'habitantParti', id: parti!.id });
+}
+
 function arrivees(etat: Etat, contenu: Contenu, capacite: number, evenements: Evenement[]): void {
   const n = etat.habitants.length;
   if (n >= capacite) return;
-  const moyenne = n === 0 ? 1 : etat.habitants.reduce((s, h) => s + h.bienEtre, 0) / n;
-  if (moyenne < contenu.habitants.seuilArrivee) return;
+  if (bienEtreMoyen(etat) < contenu.habitants.seuilArrivee) return;
   // Le compte à rebours avance plus vite quand beaucoup de places attendent.
   const regle = contenu.habitants.arriveeSelonPlaces;
   etat.pasAvantArrivee -= regle ? Math.min(1 / regle.delaiMinimal, (capacite - n + 1) / (regle.placesDeReference + 1)) : 1;
