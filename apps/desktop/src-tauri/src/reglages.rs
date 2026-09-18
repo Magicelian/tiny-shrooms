@@ -7,13 +7,15 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::{
     menu::{CheckMenuItem, MenuItem, Submenu},
-    AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Wry,
+    AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, PhysicalSize, Wry,
 };
 
 /// Côtés proposés pour la fenêtre, en pixels logiques. Le jeu est dessiné pour 320 : les autres
-/// tailles ne montrent pas plus d'île, elles grossissent ses pixels d'un cran entier.
-/// La même liste vit dans `packages/ui/src/index.tsx`.
-pub const TAILLES: [u32; 3] = [320, 640, 960];
+/// tailles ne montrent pas plus d'île, elles grossissent ses pixels. `ECRAN` (la géante) prend
+/// le plus grand carré que laisse l'écran. La même liste vit dans `packages/ui/src/index.tsx`.
+pub const TAILLES: [u32; 3] = [320, 640, ECRAN];
+/// Taille « tout l'écran » : la fenêtre remplit la hauteur utile (barre des menus et Dock exclus).
+pub const ECRAN: u32 = 0;
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -25,7 +27,7 @@ pub struct Reglages {
     pub son: bool,
     /// `fr` ou `en` ; absente, on suit la langue du système.
     pub langue: Option<String>,
-    /// Côté de la fenêtre, parmi `TAILLES` ; absent, la petite.
+    /// Côté de la fenêtre, parmi `TAILLES` ; absent, la petite. 960 (l'ancienne géante) vaut `ECRAN`.
     pub taille: Option<u32>,
 }
 
@@ -42,7 +44,11 @@ impl Reglages {
 
     /// Taille retenue, ramenée à la petite si le fichier en porte une qu'on ne propose plus.
     pub fn taille_effective(&self) -> u32 {
-        self.taille.filter(|t| TAILLES.contains(t)).unwrap_or(TAILLES[0])
+        match self.taille {
+            Some(960) => ECRAN,
+            Some(t) if TAILLES.contains(&t) => t,
+            _ => TAILLES[0],
+        }
     }
 }
 
@@ -163,8 +169,27 @@ fn garder_visible(fenetre: &tauri::WebviewWindow) {
 /// Donne à la fenêtre le côté demandé (elle reste carrée), sans la laisser déborder de l'écran.
 pub fn redimensionner(app: &AppHandle, taille: u32) {
     let Some(fenetre) = app.get_webview_window("main") else { return };
+    if taille == ECRAN {
+        remplir_ecran(&fenetre);
+        return;
+    }
     let _ = fenetre.set_size(LogicalSize::new(taille, taille));
     garder_visible(&fenetre);
+}
+
+/// Plus grand carré que laisse la zone utile de l'écran de la fenêtre, centré sur celle-ci.
+fn remplir_ecran(fenetre: &tauri::WebviewWindow) {
+    let Some(ecran) = fenetre.current_monitor().ok().flatten().or_else(|| fenetre.primary_monitor().ok().flatten())
+    else {
+        return;
+    };
+    let zone = ecran.work_area();
+    let cote = zone.size.width.min(zone.size.height);
+    let _ = fenetre.set_size(PhysicalSize::new(cote, cote));
+    let _ = fenetre.set_position(PhysicalPosition::new(
+        zone.position.x + (zone.size.width - cote) as i32 / 2,
+        zone.position.y + (zone.size.height - cote) as i32 / 2,
+    ));
 }
 
 /// Retient la position courante de la fenêtre et écrit les réglages (appelé avant de quitter).

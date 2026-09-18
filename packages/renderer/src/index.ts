@@ -19,18 +19,18 @@ export const IMAGES_PAR_SECONDE = 30;
 export const IMAGES_PAR_SECONDE_AU_REPOS = 15;
 /** Facteur de réduction de la résolution de rendu par rapport à la fenêtre, à l'échelle 1. */
 export const REDUCTION = 2;
-/** Côté de fenêtre pour lequel le jeu est dessiné ; au-delà, les pixels grossissent d'un cran entier. */
+/** Côté de fenêtre pour lequel le jeu est dessiné ; au-delà, les pixels grossissent d'autant. */
 export const TAILLE_BASE = 320;
-/** Plus gros grossissement proposé (fenêtre de 960 px). */
-export const ECHELLE_MAX = 3;
 
 /**
- * Grossissement de l'affichage, entier pour garder des pixels nets : une fenêtre deux fois
- * plus grande ne montre pas plus d'île, elle la dessine deux fois plus gros.
+ * Grossissement de l'affichage : une fenêtre deux fois plus grande ne montre pas plus d'île,
+ * elle la dessine deux fois plus gros. Entier pour les petites tailles ; la fenêtre à la
+ * taille de l'écran donne un facteur quelconque (un pixel du jeu fait alors 11 ou 12 pixels
+ * d'un écran Retina, écart invisible).
  */
 export function echelleAffichage(): number {
   const cote = Math.min(window.innerWidth, window.innerHeight);
-  return Math.max(1, Math.min(ECHELLE_MAX, Math.floor(cote / TAILLE_BASE)));
+  return Math.max(1, cote / TAILLE_BASE);
 }
 
 /** Ce qu'on surligne : un bâtiment posé, ou une emprise carrée de `taille` cases à partir de `case`. */

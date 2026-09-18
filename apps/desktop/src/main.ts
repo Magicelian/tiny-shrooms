@@ -90,7 +90,7 @@ envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []) }
 // Menu de démarrage ouvert : la ville attend qu'on entre.
 if (avecMenu) envoyer({ type: 'veille', momentMs: Date.now() });
 rendu.demarrer();
-// Fenêtre agrandie : l'île et l'interface grossissent ensemble, d'un facteur entier.
+// Fenêtre agrandie : l'île et l'interface grossissent ensemble.
 const suivreTaille = () => {
   rendu.redimensionner();
   ui.reglerEchelle(echelleAffichage());

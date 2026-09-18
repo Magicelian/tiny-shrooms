@@ -136,8 +136,9 @@ fn main() {
                     &entrees.quitter,
                 ],
             )?;
-            reglages::redimensionner(app.handle(), lus.taille_effective());
+            // La position d'abord : la géante remplit l'écran où l'on avait laissé la fenêtre.
             reglages::restaurer_position(app.handle(), &lus);
+            reglages::redimensionner(app.handle(), lus.taille_effective());
             app.manage(reglages::EtatReglages {
                 reglages: std::sync::Mutex::new(lus),
                 menu: entrees,

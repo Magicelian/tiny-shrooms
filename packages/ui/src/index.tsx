@@ -55,8 +55,8 @@ export interface OptionsInterface {
   };
 }
 
-/** Côtés proposés pour la fenêtre : mêmes valeurs que `TAILLES` dans `src-tauri/src/reglages.rs`. */
-export const TAILLES = [320, 640, 960] as const;
+/** Côtés proposés pour la fenêtre : mêmes valeurs que `TAILLES` dans `src-tauri/src/reglages.rs` (0 : tout l'écran). */
+export const TAILLES = [320, 640, 0] as const;
 /** Nom de chaque taille dans les paramètres, dans l'ordre de `TAILLES`. */
 const NOMS_TAILLE = ['accueil.taillePetite', 'accueil.tailleGrande', 'accueil.tailleGeante'] as const;
 
@@ -183,14 +183,21 @@ export class ControleurInterface {
 
   /** Taille suivante pour la fenêtre, en boucle ; sans effet là où on ne peut pas la redimensionner. */
   changerTaille(): void {
-    const suivante = TAILLES[this.magasin.valeur.echelle % TAILLES.length] ?? TAILLES[0];
+    const suivante = TAILLES[(this.rangTaille + 1) % TAILLES.length] ?? TAILLES[0];
     this.options.demarrage?.taille?.(suivante);
   }
 
   /** Nom de la taille de fenêtre actuelle, pour les paramètres ; `null` si on ne peut pas la changer. */
   get nomTaille(): string | null {
     if (!this.options.demarrage?.taille) return null;
-    return t(NOMS_TAILLE[this.magasin.valeur.echelle - 1] ?? NOMS_TAILLE[0]);
+    void this.magasin.valeur.echelle; // relu à chaque changement de taille
+    return t(NOMS_TAILLE[this.rangTaille] ?? NOMS_TAILLE[0]);
+  }
+
+  /** Rang de la taille actuelle dans `TAILLES` : un côté qui n'y figure pas est celui de l'écran. */
+  private get rangTaille(): number {
+    const rang = TAILLES.indexOf(Math.min(window.innerWidth, window.innerHeight) as (typeof TAILLES)[number]);
+    return rang < 0 ? TAILLES.length - 1 : rang;
   }
 
   reglerSon(): void {
