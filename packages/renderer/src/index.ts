@@ -136,6 +136,12 @@ export class Rendu {
     return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
   }
 
+  /** Point de la fenêtre juste au-dessus d'un bâtiment, là où s'accroche sa flèche. */
+  sommet(id: IdBatiment): { x: number; y: number } | null {
+    const zone = this.entites.emprise(id);
+    return zone && this.projeter(zone.case.x + zone.taille / 2, zone.case.y + zone.taille / 2, zone.hauteur);
+  }
+
   afficherGrille(visible: boolean): void {
     this.aides.afficherGrille(visible);
   }

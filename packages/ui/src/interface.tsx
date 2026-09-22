@@ -30,6 +30,7 @@ export function Interface({ controleur }: Props) {
       <Rangee instantane={instantane} />
 
       {deplacement !== null && <BandeauDeplacement controleur={controleur} bonus={etat.bonusVise} />}
+      {!bulle && deplacement === null && <Fleches controleur={controleur} instantane={instantane} />}
       {etat.astuceSouche && !bulle && <AstuceSouche controleur={controleur} />}
       {bulle && <ContenuBulle controleur={controleur} bulle={bulle} instantane={instantane} />}
 
@@ -112,6 +113,36 @@ function AstuceSouche({ controleur }: Props) {
   return (
     <div ref={ref} class="astuce">
       {t('prestige.astuce')}
+    </div>
+  );
+}
+
+/** Petites flèches qui suivent, à l'écran, les bâtiments qu'on peut améliorer dès maintenant. */
+function Fleches({ controleur, instantane }: Props & { instantane: Instantane }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const ids = controleur.ameliorables(instantane).map((b) => b.id);
+  const cle = ids.join(',');
+  useEffect(() => {
+    let image = 0;
+    const suivre = () => {
+      const fleches = ref.current?.children;
+      ids.forEach((id, i) => {
+        const el = fleches?.[i] as HTMLElement | undefined;
+        if (!el) return;
+        const point = controleur.pointBatiment(id);
+        el.style.visibility = point ? 'visible' : 'hidden';
+        if (point) el.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -100%)`;
+      });
+      image = requestAnimationFrame(suivre);
+    };
+    suivre();
+    return () => cancelAnimationFrame(image);
+  }, [controleur, cle]);
+  return (
+    <div ref={ref}>
+      {ids.map((id) => (
+        <span key={id} class="fleche-amelioration" />
+      ))}
     </div>
   );
 }

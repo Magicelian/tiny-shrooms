@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, Instantane, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { bonusVoisinage, casesCouvertes, centreSouche, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn } from '@tiny-shrooms/engine';
+import { AMELIORATIONS_VILLAGE, bonusVoisinage, casesCouvertes, centreSouche, coutAmelioration, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn, refusMontee } from '@tiny-shrooms/engine';
 import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
 
 export type { Langue };
@@ -28,6 +28,8 @@ export interface SceneInteractive {
   glisser(dx: number, dy: number): void;
   /** Point de la fenêtre où s'affiche la position (x, y) de l'île à cette hauteur. */
   projeter(x: number, y: number, hauteur: number): { x: number; y: number } | null;
+  /** Point de la fenêtre juste au-dessus d'un bâtiment. */
+  sommet(id: IdBatiment): { x: number; y: number } | null;
 }
 
 export interface OptionsInterface {
@@ -367,6 +369,28 @@ export class ControleurInterface {
     if (!ile?.soucheEnPlace) return null;
     const c = centreSouche(ile);
     const point = this.options.scene.projeter(c.x, c.y, HAUTEUR_ASTUCE);
+    return point && { x: point.x / this.echelle, y: point.y / this.echelle };
+  }
+
+  /** Bâtiments qu'on peut améliorer tout de suite, ressources comprises : une flèche les signale. */
+  ameliorables(instantane: Instantane): Batiment[] {
+    const { contenu } = this;
+    const { stocks, ameliorations, batiments } = instantane;
+    // Amélioration de village que l'atelier pourrait lancer : ni au maximum, ni déjà en travaux, et payable.
+    const villagePossible = AMELIORATIONS_VILLAGE.some((a) => {
+      const cout = coutAmelioration(contenu, a, ameliorations[a]);
+      return cout && !batiments.some((b) => b.amelioration?.village === a) && abordable(cout, stocks);
+    });
+    return batiments.filter((b) => {
+      if (b.type === 'atelier') return b.chantier === null && b.amelioration === null && villagePossible;
+      if (refusMontee(contenu, b, instantane.palier) !== null) return false;
+      return abordable(contenu.logement.rangs[b.niveau]?.cout ?? {}, stocks);
+    });
+  }
+
+  /** Au-dessus d'un bâtiment, en points de l'interface. */
+  pointBatiment(id: IdBatiment): { x: number; y: number } | null {
+    const point = this.options.scene.sommet(id);
     return point && { x: point.x / this.echelle, y: point.y / this.echelle };
   }
 
