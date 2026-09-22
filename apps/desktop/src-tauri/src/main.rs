@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod mises_a_jour;
+mod icone;
 mod pastille;
 mod pouls;
 mod reglages;
@@ -11,7 +12,6 @@ use std::time::Duration;
 
 use tauri::{
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu},
-    tray::{MouseButton, MouseButtonState, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
 
@@ -149,8 +149,6 @@ fn main() {
             let icone = app
                 .tray_by_id("main")
                 .expect("l'icône de barre des menus doit être déclarée dans tauri.conf.json");
-            icone.set_menu(Some(menu))?;
-            icone.set_show_menu_on_left_click(false)?;
             icone.on_menu_event(|app, evenement| match evenement.id.as_ref() {
                 "basculer" => basculer_fenetre(app),
                 "verrouiller" => {
@@ -175,16 +173,7 @@ fn main() {
                 }
                 _ => {}
             });
-            icone.on_tray_icon_event(|icone, evenement| {
-                if let TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    button_state: MouseButtonState::Up,
-                    ..
-                } = evenement
-                {
-                    basculer_fenetre(icone.app_handle());
-                }
-            });
+            icone::surveiller(app.handle().clone(), menu, basculer_fenetre);
             mises_a_jour::surveiller(app.handle().clone());
             surveiller_survol(app.handle().clone());
             veille::surveiller(app.handle().clone());
