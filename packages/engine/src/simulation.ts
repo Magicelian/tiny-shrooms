@@ -77,12 +77,17 @@ export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
   const max = plafonds(etat, contenu);
   const flux = fluxParMinute(etat, contenu);
   const { direct } = flux;
-  ranger(etat, flux, max);
   for (const r of RESSOURCES) {
     const avant = etat.stocks[r];
     const apres = avant + direct[r] / PAS_PAR_MINUTE;
     // Un plafond abaissé (démolition) ne retire rien : il bloque seulement les gains.
     etat.stocks[r] = direct[r] >= 0 ? Math.min(apres, Math.max(max[r], avant)) : Math.max(0, apres);
+  }
+  // Rangé après la consommation : sinon un stock qu'on mange reste toujours un cheveu sous le plafond.
+  ranger(etat, flux, max);
+  for (const r of RESSOURCES) {
+    // Les additions flottantes s'arrêtent parfois à 179,99999999999991 : affiché 179/180 et plus rien à porter.
+    if (etat.stocks[r] < max[r] && etat.stocks[r] > max[r] - 1e-6) etat.stocks[r] = max[r];
   }
   return evenements;
 }
