@@ -89,6 +89,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(mises_a_jour::EtatMiseAJour::default())
+        .manage(pastille::EtatPastille::default())
         .setup(|app| {
             // Pas d'icône dans le Dock : l'application vit dans la barre des menus.
             #[cfg(target_os = "macos")]

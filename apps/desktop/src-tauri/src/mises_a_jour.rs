@@ -95,6 +95,7 @@ async fn telecharger(app: &AppHandle) -> tauri_plugin_updater::Result<bool> {
     let octets = update.download(|_, _| {}, || {}).await?;
     *app.state::<EtatMiseAJour>().prete.lock().unwrap() = Some((update, octets));
     changer(app, Statut::Prete(version));
+    crate::pastille::signaler_mise_a_jour(app);
     Ok(true)
 }
 
