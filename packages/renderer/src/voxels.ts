@@ -108,8 +108,9 @@ export class Voxels {
     return max === -Infinity ? 0 : max / this.resolution;
   }
 
-  modele(): Modele {
-    return construireModele(this);
+  /** `neige` : faux pour ce qui ne doit jamais blanchir l'hiver (habitants, flammes). */
+  modele(neige = true): Modele {
+    return construireModele(this, neige);
   }
 
   /** Parcours brut, pour la construction du maillage. */
@@ -140,11 +141,12 @@ const FACES: { normale: [number, number, number]; coins: [number, number, number
   { normale: [0, 0, -1], coins: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]], nuance: 0.95 },
 ];
 
-function construireModele(v: Voxels): Modele {
+function construireModele(v: Voxels, neige: boolean): Modele {
   const taille = 1 / v.resolution;
   const positions: number[] = [];
   const normales: number[] = [];
   const nuances: number[] = [];
+  const seuilsNeige: number[] = [];
   // Faces rangées par couleur puis par couche, pour les groupes et le chantier.
   const parCouleur = new Map<Couleur, { y: number; sommet: number }[]>();
   let yMin = Infinity;
@@ -154,6 +156,8 @@ function construireModele(v: Voxels): Modele {
     yMax = Math.max(yMax, y);
     // Léger grain par voxel, pour que les aplats ne soient pas plats.
     const grain = 0.94 + 0.06 * hachage(x, y, z);
+    // Seuil de neige du voxel, entre 0,05 et 0,95 : la couche s'étend par taches, puis couvre tout.
+    const seuil = neige ? 0.05 + 0.9 * hachage(z + 17, y * 3, x - 5) : 0;
     for (const face of FACES) {
       const [nx, ny, nz] = face.normale;
       if (v.lire(x + nx, y + ny, z + nz) !== undefined) continue;
@@ -163,6 +167,7 @@ function construireModele(v: Voxels): Modele {
         normales.push(nx, ny, nz);
         const n = face.nuance * grain;
         nuances.push(n, n, n);
+        seuilsNeige.push(ny === 1 ? seuil : 0);
       }
       let liste = parCouleur.get(couleur);
       if (!liste) parCouleur.set(couleur, (liste = []));
@@ -173,6 +178,7 @@ function construireModele(v: Voxels): Modele {
   geometrie.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometrie.setAttribute('normal', new THREE.Float32BufferAttribute(normales, 3));
   geometrie.setAttribute('color', new THREE.Float32BufferAttribute(nuances, 3));
+  geometrie.setAttribute('neige', new THREE.Float32BufferAttribute(seuilsNeige, 1));
   const indices: number[] = [];
   const materiaux: THREE.Material[] = [];
   const couches: number[][] = [];

@@ -323,7 +323,7 @@ export function modeleBatiment(type: TypeBatiment, niveau = 1): Modele {
 
 let cacheFlamme: Modele | null = null;
 export function modeleFlamme(): Modele {
-  return (cacheFlamme ??= flamme().modele());
+  return (cacheFlamme ??= flamme().modele(false));
 }
 
 // ─── Souche-dépôt ──────────────────────────────────────────────────────────────
@@ -443,11 +443,11 @@ export function modelesHabitant(): ModelesHabitant {
     const v = new Voxels(RESOLUTION_HABITANT);
     const tache = couleur === CHAPEAUX[4] ? CHAPEAUX[0] : TEINTES.blanc;
     chapeau(v, 0, 0, 7, 4.3, 3, couleur, tache, 3);
-    return v.modele();
+    return v.modele(false);
   });
   const ballot = new Voxels(RESOLUTION_HABITANT);
   ballot.boule(0, 13, 0, 2.2, 1.6, 2.2, TEINTES.toile);
   ballot.poser(0, 15, 0, TEINTES.rouille);
-  cacheHabitant = { corps: corps.modele(), pied: piedV.modele(), chapeaux, ballot: ballot.modele() };
+  cacheHabitant = { corps: corps.modele(false), pied: piedV.modele(false), chapeaux, ballot: ballot.modele(false) };
   return cacheHabitant;
 }

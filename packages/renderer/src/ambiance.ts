@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import type { Ile, Meteo, Saison, Temps } from '@tiny-shrooms/engine';
 import { SAISONS } from '@tiny-shrooms/engine';
-import { COULEURS, materiau } from './palette';
+import { COULEURS, materiau, NEIGE } from './palette';
 
 type Teintes = Record<'herbe' | 'feuillage' | 'buisson' | 'eau', number>;
 
@@ -15,6 +15,9 @@ const TEINTES: Record<Saison, Teintes> = {
 
 /** Part finale de la saison pendant laquelle on glisse vers les teintes de la suivante. */
 const TRANSITION = 0.2;
+/** Neige au sol à la fin de l'automne ; l'hiver, elle couvre tout au bout de `NEIGE_PLEINE` de la saison. */
+const NEIGE_AUTOMNE = 0.4;
+const NEIGE_PLEINE = 0.3;
 /** Hauteur d'où tombent les particules, en cases. */
 const CIEL = 6;
 const GOUTTES = 120;
@@ -114,6 +117,7 @@ export class Ambiance {
       this.couleurSuivante.setHex(TEINTES[suivante][cle]);
       materiau(COULEURS[cle]).color.lerpColors(this.couleurCourante, this.couleurSuivante, glissement);
     }
+    NEIGE.value = niveauNeige(temps.saison, temps.avancementSaison, glissement);
     if (temps.meteo !== this.meteo || temps.saison !== this.saison) {
       this.meteo = temps.meteo;
       this.saison = temps.saison;
@@ -186,6 +190,17 @@ export class Ambiance {
     }
     p.objet.geometry.attributes.position!.needsUpdate = true;
   }
+}
+
+/**
+ * Neige posée sur les dessus : elle commence avec le glissement de l'automne vers l'hiver, couvre tout
+ * au début de l'hiver et fond pendant son glissement vers le printemps.
+ */
+function niveauNeige(saison: Saison, avancement: number, glissement: number): number {
+  if (saison === 'automne') return NEIGE_AUTOMNE * glissement;
+  if (saison !== 'hiver') return 0;
+  const tombee = Math.min(1, NEIGE_AUTOMNE + ((1 - NEIGE_AUTOMNE) * avancement) / NEIGE_PLEINE);
+  return tombee * (1 - glissement);
 }
 
 function creerParticules(nombre: number, sommets: number, materiel: THREE.Material): Particules {

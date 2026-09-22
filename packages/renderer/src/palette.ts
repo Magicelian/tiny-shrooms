@@ -50,6 +50,28 @@ paliers.needsUpdate = true;
 
 const cache = new Map<number, THREE.MeshToonMaterial>();
 
+/** Part de la neige tombée, de 0 à 1, réglée par l'ambiance au fil de l'hiver. */
+export const NEIGE = { value: 0 };
+const BLANC_NEIGE = 'vec3(0.93, 0.96, 1.0)';
+
+/**
+ * Neige sur les faces du dessus : l'attribut `neige` d'une face (seuil tiré par voxel, 0 = jamais) la
+ * blanchit dès que `NEIGE` l'atteint ; elle s'accumule ainsi voxel par voxel. Une géométrie sans cet
+ * attribut le lit à 0 et ne blanchit pas.
+ */
+function injecterNeige(shader: THREE.WebGLProgramParametersWithUniforms): void {
+  shader.uniforms.uNeige = NEIGE;
+  shader.vertexShader =
+    'attribute float neige;\nvarying float vNeige;\n' +
+    shader.vertexShader.replace('#include <color_vertex>', '#include <color_vertex>\n  vNeige = neige;');
+  shader.fragmentShader =
+    'uniform float uNeige;\nvarying float vNeige;\n' +
+    shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>\n  if (vNeige > 0.0 && uNeige >= vNeige) diffuseColor.rgb = ${BLANC_NEIGE} * vColor.rgb;`,
+    );
+}
+
 /**
  * Matériau toon partagé pour une couleur donnée. L'attribut `color` des géométries nuance la couleur
  * (voxels) : toute géométrie dessinée avec ces matériaux doit en avoir un (`sansNuance` sinon).
@@ -58,6 +80,7 @@ export function materiau(couleur: number): THREE.MeshToonMaterial {
   let m = cache.get(couleur);
   if (!m) {
     m = new THREE.MeshToonMaterial({ color: couleur, gradientMap: paliers, vertexColors: true });
+    m.onBeforeCompile = injecterNeige;
     cache.set(couleur, m);
   }
   return m;
