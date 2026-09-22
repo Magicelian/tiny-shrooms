@@ -907,20 +907,13 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 12px;
-  height: 15px;
-  margin-top: -3px;
+  /* Motif de 9 × 10 à 2 px par pixel, comme les icônes du jeu. */
+  width: 18px;
+  height: 20px;
+  margin-top: -2px;
+  image-rendering: pixelated;
   pointer-events: none;
-  filter: drop-shadow(1px 0 0 var(--encre)) drop-shadow(-1px 0 0 var(--encre)) drop-shadow(0 1px 0 var(--encre))
-    drop-shadow(0 -1px 0 var(--encre));
   animation: fleche-amelioration 0.7s steps(2) infinite alternate;
-}
-.fleche-amelioration::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--vert);
-  clip-path: polygon(50% 0, 100% 50%, 70% 50%, 70% 100%, 30% 100%, 30% 50%, 0 50%);
 }
 @keyframes fleche-amelioration {
   to {

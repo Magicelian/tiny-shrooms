@@ -6,6 +6,7 @@ import { capaciteLogement, elementEn } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { nomPalier, nomPose, nomRessource, pourcent } from './format';
 import { Icone } from './composants';
+import { icone } from './icones';
 import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
 import { BulleBatiment, BulleConstruire, BulleNature, titreNature } from './panneaux';
@@ -141,7 +142,7 @@ function Fleches({ controleur, instantane }: Props & { instantane: Instantane })
   return (
     <div ref={ref}>
       {ids.map((id) => (
-        <span key={id} class="fleche-amelioration" />
+        <img key={id} class="fleche-amelioration" src={icone('amelioration')} alt="" />
       ))}
     </div>
   );

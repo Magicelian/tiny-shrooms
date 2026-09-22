@@ -1,7 +1,7 @@
 // Petites icônes pixel (9 × 9) dessinées depuis des motifs texte, converties une fois en images.
 import type { Ressource } from '@tiny-shrooms/engine';
 
-export type Icone = Ressource | 'graine' | 'cadenas' | 'habitant' | 'coche' | 'croix' | 'contents' | 'mitiges' | 'tristes' | 'faim';
+export type Icone = Ressource | 'graine' | 'cadenas' | 'habitant' | 'coche' | 'croix' | 'amelioration' | 'contents' | 'mitiges' | 'tristes' | 'faim';
 
 /** `.` transparent, `#` encre ; les autres lettres renvoient à la palette de l'icône. */
 const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }> = {
@@ -148,6 +148,22 @@ const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }
       '.........',
     ],
     palette: { v: '#6fc25a' },
+  },
+  // Flèche dorée au-dessus des bâtiments qu'on peut améliorer (9 × 10).
+  amelioration: {
+    motif: [
+      '....#....',
+      '...#w#...',
+      '..#wyy#..',
+      '.#wyyyo#.',
+      '#wyyyyyo#',
+      '###wyo###',
+      '..#wyo#..',
+      '..#wyo#..',
+      '..#yoo#..',
+      '..#####..',
+    ],
+    palette: { w: '#ffe9a8', y: '#f2b53a', o: '#c9822a' },
   },
   croix: {
     motif: [
