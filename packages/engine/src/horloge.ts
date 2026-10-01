@@ -1,10 +1,12 @@
 // Horloge réelle : chaque battement rattrape tous les pas écoulés, quel que soit l'écart
-// (macOS gèle le Worker fenêtre cachée). Seule une veille signalée met le temps en pause.
+// (macOS gèle le Worker fenêtre cachée). Seule une veille signalée met le temps en pause, ou,
+// faute de signal (Windows), un écart supérieur à `ecartMaxMs`.
 import { PAS_DE_SIMULATION_MS, pasEcoules } from './temps';
 
 export class Horloge {
   private repere: number;
   private enVeille = false;
+  ecartMaxMs: number | undefined;
 
   constructor(maintenantMs: number) {
     this.repere = maintenantMs;
@@ -17,6 +19,7 @@ export class Horloge {
   /** Nombre de pas à simuler maintenant ; le reste de l'écart est conservé pour le suivant. */
   pasARattraper(maintenantMs: number): number {
     if (this.enVeille) return 0;
+    if (this.ecartMaxMs !== undefined && maintenantMs - this.repere > this.ecartMaxMs) this.repere = maintenantMs;
     const pas = pasEcoules(this.repere, maintenantMs);
     this.repere += pas * PAS_DE_SIMULATION_MS;
     // Horloge revenue en arrière : on repart d'ici plutôt que d'attendre qu'elle revienne.

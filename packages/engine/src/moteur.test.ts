@@ -145,6 +145,14 @@ describe('Horloge', () => {
     expect(h.pasARattraper(60 * MINUTE_MS + 1000)).toBe(4);
   });
 
+  it('ne rattrape pas un écart anormal quand la veille n’est pas signalée', () => {
+    const h = new Horloge(0);
+    h.ecartMaxMs = 2 * MINUTE_MS;
+    expect(h.pasARattraper(MINUTE_MS)).toBe(PAS_PAR_MINUTE);
+    expect(h.pasARattraper(9 * 60 * MINUTE_MS)).toBe(0);
+    expect(h.pasARattraper(9 * 60 * MINUTE_MS + 1000)).toBe(4);
+  });
+
   it('repart proprement si l’horloge recule', () => {
     const h = new Horloge(10_000);
     expect(h.pasARattraper(5_000)).toBe(0);

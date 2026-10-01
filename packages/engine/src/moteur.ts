@@ -35,6 +35,7 @@ export class Moteur {
         this.evenements = [];
         // Le temps passé jeu fermé ne compte pas : l'horloge repart d'ici.
         this.horloge.reveil(maintenantMs);
+        this.horloge.ecartMaxMs = message.ecartMaxMs;
         const origine =
           message.sauvegardes.length === 0 ? 'nouvelle'
           : reprise === null ? 'illisible'

@@ -310,8 +310,10 @@ export type MessageVersMoteur =
   /**
    * Lance la simulation. `sauvegardes` : fichiers bruts du plus récent au plus ancien (principal puis
    * copies de secours) ; le moteur reprend le premier lisible, ou une nouvelle partie si la liste est vide.
+   * `ecartMaxMs` : là où Rust ne signale pas la veille (Windows), un écart plus long entre deux battements
+   * vient d'une mise en veille et n'est pas rattrapé.
    */
-  | { type: 'demarrer'; sauvegardes: string[] }
+  | { type: 'demarrer'; sauvegardes: string[]; ecartMaxMs?: number }
   | { type: 'commande'; commande: Commande }
   /** Veille ou réveil du système, signalés par Rust : seule cause de pause. */
   /** `momentMs` : instant de l'endormissement vu par Rust, le Worker a pu geler avant de lire ce message. */

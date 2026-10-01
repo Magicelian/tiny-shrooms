@@ -198,6 +198,7 @@ export const fr = {
   'probleme.faim': 'Plus de baies en stock',
   'probleme.malheur': 'Les habitants sont malheureux et quittent le village',
   'probleme.froid': "L'hiver est là et aucun feu ne réchauffe le village",
+  'message.sauvegardeImpossible': 'La partie n’a pas pu être enregistrée',
   'message.partieSecours': 'Sauvegarde abîmée : partie reprise sur une copie de secours',
   'message.partieIllisible': 'Aucune sauvegarde lisible : nouvelle partie',
   'message.partieAncienne': 'Le jeu a changé : nouvelle partie (l’ancienne est archivée)',

@@ -80,7 +80,10 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   if (data.type === 'sauvegarde') {
     ecritures = ecritures
       .then(() => stockage.ecrire(data.contenu))
-      .catch((erreur) => console.error('sauvegarde impossible', erreur));
+      .catch((erreur) => {
+        console.error('sauvegarde impossible', erreur);
+        ui.magasin.annoncer(t('message.sauvegardeImpossible'));
+      });
     if (fermetureDemandee) void ecritures.then(() => invoke('quitter'));
     return;
   }
@@ -99,7 +102,10 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
   }
   ui.recevoir(data);
 };
-envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []) });
+// Hors macOS, Rust ne signale pas la veille : le pouls (20 s) borne l'écart entre deux battements,
+// un écart de plus de 2 min vient donc d'une mise en veille et n'est pas simulé.
+const ecartMaxMs = dansTauri && !navigator.userAgent.includes('Mac') ? 2 * 60_000 : undefined;
+envoyer({ type: 'demarrer', sauvegardes: await stockage.lire().catch(() => []), ecartMaxMs });
 // Menu de démarrage ouvert : la ville attend qu'on entre.
 if (avecMenu) envoyer({ type: 'veille', momentMs: Date.now() });
 rendu.demarrer();

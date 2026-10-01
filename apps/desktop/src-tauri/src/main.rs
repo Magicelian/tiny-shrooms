@@ -24,10 +24,17 @@ fn basculer_fenetre(app: &AppHandle) {
         let _ = fenetre.emit("fenetre-cachee", ());
         let _ = fenetre.hide();
     } else {
-        let _ = fenetre.show();
-        let _ = fenetre.set_focus();
-        let _ = fenetre.emit("fenetre-affichee", ());
+        afficher_fenetre(app);
     }
+}
+
+fn afficher_fenetre(app: &AppHandle) {
+    let Some(fenetre) = app.get_webview_window("main") else {
+        return;
+    };
+    let _ = fenetre.show();
+    let _ = fenetre.set_focus();
+    let _ = fenetre.emit("fenetre-affichee", ());
 }
 
 /// Une fenêtre sans le focus ne reçoit pas les mouvements de souris sous macOS :
@@ -86,8 +93,20 @@ fn quitter(app: AppHandle) {
 }
 
 fn main() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // Windows : relancer le jeu ouvrait une seconde partie qui écrivait dans les mêmes fichiers.
+    // Le second lancement ramène la fenêtre du premier (macOS ne lance jamais deux fois une application).
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| afficher_fenetre(app)));
+    builder
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Alt + F4 sous Windows : la partie est écrite avant de quitter, comme depuis le menu.
+        .on_window_event(|fenetre, evenement| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = evenement {
+                api.prevent_close();
+                demander_fermeture(fenetre.app_handle());
+            }
+        })
         .manage(mises_a_jour::EtatMiseAJour::default())
         .manage(pastille::EtatPastille::default())
         .setup(|app| {

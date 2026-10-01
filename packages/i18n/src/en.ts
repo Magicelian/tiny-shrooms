@@ -200,6 +200,7 @@ export const en: Record<keyof typeof fr, string> = {
   'probleme.faim': 'Out of berries',
   'probleme.malheur': 'Villagers are unhappy and leaving',
   'probleme.froid': 'Winter is here and no fire warms the village',
+  'message.sauvegardeImpossible': 'The game could not be saved',
   'message.partieSecours': 'Damaged save: game resumed from a backup copy',
   'message.partieIllisible': 'No readable save: new game',
   'message.partieAncienne': 'The game has changed: new game (the old one is archived)',
