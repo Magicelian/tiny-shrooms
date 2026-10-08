@@ -41,7 +41,7 @@ export class Joueur {
   }
 
   private abordable(type: TypeBatiment): boolean {
-    const cout = coutBatiment(contenu, this.etat.prestige.bonus, type);
+    const cout = coutBatiment(contenu, this.etat.prestige.bonus, type, this.etat.batiments);
     return RESSOURCES.every((r) => this.etat.stocks[r] >= (cout[r] ?? 0));
   }
 
@@ -106,13 +106,14 @@ export class Joueur {
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       () => population >= 4 && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
       // Un bâtiment qui vient d'être débloqué est essayé tout de suite.
-      () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 && this.production('sechoir', 'herbe'),
+      () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 + Math.floor(population / 15) && this.production('sechoir', 'herbe'),
       () => etat.palier >= 1 && nombre(etat, 'atelier') < 1 && this.production('atelier', 'herbe'),
+      // Stocks au plafond : on agrandit les réserves avant de loger plus de monde (l'hiver se passe sur les réserves).
+      () => this.stockage(),
       () => capacite - population < 2 && this.chantiers('hutte') === 0 && this.poser('hutte'),
       () => this.service('chaleur'),
       () => this.service('eau'),
       () => this.service('commerce'),
-      () => this.stockage(),
       // Île pleine et logements pleins : on abat un arbre, en gardant un bout de forêt pour le sanctuaire.
       () => capacite - population < 2 && this.forets() > 3 && this.faireDeLaPlace(),
     ];
@@ -141,6 +142,7 @@ export class Joueur {
   private stockage(): boolean {
     const { stocks } = this.etat;
     const plein = (r: 'baies' | 'boisMort' | 'mousse', type: TypeBatiment) => {
+      if (nombre(this.etat, type) > this.etat.habitants.length / 10) return false;
       const max = contenu.plafondsDeBase[r] + nombre(this.etat, type) * (contenu.batiments[type].stockage?.[r] ?? 0);
       return stocks[r] >= max * 0.9;
     };

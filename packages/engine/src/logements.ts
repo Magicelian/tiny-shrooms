@@ -138,9 +138,15 @@ export function monterLogement(etat: Etat, contenu: Contenu, b: BatimentEtat): R
   return null;
 }
 
-/** Tout ce qu'a coûté un bâtiment : sa construction et, pour un logement, ses montées en gamme. */
-export function coutTotal(contenu: Contenu, b: Pick<Batiment, 'type' | 'niveau' | 'agrandissement'>, bonus: Record<BonusPrestige, number>): Quantites {
-  const total = coutBatiment(contenu, bonus, b.type);
+/** Tout ce qu'a coûté un bâtiment : sa construction (au prix qu'aurait le même posé parmi les autres `batiments`)
+ * et, pour un logement, ses montées en gamme. */
+export function coutTotal(
+  contenu: Contenu,
+  b: Pick<Batiment, 'id' | 'type' | 'niveau' | 'agrandissement'>,
+  bonus: Record<BonusPrestige, number>,
+  batiments: readonly Pick<Batiment, 'id' | 'type'>[],
+): Quantites {
+  const total = coutBatiment(contenu, bonus, b.type, batiments.filter((autre) => autre.id !== b.id));
   if (!contenu.batiments[b.type].logement) return total;
   // Un agrandissement payé mais pas fini compte aussi.
   for (const rang of contenu.logement.rangs.slice(1, b.niveau + (b.agrandissement !== null ? 1 : 0))) {

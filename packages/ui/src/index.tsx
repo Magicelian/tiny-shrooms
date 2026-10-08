@@ -549,7 +549,7 @@ export class ControleurInterface {
     // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
     if (bulle?.type === 'construire') {
       const { choix } = bulle;
-      scene.montrerFantome(bulle.case, choix, !choix || abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix), instantane.stocks));
+      scene.montrerFantome(bulle.case, choix, !choix || abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix, batiments), instantane.stocks));
       scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
       scene.surligner(null);
       this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });

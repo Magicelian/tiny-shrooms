@@ -1,6 +1,6 @@
 // Renaissance : on efface l'île et le village contre des graines de prestige, dépensées en bonus permanents.
 // Les fonctions pures ne lisent que des types du contrat : l'interface s'en sert pour afficher coûts et effets.
-import type { BonusPrestige, Prestige, Quantites, TypeBatiment } from './contrat';
+import type { Batiment, BonusPrestige, Prestige, Quantites, TypeBatiment } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { creerEtat, type Etat } from './etat';
@@ -57,9 +57,15 @@ export function coutBonus(contenu: Contenu, bonus: BonusPrestige, niveau: number
   return niveau >= def.niveauMax ? null : Math.round(def.cout * def.hausseCout ** niveau);
 }
 
-/** Coût d'un bâtiment, réduction de prestige comprise. */
-export function coutBatiment(contenu: Contenu, bonus: Record<BonusPrestige, number>, type: TypeBatiment): Quantites {
-  const facteur = effetsPrestige(contenu, bonus).cout;
+/** Coût d'un bâtiment, réduction de prestige et hausse par exemplaire déjà posé (`batiments`) comprises. */
+export function coutBatiment(
+  contenu: Contenu,
+  bonus: Record<BonusPrestige, number>,
+  type: TypeBatiment,
+  batiments: readonly Pick<Batiment, 'type'>[] = [],
+): Quantites {
+  const exemplaires = batiments.filter((b) => b.type === type).length;
+  const facteur = effetsPrestige(contenu, bonus).cout * (1 + contenu.hausseParExemplaire) ** exemplaires;
   const cout: Quantites = {};
   const base = contenu.batiments[type].cout;
   for (const r of RESSOURCES) {

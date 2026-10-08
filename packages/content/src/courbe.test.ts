@@ -69,13 +69,14 @@ describe('Courbe de progression', () => {
       `${profil.nom} ${graine} : bourg à ${duree(r.bourg)}, plus long creux ${duree(r.ecartMax)}, ${r.departs} départ(s)\n  ` +
         r.jalons.map(([s, c]) => `${duree(s)} ${c}`).join(' · ') + "\n",
     );
-    // Cible de l'étape 16 : jamais de fin, mais toujours du neuf. Le joueur attentif met plus d'une heure et quart,
-    // le distrait une demi-journée de travail, sans jamais attendre plus de 1 h 30 une nouveauté.
-    if (profil.nom === 'attentif') expect(r.secondes).toBeGreaterThan(1.25 * 3600);
+    // Cible de l'étape 17 (progression ralentie, 08/10/2026) : l'attentif met plus de deux heures et quart, le distrait
+    // une journée de travail, sans attendre plus de 2 h 30 une nouveauté et sans départ.
+    expect(r.departs).toBe(0);
+    if (profil.nom === 'attentif') expect(r.secondes).toBeGreaterThan(2.25 * 3600);
     else {
-      expect(r.secondes).toBeGreaterThan(2.5 * 3600);
-      expect(r.secondes).toBeLessThan(6 * 3600);
-      expect(r.ecartMax).toBeLessThanOrEqual(90 * 60);
+      expect(r.secondes).toBeGreaterThan(5 * 3600);
+      expect(r.secondes).toBeLessThan(HEURES_MAX * 3600);
+      expect(r.ecartMax).toBeLessThanOrEqual(150 * 60);
     }
   }, 300_000);
 });

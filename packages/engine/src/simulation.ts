@@ -134,7 +134,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       const emplacement = verifierEmplacement(etat, commande.case);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];
-      if (!payer(etat, coutBatiment(contenu, etat.prestige.bonus, commande.batiment))) return refus('ressourcesInsuffisantes');
+      if (!payer(etat, coutBatiment(contenu, etat.prestige.bonus, commande.batiment, etat.batiments))) return refus('ressourcesInsuffisantes');
       etat.batiments.push({
         id: etat.prochainId++,
         type: commande.batiment,
@@ -169,7 +169,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         return refus('depotRequis');
       }
       const [b] = etat.batiments.splice(i, 1);
-      const cout = coutTotal(contenu, b!, etat.prestige.bonus);
+      const cout = coutTotal(contenu, b!, etat.prestige.bonus, etat.batiments);
       for (const r of cles(cout)) etat.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
       // La récolte en attente n'est pas perdue.
       for (const r of cles(b!.reserve)) etat.stocks[r] += b!.reserve[r] ?? 0;

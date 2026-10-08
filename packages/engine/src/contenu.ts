@@ -190,6 +190,8 @@ export interface Contenu {
   /** Améliorations du village, achetées à l'atelier. */
   ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;
   prestige: ContenuPrestige;
+  /** Hausse du prix d'un bâtiment par exemplaire du même type déjà posé (0,06 → +6 % composés). */
+  hausseParExemplaire: number;
   /** Part du coût rendue à la démolition, entre 0 et 1. */
   remboursementDemolition: number;
   /** `heureDeDepart` : heure du jour (entre 0 et 1) au premier pas d'une partie. */

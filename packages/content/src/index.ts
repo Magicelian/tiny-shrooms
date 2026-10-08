@@ -1,4 +1,4 @@
-// Valeurs d’équilibrage de la V1, réglées à l’étape 16 (`courbe.test.ts`).
+// Valeurs d’équilibrage, réglées aux étapes 16 et 17 (`courbe.test.ts`).
 import type { Contenu } from '@tiny-shrooms/engine';
 
 export const contenu: Contenu = {
@@ -29,7 +29,7 @@ export const contenu: Contenu = {
       voisinage: [{ voisin: 'gardeManger', bonus: 0.25 }],
     },
     feuDeCamp: { cout: { boisMort: 15 }, constructionSecondes: 20, portee: 2 },
-    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60, stockage: { spores: 60 }, unique: true },
+    atelier: { cout: { boisMort: 40, mousse: 20 }, constructionSecondes: 60, stockage: { spores: 160 }, unique: true },
     puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
     marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
     sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90, unique: true },
@@ -37,11 +37,11 @@ export const contenu: Contenu = {
   logement: {
     rangs: [
       { places: 2, besoins: ['nourriture'], palier: 0, sporesParMinute: 0.2 },
-      { places: 4, besoins: ['nourriture', 'chaleur', 'eau'], cout: { boisMort: 40, mousse: 20 }, palier: 1, sporesParMinute: 0.3, agrandissementSecondes: 45 },
+      { places: 4, besoins: ['nourriture', 'chaleur', 'eau'], cout: { boisMort: 80, mousse: 40 }, palier: 1, sporesParMinute: 0.3, agrandissementSecondes: 45 },
       {
         places: 8,
         besoins: ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce'],
-        cout: { boisMort: 80, mousse: 40, spores: 30 },
+        cout: { boisMort: 160, mousse: 80, spores: 60 },
         palier: 2,
         sporesParMinute: 0.5,
         agrandissementSecondes: 90,
@@ -50,11 +50,11 @@ export const contenu: Contenu = {
     ],
     sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche' },
   },
-  souche: { coutRetrait: { spores: 20 }, retraitSecondes: 45 },
+  souche: { coutRetrait: { spores: 40 }, retraitSecondes: 45 },
   defrichage: {
-    arbre: { cout: { spores: 2 }, secondes: 20, gain: { boisMort: 4 } },
-    buisson: { cout: { spores: 1 }, secondes: 10 },
-    plante: { cout: { spores: 1 }, secondes: 6 },
+    arbre: { cout: { spores: 4 }, secondes: 20, gain: { boisMort: 4 } },
+    buisson: { cout: { spores: 2 }, secondes: 10 },
+    plante: { cout: { spores: 2 }, secondes: 6 },
   },
   paliers: [
     { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'] },
@@ -77,8 +77,8 @@ export const contenu: Contenu = {
     reserveMax: 10,
     baiesParMinute: 0.5,
     ouvriersParChantier: 2,
-    delaiArriveeSecondes: 120,
-    // 1 place libre : 3 min ; 2 : 2 min ; 5 : 1 min ; 11 et plus : 30 s.
+    delaiArriveeSecondes: 240,
+    // 1 place libre : 6 min ; 2 : 4 min ; 5 : 2 min ; 11 et plus : 1 min.
     arriveeSelonPlaces: { placesDeReference: 2, delaiMinimal: 0.25 },
     // Faim ou besoins négligés : un départ toutes les 2 min tant que le bonheur moyen reste sous 50 %
     // (le joueur distrait en voit quelques-uns sans retard sur le bourg, voir courbe.test.ts).
@@ -93,8 +93,8 @@ export const contenu: Contenu = {
     bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, plafondAffame: 0.35, minutesPourSeStabiliser: 3 },
   },
   ameliorations: {
-    vitesse: { cout: { spores: 25 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 45 },
-    outils: { cout: { spores: 35 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 60 },
+    vitesse: { cout: { spores: 50 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 45 },
+    outils: { cout: { spores: 70 }, hausseCout: 1.6, effet: 0.15, niveauMax: 3, travauxSecondes: 60 },
   },
   // Bourg (50 habitants) → 6 graines, 100 → 15, 150 → 25 : attendre rapporte de plus en plus.
   prestige: {
@@ -116,6 +116,8 @@ export const contenu: Contenu = {
       accueil: 0.15,
     },
   },
+  // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.
+  hausseParExemplaire: 0.1,
   remboursementDemolition: 0.5,
   temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0.25 },
   saisons: {

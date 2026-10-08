@@ -33,7 +33,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   const { contenu } = controleur;
   const { bonusVise } = useMagasin(controleur.magasin);
   const { choix } = bulle;
-  const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix), instantane.stocks);
+  const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix, instantane.batiments), instantane.stocks);
   // Un bâtiment en un seul exemplaire disparaît du catalogue tant qu'il est là.
   const batissables = instantane.batimentsDebloques.filter((type) => !dejaConstruit(contenu, instantane.batiments, type));
   // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
@@ -44,7 +44,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
     <>
       <ul class="catalogue">
         {batissables.map((type) => {
-          const cout = coutBatiment(contenu, instantane.prestige.bonus, type);
+          const cout = coutBatiment(contenu, instantane.prestige.bonus, type, instantane.batiments);
           return (
             <li key={type}>
               <button
@@ -95,7 +95,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const [confirmer, setConfirmer] = useState(false);
   const { contenu } = controleur;
   const def = contenu.batiments[batiment.type];
-  const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus);
+  const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus, instantane.batiments);
   const enChantier = batiment.chantier !== null;
   // Construction, agrandissement ou amélioration : il faut des bâtisseurs.
   const enTravaux = enChantier || batiment.agrandissement !== null || batiment.amelioration !== null;

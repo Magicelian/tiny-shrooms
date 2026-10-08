@@ -88,6 +88,7 @@ function contenuDeTest(
         accueil: 0,
       },
     },
+    hausseParExemplaire: 0,
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
     saisons: { production: { printemps: {}, ete: {}, automne: {}, hiver: {} }, travailAuFroid: 1 },
