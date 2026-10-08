@@ -82,7 +82,7 @@ export function evaluerBesoins(etat: Etat, contenu: Contenu, nourri: boolean, oc
       if (besoin === 'nourriture') besoins[besoin] = nourri;
       else if (estRessource(besoin)) {
         // Rang actuel : la consommation de ce pas ; rang suivant : il suffit qu'il en reste en stock.
-        besoins[besoin] = rang.consommation?.[besoin] !== undefined ? servis : etat.stocks[besoin] > 0;
+        besoins[besoin] = rang.consommation?.[besoin] !== undefined ? servis : etat.partie.stocks[besoin] > 0;
       } else besoins[besoin] = sourceAPortee(etat, contenu, besoin, b, occupes);
     }
     b.besoins = besoins;
@@ -95,8 +95,8 @@ function consommer(etat: Etat, consommation: Quantites): boolean {
   let servi = true;
   for (const r of ressources) {
     const voulu = (consommation[r] ?? 0) / PAS_PAR_MINUTE;
-    const pris = Math.min(voulu, etat.stocks[r]);
-    etat.stocks[r] -= pris;
+    const pris = Math.min(voulu, etat.partie.stocks[r]);
+    etat.partie.stocks[r] -= pris;
     if (pris < voulu - 1e-9) servi = false;
   }
   return servi;

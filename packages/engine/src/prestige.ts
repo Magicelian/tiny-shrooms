@@ -1,10 +1,9 @@
-// Renaissance : on efface l'île et le village contre des graines de prestige, dépensées en bonus permanents.
+// Prestige et archipel : chaque île débloquée par une offrande rapporte des graines, dépensées en bonus permanents.
 // Les fonctions pures ne lisent que des types du contrat : l'interface s'en sert pour afficher coûts et effets.
-import type { Batiment, BonusPrestige, Prestige, Quantites, TypeBatiment } from './contrat';
+import type { Batiment, BonusPrestige, Offrande, Prestige, Quantites, Ressource, TypeBatiment } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
-import { creerEtat, type Etat } from './etat';
-import { creerHasard } from './hasard';
+import { ajouterIle, creerPartie, type Etat, type Partie } from './etat';
 
 /** Effets cumulés des bonus achetés. */
 export interface EffetsPrestige {
@@ -24,7 +23,7 @@ export interface EffetsPrestige {
 }
 
 export function prestigeNeuf(): Prestige {
-  return { graines: 0, renaissances: 0, bonus: { production: 0, depart: 0, construction: 0, logement: 0 }, populationMax: 0 };
+  return { graines: 0, bonus: { production: 0, depart: 0, construction: 0, logement: 0 } };
 }
 
 export function effetsPrestige(contenu: Contenu, bonus: Record<BonusPrestige, number>): EffetsPrestige {
@@ -45,8 +44,8 @@ export function effetsPrestige(contenu: Contenu, bonus: Record<BonusPrestige, nu
   };
 }
 
-/** Graines gagnées en renaissant avec cette population maximale. */
-export function gainRenaissance(contenu: Contenu, populationMax: number): number {
+/** Graines gagnées en débloquant l'île suivante, avec cette population maximale sur l'île en cours. */
+export function gainGraines(contenu: Contenu, populationMax: number): number {
   const { diviseur, puissance } = contenu.prestige.gain;
   return Math.floor((populationMax / diviseur) ** puissance);
 }
@@ -74,33 +73,55 @@ export function coutBatiment(
   return cout;
 }
 
-/** Vrai si un sanctuaire achevé permet de renaître. */
-export function peutRenaitre(etat: Etat): boolean {
+/** Offrande en cours sur cette île : seulement la dernière débloquée, tant qu'il reste des îles. */
+export function offrande(etat: Etat, contenu: Contenu): Offrande | null {
+  const indice = etat.partie.iles.indexOf(etat);
+  const objectif = contenu.archipel.offrandes[indice];
+  if (!objectif || indice !== etat.partie.iles.length - 1) return null;
+  return { objectif: { ...objectif }, depose: { ...etat.offrande }, graines: gainGraines(contenu, etat.populationMax) };
+}
+
+/** Vrai si un sanctuaire achevé permet de déposer l'offrande. */
+export function sanctuaireAcheve(etat: Etat): boolean {
   return etat.batiments.some((b) => b.type === 'sanctuaire' && b.chantier === null);
 }
 
-/** Nouvelle partie à zéro, prestige compris ; seuls les réglages restent. L'objet `etat` est modifié sur place. */
-export function recommencer(etat: Etat, contenu: Contenu, graine: number): void {
-  const reglages = etat.reglages;
-  Object.assign(etat, creerEtat(contenu, graine), { reglages });
+/** Dépose du stock commun ce qui manque à l'offrande, autant que possible ; rend ce qui a été déposé. */
+export function offrir(etat: Etat, contenu: Contenu): Quantites {
+  const depose: Quantites = {};
+  const objectif = offrande(etat, contenu)?.objectif ?? {};
+  for (const r of Object.keys(objectif) as Ressource[]) {
+    const manque = (objectif[r] ?? 0) - (etat.offrande[r] ?? 0);
+    // Le stock s'affiche arrondi à l'unité inférieure : on ne dépose que des unités entières.
+    const quantite = Math.min(manque, Math.floor(etat.partie.stocks[r]));
+    if (quantite <= 0) continue;
+    etat.partie.stocks[r] -= quantite;
+    etat.offrande[r] = (etat.offrande[r] ?? 0) + quantite;
+    depose[r] = quantite;
+  }
+  return depose;
 }
 
-/**
- * Remplace la partie par une nouvelle, sur une autre île ; seul le prestige, enrichi du gain, et les
- * réglages sont gardés. L'objet `etat` est modifié sur place : le moteur et ses caches le gardent.
- */
-export function renaitre(etat: Etat, contenu: Contenu): number {
-  const gain = gainRenaissance(contenu, etat.prestige.populationMax);
-  const prestige: Prestige = {
-    graines: etat.prestige.graines + gain,
-    renaissances: etat.prestige.renaissances + 1,
-    bonus: { ...etat.prestige.bonus },
-    populationMax: 0,
-  };
-  const graine = Math.floor(creerHasard(etat.graine)() * 2 ** 31) + 1;
-  const reglages = etat.reglages;
-  const neuf = creerEtat(contenu, graine, prestige);
-  // Les clés sont les mêmes : on remplace tout le contenu sans changer d'objet.
-  Object.assign(etat, neuf, { reglages });
+/** Vrai si l'offrande est complète. */
+export function offrandeRemplie(etat: Etat, contenu: Contenu): boolean {
+  const o = offrande(etat, contenu);
+  return !!o && (Object.keys(o.objectif) as Ressource[]).every((r) => (o.depose[r] ?? 0) >= (o.objectif[r] ?? 0));
+}
+
+/** Ajoute l'île suivante, l'affiche et donne les graines ; rend leur nombre. */
+export function debloquerIle(etat: Etat, contenu: Contenu): number {
+  const gain = gainGraines(contenu, etat.populationMax);
+  etat.partie.prestige.graines += gain;
+  ajouterIle(etat.partie, contenu);
+  etat.partie.vue = etat.partie.iles.length - 1;
   return gain;
+}
+
+/** Nouvelle partie à zéro, prestige compris ; seuls les réglages restent. L'objet `partie` est modifié sur place. */
+export function recommencer(partie: Partie, contenu: Contenu, graine: number): void {
+  const neuve = creerPartie(contenu, graine);
+  neuve.reglages = partie.reglages;
+  Object.assign(partie, neuve);
+  // Les îles neuves pointent vers l'objet qui vient d'être recopié : on les rattache à celui qu'on garde.
+  for (const ile of partie.iles) ile.partie = partie;
 }

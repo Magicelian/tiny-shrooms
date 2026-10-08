@@ -40,7 +40,7 @@ export const en: Record<keyof typeof fr, string> = {
   'effet.voisinage': '+{pourcent}% next to: {voisin}',
   'effet.bonusActuel': 'Neighbour bonus: +{pourcent}%',
   'effet.chantier': 'Building: {pourcent}%',
-  'effet.sanctuaire': 'Lets you be reborn on a new island',
+  'effet.sanctuaire': 'Receives the offerings that reveal a new island',
 
   // Terrains, pour les bonus de voisinage
   'terrain.foret': 'forest',
@@ -115,10 +115,12 @@ export const en: Record<keyof typeof fr, string> = {
   'amelioration.travaux': 'Work: {pourcent}%',
 
   // Renaissance
-  'prestige.gain': 'Yields {gain} seeds (record: {population} villagers)',
-  'prestige.efface': 'Everything restarts on a new island; seeds and bonuses stay.',
-  'prestige.renaitre': 'Be reborn (+{gain} seeds)',
-  'prestige.confirmer': 'Sure? The village will be erased',
+  'offrande.objectif': 'Offering to discover island {numero}:',
+  'offrande.graines': 'Will bring {graines} prestige seeds (based on this island’s population record)',
+  'offrande.deposer': 'Give from stock',
+  'offrande.faite': 'This island has already opened the way to the next one.',
+  'offrande.archipel': 'The whole archipelago is discovered!',
+  'archipel.ile': 'Island {numero}',
   'prestige.graines': 'Prestige seeds: {graines}',
   'prestige.pouvoirs': 'Powers',
   'prestige.astuce': 'Spend your seeds here: click the stump',
@@ -132,7 +134,7 @@ export const en: Record<keyof typeof fr, string> = {
   'bonus.effet.depart': 'At start: {liste}, {nombre} villager(s). Each level bought also helps right away.',
   'bonus.effet.construction': 'Cost −{cout}%, building +{vitesse}%',
   'bonus.effet.logement': 'Well-being +{pourcent}%, +{places} bed(s) per home, arrivals {accueil}% sooner',
-  'message.renaissance': 'New island! +{graines} prestige seeds',
+  'message.ileDebloquee': 'New island! +{graines} prestige seeds',
 
   // Habitants
   'habitants.detail': 'Villagers {nombre}/{places} beds',

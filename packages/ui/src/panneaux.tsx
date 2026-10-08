@@ -1,6 +1,6 @@
 // Contenu des bulles ouvertes au clic.
 import { useState } from 'preact/hooks';
-import type { Batiment, Case, Ile, Instantane, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Batiment, Case, Ile, Instantane, Ressource, TypeBatiment } from '@tiny-shrooms/engine';
 import { elementEn } from '@tiny-shrooms/engine';
 import {
   AMELIORATIONS_VILLAGE,
@@ -12,14 +12,14 @@ import {
   coutTotal,
   dejaConstruit,
   effetsPrestige,
-  gainRenaissance,
   placesLogement,
   placesSouche,
   rangLogement,
   refusMontee,
+  RESSOURCES,
 } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, pourcent } from './format';
+import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, nomRessource, pourcent } from './format';
 import { Cout, Icone, Phrase } from './composants';
 import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
@@ -347,20 +347,30 @@ function Ameliorations({ controleur, instantane }: Props) {
   );
 }
 
-/** Renaissance : gain annoncé, puis confirmation. Les bonus s'achètent à la souche. */
+/** Offrande : ce qui reste à déposer pour découvrir l'île suivante, et les graines qu'elle rapportera. */
 function Sanctuaire({ controleur, instantane }: Props) {
-  const [confirmer, setConfirmer] = useState(false);
-  const { prestige } = instantane;
-  const gain = gainRenaissance(controleur.contenu, prestige.populationMax);
+  const { offrande, ile, iles, stocks } = instantane;
+  if (!offrande) return <p class="discret">{t(ile < iles.length - 1 ? 'offrande.faite' : 'offrande.archipel')}</p>;
+  const ressources = RESSOURCES.filter((r) => offrande.objectif[r]);
+  const reste = (r: Ressource) => (offrande.objectif[r] ?? 0) - (offrande.depose[r] ?? 0);
+  const possible = ressources.some((r) => reste(r) > 0 && stocks[r].quantite >= 1);
   return (
     <>
-      <p>{t('prestige.gain', { gain, population: prestige.populationMax })}</p>
-      <p class="discret">{t('prestige.efface')}</p>
-      <button
-        class={`bouton large ${confirmer ? 'danger' : 'valider'}`}
-        onClick={() => (confirmer ? controleur.envoyer({ type: 'renaitre' }) : setConfirmer(true))}
-      >
-        {confirmer ? t('prestige.confirmer') : t('prestige.renaitre', { gain })}
+      <p>{t('offrande.objectif', { numero: ile + 2 })}</p>
+      <ul class="offrande">
+        {ressources.map((r) => (
+          <li key={r}>
+            <Icone nom={r} titre={nomRessource(r)} />
+            <Jauge valeur={(offrande.depose[r] ?? 0) / offrande.objectif[r]!} />
+            <span class="discret">
+              {nombre(offrande.depose[r] ?? 0)}/{nombre(offrande.objectif[r]!)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p class="discret">{t('offrande.graines', { graines: offrande.graines })}</p>
+      <button class="bouton large valider" disabled={!possible} onClick={() => controleur.envoyer({ type: 'offrir' })}>
+        {t('offrande.deposer')}
       </button>
     </>
   );

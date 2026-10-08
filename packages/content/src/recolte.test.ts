@@ -17,7 +17,7 @@ function premiereHutte(graine: number): { moteur: Moteur; posee: number; achevee
       etat.ile.elements.forEach((e, element) => {
         if (e.type === 'boisMort' && etat.pousses[element]! >= 1) commander({ type: 'recolter', element });
       });
-      if (etat.stocks.boisMort >= contenu.batiments.hutte.cout.boisMort!) {
+      if (etat.partie.stocks.boisMort >= contenu.batiments.hutte.cout.boisMort!) {
         const c = moteur.casesLibres()[0]!;
         commander({ type: 'poserBatiment', batiment: 'hutte', case: c, orientation: 0 });
         posee = seconde;
@@ -29,7 +29,7 @@ function premiereHutte(graine: number): { moteur: Moteur; posee: number; achevee
 
 describe('Partie neuve', () => {
   it('commence sans habitant ni stock', () => {
-    const { habitants, stocks, batiments } = new Moteur(contenu, 0).etatCourant;
+    const { habitants, partie: { stocks }, batiments } = new Moteur(contenu, 0).etatCourant;
     expect(habitants).toHaveLength(0);
     expect(batiments).toHaveLength(0);
     expect(Object.values(stocks).every((q) => q === 0)).toBe(true);

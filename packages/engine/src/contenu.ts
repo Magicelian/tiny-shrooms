@@ -150,9 +150,9 @@ export interface DefinitionPalier {
   debloque: TypeBatiment[];
 }
 
-/** Renaissance au sanctuaire. */
+/** Graines de prestige, gagnées en débloquant une île, et bonus permanents. */
 export interface ContenuPrestige {
-  /** Graines gagnées : `floor((populationMax / diviseur) ^ puissance)`. */
+  /** Graines gagnées : `floor((population maximale de l'île / diviseur) ^ puissance)`. */
   gain: { diviseur: number; puissance: number };
   /** Prix en graines du premier niveau, multiplié par `hausseCout` à chaque niveau suivant. */
   bonus: Record<BonusPrestige, { cout: number; hausseCout: number; niveauMax: number }>;
@@ -190,6 +190,11 @@ export interface Contenu {
   /** Améliorations du village, achetées à l'atelier. */
   ameliorations: Record<AmeliorationVillage, DefinitionAmelioration>;
   prestige: ContenuPrestige;
+  /**
+   * `offrandes[i]` : ce qu'il faut déposer au sanctuaire de l'île i pour débloquer l'île i + 1 ;
+   * l'archipel compte donc une île de plus que d'offrandes.
+   */
+  archipel: { offrandes: Quantites[] };
   /** Hausse du prix d'un bâtiment par exemplaire du même type déjà posé (0,06 → +6 % composés). */
   hausseParExemplaire: number;
   /** Part du coût rendue à la démolition, entre 0 et 1. */

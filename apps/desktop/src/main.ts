@@ -95,10 +95,10 @@ moteur.onmessage = ({ data }: MessageEvent<MessageDepuisMoteur>) => {
     }
     setInterval(sauvegarder, SAUVEGARDE_AUTO_MS);
   }
-  if (data.type === 'ile') rendu.appliquerIle(data.ile);
+  if (data.type === 'ile') rendu.appliquerIle(data.ile, data.indice);
   else if (data.type === 'instantane') {
     rendu.appliquerInstantane(data.instantane);
-    signalerProblemes(problemes(data.instantane, contenu));
+    signalerProblemes(problemes(data.instantane));
   }
   ui.recevoir(data);
 };

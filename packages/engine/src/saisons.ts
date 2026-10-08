@@ -45,13 +45,13 @@ export function meteoAu(pas: number, graine: number, contenu: Contenu): Meteo {
 
 /** Multiplicateur de production d'une ressource dû à la saison et à la météo. */
 export function facteurSaison(etat: Etat, contenu: Contenu, ressource: Ressource): number {
-  const { saison } = calendrier(etat.pas, contenu);
-  const meteo = meteoAu(etat.pas, etat.graine, contenu);
+  const { saison } = calendrier(etat.partie.pas, contenu);
+  const meteo = meteoAu(etat.partie.pas, etat.graine, contenu);
   return (contenu.saisons.production[saison][ressource] ?? 1) * (contenu.meteo.production[meteo][ressource] ?? 1);
 }
 
 export function estLHiver(etat: Etat, contenu: Contenu): boolean {
-  return calendrier(etat.pas, contenu).saison === 'hiver';
+  return calendrier(etat.partie.pas, contenu).saison === 'hiver';
 }
 
 /** Centre du feu de camp allumé le plus proche, s'il y en a un. */

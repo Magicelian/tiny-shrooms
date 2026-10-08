@@ -1,6 +1,6 @@
 // Courbe de l'étape 16 : ce que voit un joueur attentif et un joueur distrait, qui ne regarde l'île que de temps en temps.
 import { describe, expect, it } from 'vitest';
-import { creerEtat, Moteur } from '@tiny-shrooms/engine';
+import { creerPartie, Moteur } from '@tiny-shrooms/engine';
 import { contenu } from './index';
 import { BOURG, Joueur, PAS_PAR_SECONDE } from './joueur';
 
@@ -35,7 +35,7 @@ function nouveautes(moteur: Moteur): string[] {
 }
 
 function jouer(graine: number, profil: Profil) {
-  const moteur = new Moteur(contenu, 0, creerEtat(contenu, graine));
+  const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
   const joueur = new Joueur(moteur);
   const vus = new Set<string>();
   const jalons: [number, string][] = [];

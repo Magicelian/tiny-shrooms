@@ -1,6 +1,6 @@
 // Critère de l'étape 13 : depuis une partie neuve, un joueur scripté (`joueur.ts`) atteint le palier bourg.
 import { describe, expect, it } from 'vitest';
-import { creerEtat, Moteur, terrainEn } from '@tiny-shrooms/engine';
+import { creerPartie, Moteur, terrainEn } from '@tiny-shrooms/engine';
 import { contenu } from './index';
 import { BOURG, Joueur, PAS_PAR_SECONDE } from './joueur';
 
@@ -8,7 +8,7 @@ const HEURES_MAX = 20;
 
 describe('Joueur scripté jusqu’au bourg', () => {
   it.each([1, 2, 3])('graine %i : palier bourg atteint sans jamais perdre d’habitant ni marcher sur l’eau', (graine) => {
-    const moteur = new Moteur(contenu, 0, creerEtat(contenu, graine));
+    const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
     const joueur = new Joueur(moteur);
     const paliers: string[] = [];
     let population = 0;

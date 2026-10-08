@@ -96,6 +96,39 @@
 .ecriteau::after {
   right: 8px;
 }
+/* Île affichée, entre deux flèches, centrée sous les deux autres écriteaux (à 320 px, ils occupent toute la largeur) */
+.ecriteau.archipel {
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-inline: 2px;
+}
+.fleche-ile {
+  position: relative;
+  padding: 0 3px;
+  font: inherit;
+  color: inherit;
+  text-shadow: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.fleche-ile:disabled {
+  visibility: hidden;
+}
+.fleche-ile.alerte::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 3px;
+  background: #e0503a;
+  box-shadow: 0 0 0 1px var(--encre);
+}
 /* Habitants, sur un écriteau jumeau en haut à droite */
 .ecriteau.population {
   left: auto;
@@ -700,6 +733,26 @@
 }
 .ameliorations li + li {
   border-top: 2px dashed var(--papier-fonce);
+}
+
+/* Offrande du sanctuaire : une jauge par ressource demandée */
+.offrande {
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+.offrande li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.offrande .jauge {
+  flex: 1;
+  margin: 2px;
+}
+.offrande .discret {
+  min-width: 64px;
+  text-align: right;
 }
 
 /* Messages et bandeau dans le même habit */

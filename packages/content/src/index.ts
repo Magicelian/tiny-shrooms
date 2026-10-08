@@ -116,6 +116,16 @@ export const contenu: Contenu = {
       accueil: 0.15,
     },
   },
+  // Offrandes au sanctuaire : l'île i débloque l'île i + 1 (cinq îles). La première prend ~1 h après le bourg au
+  // joueur attentif (`archipel.test.ts`) ; les suivantes doublent, en attendant les ressources des biomes.
+  archipel: {
+    offrandes: [
+      { boisMort: 1100, mousse: 800, baiesSechees: 350, spores: 1300 },
+      { boisMort: 2200, mousse: 1600, baiesSechees: 700, spores: 2600 },
+      { boisMort: 4400, mousse: 3200, baiesSechees: 1400, spores: 5200 },
+      { boisMort: 8800, mousse: 6400, baiesSechees: 2800, spores: 10400 },
+    ],
+  },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.
   hausseParExemplaire: 0.1,
   remboursementDemolition: 0.5,

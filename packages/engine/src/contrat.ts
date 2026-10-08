@@ -136,20 +136,35 @@ export type Besoin = (typeof BESOINS)[number];
 export const AMELIORATIONS_VILLAGE = ['vitesse', 'outils'] as const;
 export type AmeliorationVillage = (typeof AMELIORATIONS_VILLAGE)[number];
 
-// ─── Renaissance ─────────────────────────────────────────────────────────────
+// ─── Prestige et archipel ────────────────────────────────────────────────────
 
-/** Bonus permanents achetés en graines de prestige ; ils survivent aux renaissances. */
+/** Bonus permanents achetés en graines de prestige, gagnées en débloquant les îles. */
 export const BONUS_PRESTIGE = ['production', 'depart', 'construction', 'logement'] as const;
 export type BonusPrestige = (typeof BONUS_PRESTIGE)[number];
 
 export interface Prestige {
   /** Graines de prestige à dépenser. */
   graines: number;
-  renaissances: number;
   /** Niveau acheté de chaque bonus. */
   bonus: Record<BonusPrestige, number>;
-  /** Plus grand nombre d'habitants de la partie en cours : il fixe le gain de la prochaine renaissance. */
-  populationMax: number;
+}
+
+/** Ce qui mérite qu'on revienne voir une île : signalé par une pastille sur l'icône de la barre des menus. */
+export type Probleme = 'faim' | 'froid' | 'malheur';
+
+/** Ce qu'on sait de chaque île sans l'afficher : pour la navigation et la pastille. */
+export interface ResumeIle {
+  palier: number;
+  habitants: number;
+  problemes: Probleme[];
+}
+
+/** Objectif du sanctuaire de la dernière île : une fois rempli, l'île suivante apparaît. */
+export interface Offrande {
+  objectif: Quantites;
+  depose: Quantites;
+  /** Graines gagnées en débloquant l'île suivante, avec la population maximale de celle-ci. */
+  graines: number;
 }
 
 // ─── Habitants ───────────────────────────────────────────────────────────────
@@ -220,6 +235,12 @@ export interface Reglages {
 /** État léger émis à chaque pas de simulation (toutes les 250 ms). */
 export interface Instantane {
   temps: Temps;
+  /** Indice de l'île affichée, à laquelle se rapportent les champs qui suivent `iles`. */
+  ile: number;
+  iles: ResumeIle[];
+  /** Offrande de l'île affichée, si c'est la dernière débloquée et qu'il en reste à débloquer. */
+  offrande: Offrande | null;
+  /** Stock commun à toutes les îles. */
   stocks: Record<Ressource, Stock>;
   batiments: Batiment[];
   habitants: Habitant[];
@@ -257,9 +278,11 @@ export type Commande =
   | { type: 'annulerArrachage'; case: Case | null }
   /** Sur un logement, la montée au rang suivant ; sur le village, un niveau d'amélioration de l'atelier. */
   | { type: 'ameliorer'; cible: { batiment: IdBatiment } | { village: AmeliorationVillage } }
-  /** Au sanctuaire : efface l'île et le village contre des graines de prestige. */
-  | { type: 'renaitre' }
-  /** Dépense des graines de prestige ; possible à tout moment (juste après une renaissance notamment). */
+  /** Affiche une autre île : les commandes visent toujours l'île affichée. */
+  | { type: 'voirIle'; ile: number }
+  /** Au sanctuaire de la dernière île : dépose du stock commun tout ce qui manque à l'offrande, autant que possible. */
+  | { type: 'offrir' }
+  /** Dépense des graines de prestige ; possible à tout moment. */
   | { type: 'acheterBonus'; bonus: BonusPrestige }
   /** Menu de démarrage : tout effacer, prestige compris, et repartir sur l'île de cette graine. */
   | { type: 'recommencer'; graine: number }
@@ -297,8 +320,8 @@ export type Evenement =
   | { type: 'logementAmeliore'; id: IdBatiment; niveau: number }
   | { type: 'villageAmeliore'; amelioration: AmeliorationVillage; niveau: number }
   | { type: 'soucheRetiree' }
-  /** Nouvelle île : l'instantané suivant décrit déjà la nouvelle partie. */
-  | { type: 'renaissance'; graines: number }
+  /** Offrande remplie : l'île `ile` apparaît et devient l'île affichée. */
+  | { type: 'ileDebloquee'; ile: number; graines: number }
   | { type: 'partieRecommencee' }
   | { type: 'defriche'; case: Case; nature: Defrichable }
   | { type: 'recolte'; element: IdElement; ressource: Ressource; quantite: number }
@@ -324,7 +347,8 @@ export type MessageVersMoteur =
   | { type: 'sauvegarder' };
 
 export type MessageDepuisMoteur =
-  | { type: 'ile'; ile: Ile }
+  /** L'île affichée, à son arrivée et quand sa forme change (souche, défrichage, autre île affichée). */
+  | { type: 'ile'; ile: Ile; indice: number }
   /**
    * Réponse à `demarrer`. `secours` : le fichier principal était illisible, une copie a pris le relais ;
    * `illisible` : aucun fichier n'a pu être relu, une nouvelle partie commence ;

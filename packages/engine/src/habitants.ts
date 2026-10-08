@@ -42,7 +42,7 @@ export function appelerArracheurs(etat: Etat, contenu: Contenu): void {
 }
 
 export function estLaNuit(etat: Etat, contenu: Contenu): boolean {
-  const heure = heureDuJour(etat.pas, contenu.temps);
+  const heure = heureDuJour(etat.partie.pas, contenu.temps);
   const { debut, fin } = contenu.habitants.nuit;
   if (debut === fin) return false;
   return debut < fin ? heure >= debut && heure < fin : heure >= debut || heure < fin;
@@ -55,7 +55,7 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   evaluerBesoins(etat, contenu, nourri, emploisTenus(etat));
   const { loges, capacite } = logements(etat, contenu);
   const nuit = estLaNuit(etat, contenu);
-  const bonusBienEtre = effetsPrestige(contenu, etat.prestige.bonus).bienEtre;
+  const bonusBienEtre = effetsPrestige(contenu, etat.partie.prestige.bonus).bienEtre;
 
   for (const h of etat.habitants) {
     majBienEtre(h, contenu, loges.get(h.id), nourri, bonusBienEtre);
@@ -109,7 +109,7 @@ function enTravaux(b: BatimentEtat): boolean {
 
 /** Fait avancer des travaux (chantier, agrandissement, amélioration) d'un pas ; renvoie vrai s'ils viennent de finir. */
 function avancerChantier(etat: Etat, contenu: Contenu, b: BatimentEtat, cadence: number, evenements: Evenement[]): boolean {
-  const vitesse = effetsPrestige(contenu, etat.prestige.bonus).chantier;
+  const vitesse = effetsPrestige(contenu, etat.partie.prestige.bonus).chantier;
   if (b.chantier === null) {
     if (b.amelioration !== null) {
       const { village } = b.amelioration;
@@ -147,8 +147,8 @@ function nourrir(etat: Etat, contenu: Contenu): boolean {
   let besoin = (etat.habitants.length * contenu.habitants.baiesParMinute) / PAS_PAR_MINUTE;
   const valeurs = { baies: 1, baiesSechees: contenu.habitants.valeurBaieSechee } as const;
   for (const r of ['baies', 'baiesSechees'] as const) {
-    const pris = Math.min(besoin / valeurs[r], etat.stocks[r]);
-    etat.stocks[r] -= pris;
+    const pris = Math.min(besoin / valeurs[r], etat.partie.stocks[r]);
+    etat.partie.stocks[r] -= pris;
     besoin -= pris * valeurs[r];
   }
   return besoin <= 1e-9;
@@ -163,7 +163,7 @@ function emploisTenus(etat: Etat): Set<number> {
 
 /** Logement de chaque habitant logé (`true` pour la souche-dépôt, sinon la hutte) et nombre total de places. */
 export function logements(etat: Etat, contenu: Contenu): { loges: Map<number, BatimentEtat | true>; capacite: number } {
-  const effets = effetsPrestige(contenu, etat.prestige.bonus);
+  const effets = effetsPrestige(contenu, etat.partie.prestige.bonus);
   const souche = placesSouche(contenu, effets.habitantsDeDepart, etat.ile.soucheEnPlace);
   const places: (BatimentEtat | true)[] = Array.from({ length: souche }, () => true);
   for (const b of etat.batiments) {
@@ -226,7 +226,7 @@ function arrivees(etat: Etat, contenu: Contenu, capacite: number, evenements: Ev
   const regle = contenu.habitants.arriveeSelonPlaces;
   etat.pasAvantArrivee -= regle ? Math.min(1 / regle.delaiMinimal, (capacite - n + 1) / (regle.placesDeReference + 1)) : 1;
   if (etat.pasAvantArrivee > 0) return;
-  const accueil = effetsPrestige(contenu, etat.prestige.bonus).arrivee;
+  const accueil = effetsPrestige(contenu, etat.partie.prestige.bonus).arrivee;
   etat.pasAvantArrivee = (contenu.habitants.delaiArriveeSecondes * accueil * 1000) / PAS_DE_SIMULATION_MS;
   evenements.push({ type: 'habitantArrive', id: ajouterHabitant(etat).id });
 }
@@ -395,13 +395,13 @@ function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat
   for (const r of cles(produit)) {
     if (produit[r]! > 0) part = Math.min(part, Math.max(0, contenu.habitants.reserveMax - (b.reserve[r] ?? 0)) / produit[r]!);
   }
-  for (const r of cles(consomme)) part = Math.min(part, etat.stocks[r] / consomme[r]!);
+  for (const r of cles(consomme)) part = Math.min(part, etat.partie.stocks[r] / consomme[r]!);
   if (!(part > 0)) {
     h.activite = 'attend';
     h.mission = null;
     return;
   }
-  for (const r of cles(consomme)) etat.stocks[r] -= consomme[r]! * part;
+  for (const r of cles(consomme)) etat.partie.stocks[r] -= consomme[r]! * part;
   for (const r of cles(produit)) b.reserve[r] = (b.reserve[r] ?? 0) + produit[r]! * part;
   h.activite = 'recolte';
 }
@@ -433,7 +433,7 @@ function deposer(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
   }
   // Toujours déposé en entier : la place a été retenue au ramassage, et un stock rempli entre-temps
   // déborde à peine plutôt que de bloquer le porteur. La charge rejoint les arrivages, rangés peu à peu.
-  etat.arrivages[charge.ressource] += charge.quantite;
+  etat.partie.arrivages[charge.ressource] += charge.quantite;
   h.charge = null;
   h.mission = null;
   h.activite = 'attend';
@@ -441,9 +441,9 @@ function deposer(etat: Etat, contenu: Contenu, h: HabitantEtat): void {
 
 /** Place restante dans les stocks, charges déjà en route comprises. */
 function placeLibre(etat: Etat, contenu: Contenu): Record<Ressource, number> {
-  const max = plafonds(etat, contenu);
+  const max = plafonds(etat.partie, contenu);
   const place = {} as Record<Ressource, number>;
-  for (const r of RESSOURCES) place[r] = max[r] - etat.stocks[r] - etat.arrivages[r];
+  for (const r of RESSOURCES) place[r] = max[r] - etat.partie.stocks[r] - etat.partie.arrivages[r];
   for (const h of etat.habitants) if (h.charge) place[h.charge.ressource] -= h.charge.quantite;
   for (const r of RESSOURCES) place[r] = Math.max(0, place[r]);
   return place;

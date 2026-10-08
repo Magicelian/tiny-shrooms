@@ -50,10 +50,10 @@ export function avancerDefrichage(etat: Etat, contenu: Contenu, c: Case, cadence
     ile.elements.splice(element, 1);
     etat.pousses.splice(element, 1);
   }
-  const max = plafonds(etat, contenu);
+  const max = plafonds(etat.partie, contenu);
   for (const r of RESSOURCES) {
     const gain = def.gain?.[r] ?? 0;
-    if (gain > 0) etat.stocks[r] = Math.max(etat.stocks[r], Math.min(max[r], etat.stocks[r] + gain));
+    if (gain > 0) etat.partie.stocks[r] = Math.max(etat.partie.stocks[r], Math.min(max[r], etat.partie.stocks[r] + gain));
   }
   majBonusVoisinage(etat, contenu);
   evenements.push({ type: 'defriche', case: { ...c }, nature: d.nature });

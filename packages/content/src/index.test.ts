@@ -22,7 +22,7 @@ describe('Une heure simulée avec le contenu de la V1', () => {
 
   it('paie les trois bâtiments sur le stock de départ', () => {
     expect(moteur.etatCourant.batiments).toHaveLength(3);
-    expect(moteur.etatCourant.stocks).toMatchObject({ baies: 10, boisMort: 25 });
+    expect(moteur.etatCourant.partie.stocks).toMatchObject({ baies: 10, boisMort: 25 });
   });
 
   it('les habitants construisent seuls les trois chantiers', () => {
@@ -32,10 +32,10 @@ describe('Une heure simulée avec le contenu de la V1', () => {
   });
 
   it('puis récoltent et remplissent les stocks', () => {
-    const { baies, boisMort } = moteur.etatCourant.stocks;
+    const { baies, boisMort } = moteur.etatCourant.partie.stocks;
     minutes(12);
-    expect(moteur.etatCourant.stocks.baies).toBeGreaterThan(baies + 10);
-    expect(moteur.etatCourant.stocks.boisMort).toBeGreaterThan(boisMort + 10);
+    expect(moteur.etatCourant.partie.stocks.baies).toBeGreaterThan(baies + 10);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBeGreaterThan(boisMort + 10);
   });
 
   it('accueillent de nouveaux habitants dans la hutte', () => {
@@ -45,7 +45,7 @@ describe('Une heure simulée avec le contenu de la V1', () => {
 
   it('tiennent une heure sans rien perdre ni rester affamés', () => {
     minutes(45);
-    const { stocks, habitants } = moteur.etatCourant;
+    const { partie: { stocks }, habitants } = moteur.etatCourant;
     for (const r of RESSOURCES) expect(stocks[r]).toBeGreaterThanOrEqual(0);
     expect(stocks.spores).toBeGreaterThan(0);
     expect(Math.min(...habitants.map((h) => h.bienEtre))).toBeGreaterThan(0.6);
@@ -68,7 +68,7 @@ describe('Une année sans préparer l’hiver', () => {
       const habitants = moteur.etatCourant.habitants.length;
       const enReserve = reserveDeBaies();
       for (const e of moteur.simuler(PAS_PAR_MINUTE)) if (e.type === 'saisonChangee') saisons.push(e.saison);
-      const { stocks } = moteur.etatCourant;
+      const { stocks } = moteur.etatCourant.partie;
       // Rien ne se perd : ni habitant, ni stock négatif ; l'hiver, la cueillette ne produit plus rien
       // (les baies récoltées avant peuvent encore être livrées).
       expect(moteur.etatCourant.habitants.length).toBeGreaterThanOrEqual(habitants);
@@ -82,8 +82,8 @@ describe('Une année sans préparer l’hiver', () => {
 
   it('ralentit en hiver sans rien faire perdre, puis repart', () => {
     expect(moteur.etatCourant.habitants.length).toBeGreaterThanOrEqual(4);
-    const baies = moteur.etatCourant.stocks.baies + reserveDeBaies();
+    const baies = moteur.etatCourant.partie.stocks.baies + reserveDeBaies();
     moteur.simuler(10 * PAS_PAR_MINUTE);
-    expect(moteur.etatCourant.stocks.baies + reserveDeBaies()).toBeGreaterThan(baies);
+    expect(moteur.etatCourant.partie.stocks.baies + reserveDeBaies()).toBeGreaterThan(baies);
   });
 });

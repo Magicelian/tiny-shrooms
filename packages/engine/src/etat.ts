@@ -1,4 +1,4 @@
-// État complet de la partie : sérialisable tel quel, seul le moteur le modifie.
+// État de la partie : le commun à toutes les îles (`Partie`) et chaque île avec son village (`Etat`).
 import type {
   AmeliorationVillage,
   Batiment,
@@ -16,6 +16,7 @@ import type {
 } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
+import { creerHasard } from './hasard';
 import { centreSouche, genererIle } from './ile';
 import { effetsPrestige, prestigeNeuf } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
@@ -40,11 +41,32 @@ export interface HabitantEtat extends Omit<Habitant, 'lieu'> {
   pasDepuisChoix: number;
 }
 
-export interface Etat {
+/**
+ * Partie complète : ce qui est commun à toutes les îles, puis les îles. Sérialisable une fois retiré le lien
+ * `partie` de chaque île (voir `sauvegarde.ts`) ; seul le moteur la modifie.
+ */
+export interface Partie {
   pas: number;
+  /** Graine de la météo et des îles à venir ; la première île a la même. */
+  graine: number;
+  /** Stock commun à toutes les îles. */
+  stocks: Record<Ressource, number>;
+  /** Livraisons posées aux dépôts, rangées dans les stocks peu à peu, au rythme de la production. */
+  arrivages: Record<Ressource, number>;
+  prestige: Prestige;
+  reglages: Reglages;
+  /** Îles débloquées, dans l'ordre ; toutes vivent en même temps. */
+  iles: Etat[];
+  /** Indice de l'île affichée : les commandes la visent. */
+  vue: number;
+}
+
+/** Une île et son village ; `partie` mène à ce qui est commun (temps, stock, prestige, réglages). */
+export interface Etat {
+  partie: Partie;
+  /** Graine qui a dessiné cette île. */
   graine: number;
   ile: Ile;
-  stocks: Record<Ressource, number>;
   batiments: BatimentEtat[];
   prochainId: number;
   habitants: HabitantEtat[];
@@ -64,23 +86,55 @@ export interface Etat {
   /** Cases en cours de défrichage, dans l'ordre des commandes. */
   defrichages: Defrichage[];
   ameliorations: Record<AmeliorationVillage, number>;
-  /** Gardé d'une renaissance à l'autre. */
-  prestige: Prestige;
-  reglages: Reglages;
-  /** Livraisons posées au dépôt, rangées dans les stocks peu à peu, au rythme de la production. */
-  arrivages: Record<Ressource, number>;
+  /** Plus grand nombre d'habitants de l'île : il fixe les graines gagnées en débloquant la suivante. */
+  populationMax: number;
+  /** Déjà déposé au sanctuaire pour débloquer l'île suivante. */
+  offrande: Quantites;
 }
 
-export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = prestigeNeuf()): Etat {
-  const ile = genererIle(contenu.ile.taille, graine, prestige.renaissances);
+export function creerPartie(contenu: Contenu, graine = 1, prestige: Prestige = prestigeNeuf()): Partie {
   const effets = effetsPrestige(contenu, prestige.bonus);
   const stocks = { ...contenu.stocksDeDepart };
   for (const r of RESSOURCES) stocks[r] += effets.stocksDeDepart[r] ?? 0;
-  const etat: Etat = {
+  const partie: Partie = {
     pas: 0,
     graine,
-    ile,
     stocks,
+    arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
+    prestige,
+    reglages: {
+      langue: 'fr',
+      sonActive: false,
+      volume: 0.5,
+      opacite: 1,
+      toujoursAuDessus: true,
+      lancementAuDemarrage: false,
+    },
+    iles: [],
+    vue: 0,
+  };
+  ajouterIle(partie, contenu, graine);
+  return partie;
+}
+
+/** Première île d'une partie neuve. */
+export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = prestigeNeuf()): Etat {
+  return creerPartie(contenu, graine, prestige).iles[0]!;
+}
+
+/** Graine de l'île d'indice `indice`, tirée de celle de la partie ; la première île garde la même. */
+export function graineIle(partie: Pick<Partie, 'graine'>, indice: number): number {
+  return indice === 0 ? partie.graine : Math.floor(creerHasard(partie.graine + indice)() * 2 ** 31) + 1;
+}
+
+/** Nouvelle île vierge au bout de l'archipel, avec sa souche et ses habitants de départ. */
+export function ajouterIle(partie: Partie, contenu: Contenu, graine = graineIle(partie, partie.iles.length)): Etat {
+  const ile = genererIle(contenu.ile.taille, graine);
+  const effets = effetsPrestige(contenu, partie.prestige.bonus);
+  const etat: Etat = {
+    partie,
+    graine,
+    ile,
     batiments: [],
     prochainId: 1,
     habitants: [],
@@ -92,19 +146,12 @@ export function creerEtat(contenu: Contenu, graine = 1, prestige: Prestige = pre
     retraitSouche: null,
     defrichages: [],
     ameliorations: { vitesse: 0, outils: 0 },
-    prestige,
-    reglages: {
-      langue: 'fr',
-      sonActive: false,
-      volume: 0.5,
-      opacite: 1,
-      toujoursAuDessus: true,
-      lancementAuDemarrage: false,
-    },
-    arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
+    populationMax: 0,
+    offrande: {},
   };
+  partie.iles.push(etat);
   for (let i = 0; i < contenu.habitants.auDepart + effets.habitantsDeDepart; i++) ajouterHabitant(etat);
-  prestige.populationMax = Math.max(prestige.populationMax, etat.habitants.length);
+  etat.populationMax = etat.habitants.length;
   return etat;
 }
 
@@ -133,9 +180,10 @@ export function ajouterHabitant(etat: Etat): HabitantEtat {
   return habitant;
 }
 
-export function plafonds(etat: Etat, contenu: Contenu): Record<Ressource, number> {
+/** Plafonds du stock commun : ceux de base, plus les réserves achevées de toutes les îles. */
+export function plafonds(partie: Partie, contenu: Contenu): Record<Ressource, number> {
   const resultat = { ...contenu.plafondsDeBase };
-  for (const b of etat.batiments) {
+  for (const b of partie.iles.flatMap((e) => e.batiments)) {
     if (b.chantier !== null) continue;
     const stockage = contenu.batiments[b.type].stockage ?? {};
     for (const r of RESSOURCES) resultat[r] += stockage[r] ?? 0;

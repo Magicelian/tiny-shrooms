@@ -3,9 +3,10 @@ import type { Commande, Evenement, Instantane, Quantites, RaisonRefus, Ressource
 import { RESSOURCES } from './contrat';
 import { bonusProduction, coutAmelioration, payer, rembourser } from './ameliorations';
 import { BONUS_PRESTIGE } from './contrat';
-import { coutBatiment, coutBonus, peutRenaitre, recommencer, renaitre } from './prestige';
+import { coutBatiment, coutBonus, debloquerIle, offrande, offrandeRemplie, offrir, recommencer, sanctuaireAcheve } from './prestige';
 import type { Contenu } from './contenu';
-import { ajouterHabitant, plafonds, type Etat } from './etat';
+import { ajouterHabitant, plafonds, type Etat, type Partie } from './etat';
+import { problemesDe } from './problemes';
 import { dejaConstruit, majBonusVoisinage, verifierEmplacement } from './grille';
 import { appelerArracheurs, avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
@@ -24,7 +25,7 @@ const MINUTES_POUR_RANGER = 1;
  * `production` : récoltes en cours ; `estime` : bilan affiché, repas et consommations compris.
  */
 function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production: Flux; estime: Flux } {
-  const direct: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
+  const direct = fluxNul();
   const h = contenu.habitants;
   const { loges } = logements(etat, contenu);
   const bonus = bonusProduction(etat, contenu);
@@ -36,7 +37,7 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
     direct.spores += (rang?.sporesParMinute ?? 0) * Math.min(1, joie) * bonus;
   }
 
-  const production: Flux = { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
+  const production = fluxNul();
   const estime = { ...direct };
   // Les consommations des logements sont déjà prélevées pas à pas ; on les montre dans la tendance.
   for (const b of etat.batiments) {
@@ -45,7 +46,7 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
   }
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.
-  const nourri = etat.stocks.baies + etat.stocks.baiesSechees > 0;
+  const nourri = etat.partie.stocks.baies + etat.partie.stocks.baiesSechees > 0;
   for (const habitant of etat.habitants) {
     const m = habitant.mission;
     if (m?.tache !== 'recolter' || habitant.activite !== 'recolte') continue;
@@ -63,42 +64,65 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
   return { direct, production, estime };
 }
 
-export function avancer(etat: Etat, contenu: Contenu): Evenement[] {
+/** Un pas de simulation pour toutes les îles ; seuls les événements de l'île affichée sont rendus. */
+export function avancer(partie: Partie, contenu: Contenu): Evenement[] {
   const evenements: Evenement[] = [];
-  const saisonAvant = calendrier(etat.pas, contenu).rang;
-  etat.pas++;
-  const saison = calendrier(etat.pas, contenu);
+  const saisonAvant = calendrier(partie.pas, contenu).rang;
+  partie.pas++;
+  const saison = calendrier(partie.pas, contenu);
   if (saison.rang !== saisonAvant) evenements.push({ type: 'saisonChangee', saison: saison.saison });
-  avancerHabitants(etat, contenu, evenements);
-  majPalier(etat, contenu, evenements);
-  etat.prestige.populationMax = Math.max(etat.prestige.populationMax, etat.habitants.length);
-  repousser(etat, contenu);
+  partie.iles.forEach((etat, i) => {
+    const siens: Evenement[] = [];
+    avancerHabitants(etat, contenu, siens);
+    majPalier(etat, contenu, siens);
+    etat.populationMax = Math.max(etat.populationMax, etat.habitants.length);
+    repousser(etat, contenu);
+    if (i === partie.vue) evenements.push(...siens);
+  });
 
-  const max = plafonds(etat, contenu);
-  const flux = fluxParMinute(etat, contenu);
+  const max = plafonds(partie, contenu);
+  const flux = fluxDeLArchipel(partie, contenu);
   const { direct } = flux;
   for (const r of RESSOURCES) {
-    const avant = etat.stocks[r];
+    const avant = partie.stocks[r];
     const apres = avant + direct[r] / PAS_PAR_MINUTE;
     // Un plafond abaissé (démolition) ne retire rien : il bloque seulement les gains.
-    etat.stocks[r] = direct[r] >= 0 ? Math.min(apres, Math.max(max[r], avant)) : Math.max(0, apres);
+    partie.stocks[r] = direct[r] >= 0 ? Math.min(apres, Math.max(max[r], avant)) : Math.max(0, apres);
   }
   // Rangé après la consommation : sinon un stock qu'on mange reste toujours un cheveu sous le plafond.
-  ranger(etat, flux, max);
+  ranger(partie, flux, max);
   for (const r of RESSOURCES) {
     // Les additions flottantes s'arrêtent parfois à 179,99999999999991 : affiché 179/180 et plus rien à porter.
-    if (etat.stocks[r] < max[r] && etat.stocks[r] > max[r] - 1e-6) etat.stocks[r] = max[r];
+    if (partie.stocks[r] < max[r] && partie.stocks[r] > max[r] - 1e-6) partie.stocks[r] = max[r];
   }
   return evenements;
+}
+
+/** Flux de toutes les îles additionnés : le stock est commun. */
+function fluxDeLArchipel(partie: Partie, contenu: Contenu): { direct: Flux; production: Flux; estime: Flux } {
+  const total = { direct: fluxNul(), production: fluxNul(), estime: fluxNul() };
+  for (const etat of partie.iles) {
+    const flux = fluxParMinute(etat, contenu);
+    for (const r of RESSOURCES) {
+      total.direct[r] += flux.direct[r];
+      total.production[r] += flux.production[r];
+      total.estime[r] += flux.estime[r];
+    }
+  }
+  return total;
+}
+
+function fluxNul(): Flux {
+  return { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
 }
 
 /**
  * Les livraisons entrent dans les stocks au rythme de la production (6/min : une unité toutes les 10 s),
  * plutôt que par charges entières ; un retard sur la production se résorbe en `MINUTES_POUR_RANGER`.
  */
-function ranger(etat: Etat, flux: { direct: Flux; production: Flux; estime: Flux }, max: Record<Ressource, number>): void {
+function ranger(partie: Partie, flux: { direct: Flux; production: Flux; estime: Flux }, max: Record<Ressource, number>): void {
   for (const r of RESSOURCES) {
-    const enAttente = etat.arrivages[r];
+    const enAttente = partie.arrivages[r];
     if (enAttente <= 0) continue;
     // Ce que le village mange ou use par minute : les livraisons entrent au moins aussi vite, sinon le stock
     // fond sous le plafond pendant que la file attend.
@@ -106,10 +130,10 @@ function ranger(etat: Etat, flux: { direct: Flux; production: Flux; estime: Flux
     // Au moins une unité par minute, pour que la file se vide même sans production.
     const parMinute = Math.max(flux.production[r] + consommation, enAttente / MINUTES_POUR_RANGER, 1);
     // Jusqu'au plafond exactement ; le surplus attend au dépôt qu'une place se libère.
-    const range = Math.min(enAttente, parMinute / PAS_PAR_MINUTE, Math.max(0, max[r] - etat.stocks[r]));
+    const range = Math.min(enAttente, parMinute / PAS_PAR_MINUTE, Math.max(0, max[r] - partie.stocks[r]));
     if (range <= 0) continue;
-    etat.stocks[r] += range;
-    etat.arrivages[r] = enAttente - range < 1e-9 ? 0 : enAttente - range;
+    partie.stocks[r] += range;
+    partie.arrivages[r] = enAttente - range < 1e-9 ? 0 : enAttente - range;
   }
 }
 
@@ -124,8 +148,10 @@ function repousser(etat: Etat, contenu: Contenu): void {
   });
 }
 
-export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Commande): Evenement[] {
+/** Applique une commande à l'île affichée. */
+export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Commande): Evenement[] {
   const refus = (raison: RaisonRefus): Evenement[] => [{ type: 'commandeRefusee', commande, raison }];
+  const etat = partie.iles[partie.vue]!;
 
   switch (commande.type) {
     case 'poserBatiment': {
@@ -134,7 +160,7 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       const emplacement = verifierEmplacement(etat, commande.case);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];
-      if (!payer(etat, coutBatiment(contenu, etat.prestige.bonus, commande.batiment, etat.batiments))) return refus('ressourcesInsuffisantes');
+      if (!payer(etat, coutBatiment(contenu, etat.partie.prestige.bonus, commande.batiment, etat.batiments))) return refus('ressourcesInsuffisantes');
       etat.batiments.push({
         id: etat.prochainId++,
         type: commande.batiment,
@@ -169,10 +195,10 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
         return refus('depotRequis');
       }
       const [b] = etat.batiments.splice(i, 1);
-      const cout = coutTotal(contenu, b!, etat.prestige.bonus, etat.batiments);
-      for (const r of cles(cout)) etat.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
+      const cout = coutTotal(contenu, b!, etat.partie.prestige.bonus, etat.batiments);
+      for (const r of cles(cout)) etat.partie.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
       // La récolte en attente n'est pas perdue.
-      for (const r of cles(b!.reserve)) etat.stocks[r] += b!.reserve[r] ?? 0;
+      for (const r of cles(b!.reserve)) etat.partie.stocks[r] += b!.reserve[r] ?? 0;
       majBonusVoisinage(etat, contenu);
       return [];
     }
@@ -181,11 +207,11 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       if (!element) return refus('introuvable');
       if ((etat.pousses[commande.element] ?? 1) < 1) return refus('pasPret');
       const { ressource, quantite } = contenu.recolte[element.type];
-      const place = plafonds(etat, contenu)[ressource] - etat.stocks[ressource];
+      const place = plafonds(etat.partie, contenu)[ressource] - etat.partie.stocks[ressource];
       // Le stock s'affiche arrondi à l'unité inférieure : une fraction de place libre se remplit aussi.
       const gain = Math.min(Math.round(quantite * bonusProduction(etat, contenu)), place);
       if (gain <= 0) return refus('stockPlein');
-      etat.stocks[ressource] += gain;
+      etat.partie.stocks[ressource] += gain;
       etat.pousses[commande.element] = 0;
       return [{ type: 'recolte', element: commande.element, ressource, quantite: gain }];
     }
@@ -216,27 +242,35 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
       rembourser(etat, contenu.defrichage[d!.nature].cout);
       return [];
     }
-    case 'renaitre': {
-      if (!peutRenaitre(etat)) return refus(etat.batimentsDebloques.includes('sanctuaire') ? 'indisponible' : 'nonDebloque');
-      return [{ type: 'renaissance', graines: renaitre(etat, contenu) }];
+    case 'voirIle': {
+      if (!Number.isInteger(commande.ile) || !partie.iles[commande.ile]) return refus('introuvable');
+      partie.vue = commande.ile;
+      return [];
+    }
+    case 'offrir': {
+      if (!sanctuaireAcheve(etat)) return refus(etat.batimentsDebloques.includes('sanctuaire') ? 'indisponible' : 'nonDebloque');
+      if (!offrande(etat, contenu)) return refus('indisponible');
+      if (Object.keys(offrir(etat, contenu)).length === 0 && !offrandeRemplie(etat, contenu)) return refus('ressourcesInsuffisantes');
+      if (!offrandeRemplie(etat, contenu)) return [];
+      return [{ type: 'ileDebloquee', ile: partie.iles.length, graines: debloquerIle(etat, contenu) }];
     }
     case 'recommencer':
-      recommencer(etat, contenu, Math.max(1, Math.floor(Math.abs(commande.graine))));
+      recommencer(partie, contenu, Math.max(1, Math.floor(Math.abs(commande.graine))));
       return [{ type: 'partieRecommencee' }];
     case 'acheterBonus': {
       if (!BONUS_PRESTIGE.includes(commande.bonus)) return refus('introuvable');
-      const niveau = etat.prestige.bonus[commande.bonus];
+      const niveau = etat.partie.prestige.bonus[commande.bonus];
       const prix = coutBonus(contenu, commande.bonus, niveau);
       if (prix === null) return refus('indisponible');
-      if (etat.prestige.graines < prix) return refus('ressourcesInsuffisantes');
-      etat.prestige.graines -= prix;
-      etat.prestige.bonus[commande.bonus] = niveau + 1;
-      // Les bagages servent aussi tout de suite : on les achète juste après avoir renaît.
+      if (etat.partie.prestige.graines < prix) return refus('ressourcesInsuffisantes');
+      etat.partie.prestige.graines -= prix;
+      etat.partie.prestige.bonus[commande.bonus] = niveau + 1;
+      // Les bagages servent aussi tout de suite, sur l'île affichée.
       if (commande.bonus === 'depart') return donnerBagages(etat, contenu);
       return [];
     }
     case 'modifierReglage': {
-      (etat.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
+      (etat.partie.reglages as unknown as Record<string, unknown>)[commande.cle] = commande.valeur;
       return [];
     }
     case 'ameliorer': {
@@ -272,34 +306,39 @@ export function appliquerCommande(etat: Etat, contenu: Contenu, commande: Comman
 /** Un niveau de bagages : ses ressources (jusqu'au plafond) et ses habitants, dans la partie en cours. */
 function donnerBagages(etat: Etat, contenu: Contenu): Evenement[] {
   const { stocksDeDepart, habitantsDeDepart } = contenu.prestige.effets;
-  const max = plafonds(etat, contenu);
+  const max = plafonds(etat.partie, contenu);
   for (const r of RESSOURCES) {
-    etat.stocks[r] = Math.max(etat.stocks[r], Math.min(max[r], etat.stocks[r] + (stocksDeDepart[r] ?? 0)));
+    etat.partie.stocks[r] = Math.max(etat.partie.stocks[r], Math.min(max[r], etat.partie.stocks[r] + (stocksDeDepart[r] ?? 0)));
   }
   const evenements: Evenement[] = [];
   for (let i = 0; i < habitantsDeDepart; i++) evenements.push({ type: 'habitantArrive', id: ajouterHabitant(etat).id });
   return evenements;
 }
 
-export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Instantane {
-  const max = plafonds(etat, contenu);
-  const { estime } = fluxParMinute(etat, contenu);
+/** Vue publiée : le temps et le stock communs, l'île affichée en détail, les autres en résumé. */
+export function instantane(partie: Partie, contenu: Contenu, enPause: boolean): Instantane {
+  const etat = partie.iles[partie.vue]!;
+  const max = plafonds(partie, contenu);
+  const { estime } = fluxDeLArchipel(partie, contenu);
   const stocks = {} as Record<Ressource, Stock>;
   for (const r of RESSOURCES) {
-    stocks[r] = { quantite: etat.stocks[r], plafond: max[r], productionParMinute: estime[r] };
+    stocks[r] = { quantite: partie.stocks[r], plafond: max[r], productionParMinute: estime[r] };
   }
-  const { saison, annee, avancement } = calendrier(etat.pas, contenu);
+  const { saison, annee, avancement } = calendrier(partie.pas, contenu);
   return {
     temps: {
-      pas: etat.pas,
+      pas: partie.pas,
       annee,
       saison,
       avancementSaison: avancement,
-      heure: heureDuJour(etat.pas, contenu.temps),
+      heure: heureDuJour(partie.pas, contenu.temps),
       nuit: estLaNuit(etat, contenu),
-      meteo: meteoAu(etat.pas, etat.graine, contenu),
+      meteo: meteoAu(partie.pas, partie.graine, contenu),
       enPause,
     },
+    ile: partie.vue,
+    iles: partie.iles.map((e) => ({ palier: e.palier, habitants: e.habitants.length, problemes: problemesDe(e, saison, contenu) })),
+    offrande: offrande(etat, contenu),
     stocks,
     batiments: etat.batiments.map(({ reserve: _reserve, ...b }) => ({ ...b, case: { ...b.case }, besoins: { ...b.besoins } })),
     habitants: etat.habitants.map(({ mission, charge: _c, pasDepuisChoix: _p, ...h }) => ({
@@ -314,8 +353,8 @@ export function instantane(etat: Etat, contenu: Contenu, enPause: boolean): Inst
     palier: etat.palier,
     faim: etat.faim ?? false,
     ameliorations: { ...etat.ameliorations },
-    prestige: { ...etat.prestige, bonus: { ...etat.prestige.bonus } },
-    reglages: { ...etat.reglages },
+    prestige: { ...partie.prestige, bonus: { ...partie.prestige.bonus } },
+    reglages: { ...partie.reglages },
   };
 }
 

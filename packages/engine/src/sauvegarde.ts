@@ -1,11 +1,11 @@
-// Format du fichier de sauvegarde : un numéro de version et l'état complet.
+// Format du fichier de sauvegarde : un numéro de version et la partie complète (champ `etat`, nom d'origine).
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
 import type { Case, Ile } from './contrat';
-import type { Etat } from './etat';
+import type { Etat, Partie } from './etat';
 import { placerElements } from './ile';
 import { prestigeNeuf } from './prestige';
 
-export const VERSION_SAUVEGARDE = 12;
+export const VERSION_SAUVEGARDE = 13;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -17,9 +17,12 @@ export class SauvegardeAncienne extends Error {
   }
 }
 
+/** Une île sans son lien vers la partie, qui ferait une boucle. */
+type IleSauvee = Omit<Etat, 'partie'>;
+
 interface FichierSauvegarde {
   version: number;
-  etat: Etat;
+  etat: Omit<Partie, 'iles'> & { iles: IleSauvee[] };
 }
 
 /**
@@ -65,15 +68,30 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
     ...etat,
     batiments: (etat.batiments as object[]).map((b) => ({ ...b, amelioration: null })),
   }),
+  // Version 13 : archipel. L'île en cours devient la première ; stock, prestige et réglages deviennent communs.
+  12: ({ pas, graine, stocks, arrivages, prestige, reglages, ...ile }) => {
+    const { renaissances: _r, populationMax, ...reste } = prestige as { renaissances: number; populationMax: number };
+    return {
+      pas,
+      graine,
+      stocks,
+      arrivages,
+      prestige: reste,
+      reglages,
+      vue: 0,
+      iles: [{ ...ile, graine, populationMax, offrande: {} }],
+    };
+  },
 };
 
-export function serialiser(etat: Etat): string {
-  const fichier: FichierSauvegarde = { version: VERSION_SAUVEGARDE, etat };
+export function serialiser(partie: Readonly<Partie>): string {
+  const iles = partie.iles.map(({ partie: _partie, ...ile }) => ile);
+  const fichier: FichierSauvegarde = { version: VERSION_SAUVEGARDE, etat: { ...partie, iles } };
   return JSON.stringify(fichier);
 }
 
 /** Relit une sauvegarde et la migre ; lève une erreur si le fichier est illisible ou incomplet. */
-export function charger(texte: string): Etat {
+export function charger(texte: string): Partie {
   const fichier = JSON.parse(texte) as { version?: unknown; etat?: unknown };
   let version = fichier.version;
   let etat = fichier.etat;
@@ -86,18 +104,20 @@ export function charger(texte: string): Etat {
     etat = migrer(etat as Record<string, unknown>);
   }
   verifier(etat as Record<string, unknown>);
-  return etat as Etat;
+  const partie = etat as unknown as Partie;
+  for (const ile of partie.iles) ile.partie = partie;
+  return partie;
 }
 
 /**
  * Prend la première sauvegarde lisible, par ordre de préférence ; `null` s'il n'y en a aucune.
  * `ancienne` : au moins un fichier date d'avant la réorientation.
  */
-export function chargerPremiereValide(textes: readonly string[]): { etat: Etat; rang: number } | { ancienne: true } | null {
+export function chargerPremiereValide(textes: readonly string[]): { partie: Partie; rang: number } | { ancienne: true } | null {
   let ancienne = false;
   for (const [rang, texte] of textes.entries()) {
     try {
-      return { etat: charger(texte), rang };
+      return { partie: charger(texte), rang };
     } catch (erreur) {
       // Fichier tronqué ou abîmé : on passe à la copie suivante.
       if (erreur instanceof SauvegardeAncienne) ancienne = true;
@@ -111,13 +131,25 @@ function estObjet(valeur: unknown): valeur is Record<string, unknown> {
 }
 
 /** Contrôle de forme : suffit à écarter un fichier tronqué ou modifié à la main. */
-function verifier(etat: Record<string, unknown>): void {
-  const nombres = ['pas', 'graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier'];
-  const tableaux = ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'defrichages'];
-  const objets = ['ile', 'stocks', 'reglages', 'ameliorations', 'arrivages', 'prestige'];
-  const manquant =
-    nombres.find((cle) => !Number.isFinite(etat[cle])) ??
-    tableaux.find((cle) => !Array.isArray(etat[cle])) ??
-    objets.find((cle) => !estObjet(etat[cle]));
-  if (manquant) throw new Error(`sauvegarde incomplète : ${manquant}`);
+function verifier(partie: Record<string, unknown>): void {
+  manquant(partie, ['pas', 'graine', 'vue'], ['iles'], ['stocks', 'reglages', 'arrivages', 'prestige']);
+  const iles = partie.iles as unknown[];
+  if (iles.length === 0 || !iles[partie.vue as number]) throw new Error('sauvegarde incomplète : vue');
+  for (const ile of iles) {
+    if (!estObjet(ile)) throw new Error('sauvegarde incomplète : iles');
+    manquant(
+      ile,
+      ['graine', 'prochainId', 'prochainIdHabitant', 'pasAvantArrivee', 'palier', 'populationMax'],
+      ['batiments', 'habitants', 'pousses', 'batimentsDebloques', 'defrichages'],
+      ['ile', 'ameliorations', 'offrande'],
+    );
+  }
+}
+
+function manquant(objet: Record<string, unknown>, nombres: string[], tableaux: string[], objets: string[]): void {
+  const cle =
+    nombres.find((c) => !Number.isFinite(objet[c])) ??
+    tableaux.find((c) => !Array.isArray(objet[c])) ??
+    objets.find((c) => !estObjet(objet[c]));
+  if (cle) throw new Error(`sauvegarde incomplète : ${cle}`);
 }

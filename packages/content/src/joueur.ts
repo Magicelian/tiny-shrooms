@@ -4,6 +4,8 @@ import {
   capaciteLogement,
   coutBatiment,
   Moteur,
+  offrande,
+  plafonds,
   PAS_PAR_MINUTE,
   RESSOURCES,
   refusMontee,
@@ -36,13 +38,13 @@ export class Joueur {
   }
 
   commander(commande: Commande): boolean {
-    const [message] = this.moteur.recevoir({ type: 'commande', commande }, 0);
+    const message = this.moteur.recevoir({ type: 'commande', commande }, 0).find((m) => m.type === 'instantane');
     return message?.type === 'instantane' && !message.evenements.some((e) => e.type === 'commandeRefusee');
   }
 
   private abordable(type: TypeBatiment): boolean {
-    const cout = coutBatiment(contenu, this.etat.prestige.bonus, type, this.etat.batiments);
-    return RESSOURCES.every((r) => this.etat.stocks[r] >= (cout[r] ?? 0));
+    const cout = coutBatiment(contenu, this.etat.partie.prestige.bonus, type, this.etat.batiments);
+    return RESSOURCES.every((r) => this.etat.partie.stocks[r] >= (cout[r] ?? 0));
   }
 
   /** Pose un bâtiment sur la première case qui convient ; les cases sont triées de la souche vers le bord. */
@@ -95,13 +97,15 @@ export class Joueur {
       if (etat.pousses[element]! >= 1) this.commander({ type: 'recolter', element });
     });
     const population = etat.habitants.length;
-    const capacite = capaciteLogement(contenu, etat.batiments, etat.ile.soucheEnPlace, etat.prestige);
+    const capacite = capaciteLogement(contenu, etat.batiments, etat.ile.soucheEnPlace, etat.partie.prestige);
     // Montées en gamme et améliorations ne sont pas des chantiers : elles passent avant la limite.
     if (this.monter() || this.ameliorerAtelier()) return true;
     if (this.chantiers() >= 2) return false;
 
     if (nombre(etat, 'hutte') === 0) return this.poser('hutte');
     const actions: (() => boolean)[] = [
+      // Au bourg, le sanctuaire passe avant tout : sinon, l'île pleine, chaque case libérée est reprise.
+      () => this.offrir(),
       () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.production('cueillette', 'buisson'),
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       () => population >= 4 && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
@@ -118,6 +122,26 @@ export class Joueur {
       () => capacite - population < 2 && this.forets() > 3 && this.faireDeLaPlace(),
     ];
     return actions.some((action) => action());
+  }
+
+  /** Au bourg : pose le sanctuaire, puis y dépose dès qu'un stock demandé par l'offrande est presque plein. */
+  offrir(): boolean {
+    const etat = this.etat;
+    if (!etat.batimentsDebloques.includes('sanctuaire')) return false;
+    if (nombre(etat, 'sanctuaire') === 0) return this.poser('sanctuaire') || this.faireDeLaPlace() || this.demolirPourLeSanctuaire();
+    const o = offrande(etat, contenu);
+    if (!o) return false;
+    const max = plafonds(etat.partie, contenu);
+    const plein = RESSOURCES.some((r) => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0) && etat.partie.stocks[r] >= max[r] * 0.9);
+    return plein && this.commander({ type: 'offrir' });
+  }
+
+  /** Île pleine sans arbre à abattre : un tas de bois cède sa place (le bois déborde à ce stade). */
+  private demolirPourLeSanctuaire(): boolean {
+    const { batiments, defrichages } = this.etat;
+    if (defrichages.length > 0 || this.moteur.casesLibres().length > 0 || nombre(this.etat, 'tasDeBois') < 2) return false;
+    const tas = batiments.find((b) => b.type === 'tasDeBois')!;
+    return this.commander({ type: 'demolir', id: tas.id });
   }
 
   private forets(): number {
@@ -140,7 +164,7 @@ export class Joueur {
   }
 
   private stockage(): boolean {
-    const { stocks } = this.etat;
+    const { stocks } = this.etat.partie;
     const plein = (r: 'baies' | 'boisMort' | 'mousse', type: TypeBatiment) => {
       if (nombre(this.etat, type) > this.etat.habitants.length / 10) return false;
       const max = contenu.plafondsDeBase[r] + nombre(this.etat, type) * (contenu.batiments[type].stockage?.[r] ?? 0);

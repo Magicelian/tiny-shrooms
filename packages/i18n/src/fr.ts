@@ -37,7 +37,7 @@ export const fr = {
   'effet.voisinage': '+{pourcent} % à côté : {voisin}',
   'effet.bonusActuel': 'Bonus de voisinage : +{pourcent} %',
   'effet.chantier': 'Chantier : {pourcent} %',
-  'effet.sanctuaire': 'Permet de renaître sur une nouvelle île',
+  'effet.sanctuaire': 'Reçoit les offrandes qui font découvrir une nouvelle île',
 
   // Terrains, pour les bonus de voisinage
   'terrain.foret': 'forêt',
@@ -112,10 +112,12 @@ export const fr = {
   'amelioration.travaux': 'Travaux : {pourcent} %',
 
   // Renaissance
-  'prestige.gain': 'Rapporte {gain} graines (record : {population} habitants)',
-  'prestige.efface': 'Tout repart de zéro sur une nouvelle île ; les graines et les bonus restent.',
-  'prestige.renaitre': 'Renaître (+{gain} graines)',
-  'prestige.confirmer': 'Sûr ? Le village sera effacé',
+  'offrande.objectif': "Offrande pour découvrir l'île {numero} :",
+  'offrande.graines': 'Rapportera {graines} graines de prestige (selon le record d’habitants de cette île)',
+  'offrande.deposer': 'Déposer depuis le stock',
+  'offrande.faite': 'Cette île a déjà ouvert le chemin de la suivante.',
+  'offrande.archipel': 'Tout l’archipel est découvert !',
+  'archipel.ile': 'Île {numero}',
   'prestige.graines': 'Graines de prestige : {graines}',
   'prestige.pouvoirs': 'Pouvoirs',
   'prestige.astuce': 'Tes graines se dépensent ici : clique sur la souche',
@@ -129,7 +131,7 @@ export const fr = {
   'bonus.effet.depart': 'Au départ : {liste}, {nombre} habitant(s). Chaque niveau acheté sert aussi tout de suite.',
   'bonus.effet.construction': 'Coût −{cout} %, chantiers +{vitesse} %',
   'bonus.effet.logement': 'Bien-être +{pourcent} %, +{places} place(s) par logement, arrivées +{accueil} % plus tôt',
-  'message.renaissance': 'Nouvelle île ! +{graines} graines de prestige',
+  'message.ileDebloquee': 'Nouvelle île ! +{graines} graines de prestige',
 
   // Habitants
   'habitants.detail': 'Habitants {nombre}/{places} places',

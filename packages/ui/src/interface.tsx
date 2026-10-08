@@ -28,6 +28,7 @@ export function Interface({ controleur }: Props) {
     <div class={`interface ${etat.focus ? 'active' : ''}`}>
       <Ecriteau instantane={instantane} />
       <Population controleur={controleur} instantane={instantane} />
+      <Archipel controleur={controleur} instantane={instantane} />
       <Rangee instantane={instantane} />
 
       {deplacement !== null && <BandeauDeplacement controleur={controleur} bonus={etat.bonusVise} />}
@@ -221,6 +222,38 @@ function Population({ controleur, instantane }: Props & { instantane: Instantane
         </span>
       )}
     </Survol>
+  );
+}
+
+/**
+ * Île affichée, en haut au milieu, dès qu'il y en a plusieurs ; les flèches mènent aux voisines (touches 1 à 9 aussi).
+ * Un point sur une flèche : un problème sur une île de ce côté.
+ */
+function Archipel({ controleur, instantane }: Props & { instantane: Instantane }) {
+  const { ile, iles } = instantane;
+  if (iles.length < 2) return null;
+  const alerte = (debut: number, fin: number) => iles.slice(debut, fin).some((i) => i.problemes.length > 0);
+  const fleche = (sens: -1 | 1) => {
+    const cible = ile + sens;
+    const existe = cible >= 0 && cible < iles.length;
+    const signal = sens < 0 ? alerte(0, ile) : alerte(ile + 1, iles.length);
+    return (
+      <button
+        class={`fleche-ile commande ${signal ? 'alerte' : ''}`}
+        disabled={!existe}
+        title={existe ? t('archipel.ile', { numero: cible + 1 }) : undefined}
+        onClick={() => controleur.voirIle(cible)}
+      >
+        {sens < 0 ? '‹' : '›'}
+      </button>
+    );
+  };
+  return (
+    <div class="ecriteau archipel">
+      {fleche(-1)}
+      <span>{t('archipel.ile', { numero: ile + 1 })}</span>
+      {fleche(1)}
+    </div>
   );
 }
 

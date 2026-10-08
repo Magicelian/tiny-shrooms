@@ -13,7 +13,7 @@ export type Effet =
   | 'arrivee'
   | 'refus'
   | 'palier'
-  | 'renaissance'
+  | 'nouvelleIle'
   | 'arracher'
   | 'demolir'
   | 'faim';
@@ -67,7 +67,7 @@ const NOTES: Record<Effet, Note[]> = {
     { f: 1047, t: 0.3, d: 0.3, onde: 'square', v: 0.35 },
     { f: 523, t: 0.3, d: 0.3, onde: 'triangle', v: 0.5 },
   ],
-  renaissance: [
+  nouvelleIle: [
     { f: 220, t: 0, d: 0.9, vers: 880, onde: 'triangle', v: 0.6 },
     { f: 1319, t: 0.6, d: 0.5, onde: 'sine', v: 0.4 },
     { f: 1760, t: 0.75, d: 0.5, onde: 'sine', v: 0.3 },

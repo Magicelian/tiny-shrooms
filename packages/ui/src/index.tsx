@@ -108,6 +108,8 @@ const SON_COMMANDE: Partial<Record<Commande['type'], Effet>> = {
   annulerArrachage: 'fermer',
   ameliorer: 'termine',
   acheterBonus: 'termine',
+  offrir: 'termine',
+  voirIle: 'fermer',
 };
 
 export class ControleurInterface {
@@ -277,11 +279,12 @@ export class ControleurInterface {
         const b = message.instantane.batiments.find((x) => x.id === e.id);
         if (b) this.magasin.annoncer(t('message.constructionTerminee', { batiment: nomPose(this.contenu, b) }));
         this.sons.jouer('termine');
-      } else if (e.type === 'renaissance') {
+      } else if (e.type === 'ileDebloquee') {
         this.fermer();
-        this.magasin.annoncer(t('message.renaissance', { graines: e.graines }));
-        this.sons.jouer('renaissance');
-        if (message.instantane.prestige.renaissances === 1) this.magasin.modifier({ astuceSouche: true });
+        this.magasin.annoncer(t('message.ileDebloquee', { graines: e.graines }));
+        this.sons.jouer('nouvelleIle');
+        // Premières graines : la souche de la nouvelle île montre où les dépenser.
+        if (e.ile === 1) this.magasin.modifier({ astuceSouche: true });
       } else if (e.type === 'soucheRetiree') {
         this.magasin.annoncer(t('message.soucheRetiree'));
         this.sons.jouer('termine');
@@ -310,6 +313,14 @@ export class ControleurInterface {
 
   tourner(sens: 1 | -1): void {
     this.options.scene.tourner(sens);
+  }
+
+  /** Affiche une autre île de l'archipel ; la bulle ouverte, qui parlait de l'île quittée, se referme. */
+  voirIle(indice: number): void {
+    const instantane = this.magasin.valeur.instantane;
+    if (!instantane || indice === instantane.ile || !instantane.iles[indice]) return;
+    this.fermer();
+    this.envoyer({ type: 'voirIle', ile: indice });
   }
 
   basculerZoom(): void {
@@ -495,6 +506,7 @@ export class ControleurInterface {
       else if (e.key === 'ArrowLeft' || e.key === 'q') this.tourner(-1);
       else if (e.key === 'ArrowRight' || e.key === 'e') this.tourner(1);
       else if (e.key === 'z') this.basculerZoom();
+      else if (/^[1-9]$/.test(e.key)) this.voirIle(Number(e.key) - 1);
     });
   }
 

@@ -4,7 +4,7 @@ import type { Case, Commande, Evenement, MessageDepuisMoteur, TypeBatiment } fro
 import { RESSOURCES, TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
 import { genererIle, terrainEn } from './ile';
-import { creerEtat } from './etat';
+import { creerPartie } from './etat';
 import { Moteur } from './moteur';
 import { meteoAu } from './saisons';
 import { charger, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
@@ -88,6 +88,7 @@ function contenuDeTest(
         accueil: 0,
       },
     },
+    archipel: { offrandes: [{ boisMort: 30 }, { boisMort: 30 }] },
     hausseParExemplaire: 0,
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
@@ -106,8 +107,15 @@ function poser(batiment: TypeBatiment, c: Case): Commande {
 }
 
 function commander(moteur: Moteur, commande: Commande): Evenement[] {
-  const [message] = moteur.recevoir({ type: 'commande', commande }, 0);
+  const message = moteur.recevoir({ type: 'commande', commande }, 0).find((m) => m.type === 'instantane');
   return message?.type === 'instantane' ? message.evenements : [];
+}
+
+/** L'île affichée au format à plat d'avant l'archipel (version 12), pour les tests de migration. */
+function aplatir(moteur: Moteur): Record<string, unknown> {
+  const { partie, populationMax, offrande: _o, ...ile } = moteur.etatCourant;
+  const { iles: _i, vue: _v, ...commun } = partie;
+  return JSON.parse(JSON.stringify({ ...ile, ...commun, prestige: { ...commun.prestige, renaissances: 0, populationMax } }));
 }
 
 function instantaneDe(messages: MessageDepuisMoteur[]) {
@@ -215,7 +223,7 @@ describe('Habitants', () => {
     const moteur = new Moteur(contenuDeTest({ cueillette: { production: { baies: 12 } } }), 0);
     commander(moteur, poser('cueillette', caseLibre(moteur)));
     moteur.simuler(5 * PAS_PAR_MINUTE);
-    const { stocks, habitants } = moteur.etatCourant;
+    const { partie: { stocks }, habitants } = moteur.etatCourant;
     expect(stocks.baies).toBeGreaterThan(110);
     expect(habitants.map((h) => h.tache)).toContain('recolter');
   });
@@ -226,7 +234,7 @@ describe('Habitants', () => {
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('cueillette', caseLibre(moteur)));
     moteur.simuler(3 * PAS_PAR_MINUTE);
-    const { stocks, habitants, batiments } = moteur.etatCourant;
+    const { partie: { stocks }, habitants, batiments } = moteur.etatCourant;
     expect(stocks.baies).toBeCloseTo(102);
     expect(habitants.every((h) => h.charge === null)).toBe(true);
     expect(batiments[0]!.reserve.baies).toBeGreaterThan(0);
@@ -282,7 +290,7 @@ describe('Commandes', () => {
     const moteur = new Moteur(contenuDeTest({ hutte: { cout: { boisMort: 60 } } }), 0);
     const [a, b] = moteur.casesLibres();
     expect(commander(moteur, poser('hutte', a!))).toEqual([]);
-    expect(moteur.etatCourant.stocks.boisMort).toBe(40);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBe(40);
     expect(commander(moteur, poser('hutte', b!))[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
   });
 
@@ -298,7 +306,7 @@ describe('Commandes', () => {
     commander(moteur, poser('hutte', caseLibre(moteur)));
     (moteur.etatCourant.batiments[0]!.reserve as { baies?: number }).baies = 4;
     commander(moteur, { type: 'demolir', id: 1 });
-    expect(moteur.etatCourant.stocks).toMatchObject({ boisMort: 70, baies: 104 });
+    expect(moteur.etatCourant.partie.stocks).toMatchObject({ boisMort: 70, baies: 104 });
     expect(moteur.etatCourant.batiments).toEqual([]);
   });
 });
@@ -374,14 +382,14 @@ describe('Moteur', () => {
     const reprise = new Moteur(contenu, 0);
     const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: [abime, '{"version":1,"etat":{}}', recente, ancienne] }, 0);
     expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'secours' });
-    expect(reprise.etatCourant.pas).toBe(80);
+    expect(reprise.etatCourant.partie.pas).toBe(80);
   });
 
   it('commence une nouvelle partie si aucun fichier n’est lisible', () => {
     const reprise = new Moteur(contenuDeTest(), 0);
     const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: ['', '{"version":99,"etat":{}}'] }, 0);
     expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'illisible' });
-    expect(reprise.etatCourant.pas).toBe(0);
+    expect(reprise.etatCourant.partie.pas).toBe(0);
   });
 
   it('repart de zéro devant une sauvegarde d’avant la réorientation', () => {
@@ -389,16 +397,16 @@ describe('Moteur', () => {
     const ancienne = JSON.stringify({ version: 3, etat: { pas: 500 } });
     const messages = reprise.recevoir({ type: 'demarrer', sauvegardes: [ancienne, ''] }, 0);
     expect(messages[1]).toEqual({ type: 'partieChargee', origine: 'ancienne' });
-    expect(reprise.etatCourant.pas).toBe(0);
+    expect(reprise.etatCourant.partie.pas).toBe(0);
   });
 });
 
 describe('charger', () => {
   it('écrit la version courante et refuse un fichier sans version', () => {
-    const etat = new Moteur(contenuDeTest(), 0).etatCourant;
-    expect(JSON.parse(serialiser(etat))).toMatchObject({ version: VERSION_SAUVEGARDE });
-    expect(charger(serialiser(etat))).toEqual(etat);
-    expect(() => charger(JSON.stringify(etat))).toThrow();
+    const partie = new Moteur(contenuDeTest(), 0).partieCourante;
+    expect(JSON.parse(serialiser(partie))).toMatchObject({ version: VERSION_SAUVEGARDE });
+    expect(charger(serialiser(partie))).toEqual(partie);
+    expect(() => charger(JSON.stringify({ etat: JSON.parse(serialiser(partie)).etat }))).toThrow();
   });
 });
 
@@ -416,9 +424,9 @@ describe('Saisons et météo', () => {
 
   /** Moteur dont la partie commence au pas donné. */
   function moteurAu(contenu: Contenu, pas: number): Moteur {
-    const etat = creerEtat(contenu);
-    etat.pas = pas;
-    return new Moteur(contenu, 0, etat);
+    const partie = creerPartie(contenu);
+    partie.pas = pas;
+    return new Moteur(contenu, 0, partie);
   }
 
   it('enchaîne une année complète', () => {
@@ -447,9 +455,9 @@ describe('Saisons et météo', () => {
     const moteur = moteurAu(contenu, HIVER);
     commander(moteur, poser('cueillette', caseLibre(moteur)));
     moteur.simuler(5 * MIN);
-    expect(moteur.etatCourant.stocks.baies).toBeCloseTo(50);
+    expect(moteur.etatCourant.partie.stocks.baies).toBeCloseTo(50);
     moteur.simuler(10 * MIN);
-    const { stocks, habitants, batiments } = moteur.etatCourant;
+    const { partie: { stocks }, habitants, batiments } = moteur.etatCourant;
     expect(batiments[0]!.reserve).toEqual({});
     expect(habitants.map((h) => h.tache)).not.toContain('recolter');
     expect(habitants).toHaveLength(2);
@@ -468,10 +476,10 @@ describe('Saisons et météo', () => {
         const proche = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) <= 2);
         commander(moteur, poser('feuDeCamp', proche!));
       }
-      const avant = moteur.etatCourant.stocks.boisMort;
+      const avant = moteur.etatCourant.partie.stocks.boisMort;
       moteur.simuler(2 * MIN);
       // Les porteurs déplacent la récolte : on compte le stock, la réserve et ce qui est en chemin.
-      const { stocks, batiments, habitants } = moteur.etatCourant;
+      const { partie: { stocks }, batiments, habitants } = moteur.etatCourant;
       const enChemin = habitants.reduce((s, h) => s + (h.charge?.quantite ?? 0), 0);
       return stocks.boisMort - avant + (batiments[0]!.reserve.boisMort ?? 0) + enChemin;
     };
@@ -494,7 +502,7 @@ describe('Saisons et météo', () => {
     contenu.stocksDeDepart = { ...contenu.stocksDeDepart, baies: 0, baiesSechees: 10 };
     const moteur = new Moteur(contenu, 0);
     moteur.simuler(MIN);
-    expect(moteur.etatCourant.stocks.baiesSechees).toBeCloseTo(8);
+    expect(moteur.etatCourant.partie.stocks.baiesSechees).toBeCloseTo(8);
   });
 });
 
@@ -522,7 +530,7 @@ describe('Améliorations', () => {
     // Sans durée de travaux, l'amélioration prend tout de suite.
     expect(commander(moteur, ameliorer)).toEqual([{ type: 'villageAmeliore', amelioration: 'outils', niveau: 1 }]);
     expect(commander(moteur, ameliorer)).toEqual([{ type: 'villageAmeliore', amelioration: 'outils', niveau: 2 }]);
-    expect(moteur.etatCourant.stocks.boisMort).toBe(70);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBe(70);
     expect(commander(moteur, ameliorer)).toMatchObject([{ raison: 'indisponible' }]);
     expect(instantaneDe(moteur.recevoir({ type: 'battre' }, 0)).ameliorations).toEqual({ vitesse: 0, outils: 2 });
   });
@@ -576,7 +584,7 @@ describe('Récolte à la main', () => {
     const element = premier(moteur, 'boisMort');
     const recolter: Commande = { type: 'recolter', element };
     expect(commander(moteur, recolter)).toEqual([{ type: 'recolte', element, ressource: 'boisMort', quantite: 2 }]);
-    expect(moteur.etatCourant.stocks.boisMort).toBe(102);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBe(102);
     expect(commander(moteur, recolter)).toMatchObject([{ raison: 'pasPret' }]);
     moteur.simuler(PAS_PAR_MINUTE / 6);
     expect(commander(moteur, recolter)).toMatchObject([{ type: 'recolte' }]);
@@ -610,9 +618,9 @@ describe('Récolte à la main', () => {
     const contenu = contenuDeTest();
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('hutte', caseLibre(moteur)));
-    const { ile, pousses: _p, ...reste } = moteur.etatCourant;
+    const { ile, pousses: _p, ...reste } = aplatir(moteur) as unknown as Etat;
     const { elements: _e, ...ileV4 } = ile;
-    const etat = charger(JSON.stringify({ version: 4, etat: { ...reste, ile: ileV4 } }));
+    const etat = charger(JSON.stringify({ version: 4, etat: { ...reste, ile: ileV4 } })).iles[0]!;
     expect(etat.pousses).toHaveLength(etat.ile.elements.length);
     const hutte = etat.batiments[0]!.case;
     expect(etat.ile.elements.some((e) => e.case.x === hutte.x && e.case.y === hutte.y)).toBe(false);
@@ -623,14 +631,14 @@ describe('Arrivages', () => {
   it('une livraison entre dans les stocks peu à peu, sans à-coup', () => {
     const moteur = new Moteur(contenuDeTest({}, { auDepart: 0 }), 0);
     const etat = moteur.etatCourant as Etat;
-    etat.arrivages.baies = 6;
+    etat.partie.arrivages.baies = 6;
     moteur.simuler(PAS_PAR_MINUTE / 6);
-    const apres10s = etat.stocks.baies - 100;
+    const apres10s = etat.partie.stocks.baies - 100;
     expect(apres10s).toBeGreaterThan(0.5);
     expect(apres10s).toBeLessThan(1.5);
     moteur.simuler(10 * PAS_PAR_MINUTE);
-    expect(etat.stocks.baies).toBeCloseTo(106);
-    expect(etat.arrivages.baies).toBe(0);
+    expect(etat.partie.stocks.baies).toBeCloseTo(106);
+    expect(etat.partie.arrivages.baies).toBe(0);
   });
 });
 
@@ -662,9 +670,9 @@ describe('Logements et paliers', () => {
     const puits = moteur.casesLibres().find((p) => Math.max(Math.abs(p.x - c.x), Math.abs(p.y - c.y)) <= 2)!;
     commander(moteur, poser('puits', puits));
     moteur.simuler(1);
-    const bois = moteur.etatCourant.stocks.boisMort;
+    const bois = moteur.etatCourant.partie.stocks.boisMort;
     expect(monter(moteur, hutte.id)).toEqual([{ type: 'logementAmeliore', id: hutte.id, niveau: 2 }]);
-    expect(moteur.etatCourant.stocks.boisMort).toBe(bois - 10);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBe(bois - 10);
     moteur.simuler(2 * PAS_PAR_MINUTE);
     expect(moteur.etatCourant.habitants).toHaveLength(6);
     expect(monter(moteur, hutte.id)[0]).toMatchObject({ raison: 'indisponible' });
@@ -716,9 +724,9 @@ describe('Logements et paliers', () => {
     commander(moteur, poser('hutte', caseLibre(moteur)));
     const hutte = hutteEt(moteur);
     hutte.niveau = 2;
-    const bois = moteur.etatCourant.stocks.boisMort;
+    const bois = moteur.etatCourant.partie.stocks.boisMort;
     commander(moteur, { type: 'demolir', id: hutte.id });
-    expect(moteur.etatCourant.stocks.boisMort).toBe(bois + 5);
+    expect(moteur.etatCourant.partie.stocks.boisMort).toBe(bois + 5);
   });
 
   it('un logement consomme sa ressource et signale le manque', () => {
@@ -728,10 +736,10 @@ describe('Logements et paliers', () => {
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('hutte', caseLibre(moteur)));
     moteur.simuler(PAS_PAR_MINUTE / 12);
-    expect(moteur.etatCourant.stocks.mousse).toBeCloseTo(0.5);
+    expect(moteur.etatCourant.partie.stocks.mousse).toBeCloseTo(0.5);
     expect(hutteEt(moteur).besoins.mousse).toBe(true);
     moteur.simuler(PAS_PAR_MINUTE / 6);
-    expect(moteur.etatCourant.stocks.mousse).toBe(0);
+    expect(moteur.etatCourant.partie.stocks.mousse).toBe(0);
     expect(hutteEt(moteur).besoins.mousse).toBe(false);
   });
 
@@ -750,9 +758,9 @@ describe('Logements et paliers', () => {
     const contenu = contenuDeTest();
     const moteur = new Moteur(contenu, 0);
     commander(moteur, poser('hutte', caseLibre(moteur)));
-    const { palier: _p, batiments, ...reste } = moteur.etatCourant;
+    const { palier: _p, batiments, ...reste } = aplatir(moteur) as unknown as Etat;
     const v5 = { ...reste, batimentsDebloques: ['hutte', 'sechoir', 'atelier'], batiments: batiments.map(({ besoins: _b, ...b }) => b) };
-    const etat = charger(JSON.stringify({ version: 5, etat: v5 }));
+    const etat = charger(JSON.stringify({ version: 5, etat: v5 })).iles[0]!;
     expect(etat.palier).toBe(0);
     expect(etat.batimentsDebloques).toEqual(['hutte']);
     expect(etat.batiments[0]!.besoins).toEqual({});
@@ -805,7 +813,7 @@ describe('Chemins', () => {
         precedente.set(h.id, ici);
       }
     }
-    expect(etat.stocks.baies).toBeGreaterThan(100);
+    expect(etat.partie.stocks.baies).toBeGreaterThan(100);
     expect(entrees).toBe(0);
   });
 });
@@ -826,7 +834,7 @@ describe('Retrait de la souche', () => {
     const etat = moteur.etatCourant;
     const souche = etat.ile.souche;
     expect(retirer()).toEqual([]);
-    expect(etat.stocks.spores).toBe(10);
+    expect(etat.partie.stocks.spores).toBe(10);
     expect(retirer()[0]).toMatchObject({ raison: 'indisponible' });
     // La remise est désormais le seul dépôt : on ne peut plus la démolir.
     expect(commander(moteur, { type: 'demolir', id: etat.batiments[0]!.id })[0]).toMatchObject({ raison: 'depotRequis' });
@@ -842,7 +850,7 @@ describe('Retrait de la souche', () => {
     expect(etat.ile.soucheEnPlace).toBe(false);
     expect(etat.retraitSouche).toBeNull();
     // Deux ouvriers : environ deux fois plus vite que les 30 s d'un seul.
-    expect(etat.pas).toBeLessThan((PAS_PAR_MINUTE / 60) * 25 + PAS_PAR_MINUTE / 6);
+    expect(etat.partie.pas).toBeLessThan((PAS_PAR_MINUTE / 60) * 25 + PAS_PAR_MINUTE / 6);
     expect(messages.some((m) => m.type === 'ile' && !m.ile.soucheEnPlace)).toBe(true);
     expect(commander(moteur, poser('hutte', souche))).toEqual([]);
   });
@@ -857,9 +865,9 @@ describe('Retrait de la souche', () => {
     moteur.simuler(PAS_PAR_MINUTE);
     const etat = moteur.etatCourant;
     expect(etat.ile.soucheEnPlace).toBe(false);
-    const baies = etat.stocks.baies + etat.arrivages.baies;
+    const baies = etat.partie.stocks.baies + etat.partie.arrivages.baies;
     moteur.simuler(3 * PAS_PAR_MINUTE);
-    expect(etat.stocks.baies + etat.arrivages.baies).toBeGreaterThan(baies + 5);
+    expect(etat.partie.stocks.baies + etat.partie.arrivages.baies).toBeGreaterThan(baies + 5);
     // Les deux habitants restent, sans logement.
     expect(etat.habitants).toHaveLength(2);
   });
@@ -875,7 +883,7 @@ describe('Retrait de la souche', () => {
     expect(etat.habitants.some((h) => h.mission?.tache === 'arracher')).toBe(true);
     expect(annuler()).toEqual([]);
     expect(etat.retraitSouche).toBeNull();
-    expect(etat.stocks.spores).toBe(30);
+    expect(etat.partie.stocks.spores).toBe(30);
     moteur.simuler(1);
     expect(etat.habitants.some((h) => h.mission?.tache === 'arracher')).toBe(false);
     expect(etat.ile.soucheEnPlace).toBe(true);
@@ -884,9 +892,9 @@ describe('Retrait de la souche', () => {
   it('migre une sauvegarde de version 7 avec la souche en place', () => {
     const contenu = contenuDeTest();
     const moteur = new Moteur(contenu, 0);
-    const { retraitSouche: _r, defrichages: _d, ile, ...reste } = moteur.etatCourant;
+    const { retraitSouche: _r, defrichages: _d, ile, ...reste } = aplatir(moteur) as unknown as Etat;
     const { soucheEnPlace: _s, ...ileV7 } = ile;
-    const etat = charger(JSON.stringify({ version: 7, etat: { ...reste, ile: ileV7 } }));
+    const etat = charger(JSON.stringify({ version: 7, etat: { ...reste, ile: ileV7 } })).iles[0]!;
     expect(etat.ile.soucheEnPlace).toBe(true);
     expect(etat.retraitSouche).toBeNull();
   });
@@ -902,7 +910,7 @@ describe('Défrichage', () => {
     const c = { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) };
     expect(commander(moteur, poser('hutte', c))[0]).toMatchObject({ raison: 'emplacementOccupe' });
     expect(commander(moteur, { type: 'defricher', case: c })).toEqual([]);
-    expect(etat.stocks.boisMort).toBe(95);
+    expect(etat.partie.stocks.boisMort).toBe(95);
     expect(commander(moteur, { type: 'defricher', case: c })[0]).toMatchObject({ raison: 'indisponible' });
     const messages: MessageDepuisMoteur[] = [];
     for (let seconde = 1; seconde <= 40 && etat.defrichages.length > 0; seconde++) {
@@ -910,7 +918,7 @@ describe('Défrichage', () => {
     }
     expect(etat.defrichages).toHaveLength(0);
     expect(terrainEn(ile, c.x, c.y)).toBe('herbe');
-    expect(etat.stocks.baies).toBe(103);
+    expect(etat.partie.stocks.baies).toBe(103);
     expect(messages.some((m) => m.type === 'ile')).toBe(true);
     expect(commander(moteur, poser('hutte', c))).toEqual([]);
   });
@@ -923,10 +931,10 @@ describe('Défrichage', () => {
     const arbre = ile.terrain.indexOf('foret');
     const c = { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) };
     commander(moteur, { type: 'defricher', case: c });
-    expect(etat.stocks.boisMort).toBe(95);
+    expect(etat.partie.stocks.boisMort).toBe(95);
     expect(commander(moteur, { type: 'annulerArrachage', case: { x: c.x + 1, y: c.y } })[0]).toMatchObject({ raison: 'introuvable' });
     expect(commander(moteur, { type: 'annulerArrachage', case: c })).toEqual([]);
-    expect(etat.stocks.boisMort).toBe(100);
+    expect(etat.partie.stocks.boisMort).toBe(100);
     expect(etat.defrichages).toHaveLength(0);
     moteur.simuler(PAS_PAR_MINUTE);
     expect(terrainEn(ile, c.x, c.y)).toBe('foret');
@@ -947,50 +955,104 @@ describe('Défrichage', () => {
   });
 });
 
-describe('Renaissance', () => {
-  it('exige un sanctuaire achevé', () => {
-    const contenu = contenuDeTest();
+describe('Archipel', () => {
+  /** Moteur dont l'île affichée a un sanctuaire achevé et deux habitants de plus logés dans une hutte. */
+  function avecSanctuaire(contenu = contenuDeTest({ hutte: { logement: true } })): Moteur {
     const moteur = new Moteur(contenu, 0);
-    expect(commander(moteur, { type: 'renaitre' })[0]).toMatchObject({ raison: 'indisponible' });
-  });
-
-  it('efface la partie, change d’île et garde le prestige enrichi', () => {
-    const moteur = new Moteur(contenuDeTest({ hutte: { logement: true } }), 0);
-    const etat = moteur.etatCourant;
-    const ileAvant = etat.ile;
     commander(moteur, poser('sanctuaire', caseLibre(moteur)));
     commander(moteur, poser('hutte', caseLibre(moteur)));
     moteur.simuler(2 * PAS_PAR_MINUTE);
-    expect(etat.prestige.populationMax).toBe(4);
-    etat.reglages.volume = 0.2;
-    const messages = moteur.recevoir({ type: 'commande', commande: { type: 'renaitre' } }, 0);
-    expect(instantaneDe(messages).prestige).toMatchObject({ graines: 4, renaissances: 1 });
-    expect(messages[0]).toMatchObject({ type: 'ile' });
-    expect(etat.ile).not.toEqual(ileAvant);
-    expect(etat.batiments).toEqual([]);
-    expect(etat.pas).toBe(0);
-    expect(etat.habitants).toHaveLength(2);
-    expect(etat.prestige.populationMax).toBe(2);
-    expect(etat.reglages.volume).toBe(0.2);
+    return moteur;
+  }
+
+  it('l’offrande exige un sanctuaire achevé', () => {
+    const moteur = new Moteur(contenuDeTest(), 0);
+    expect(commander(moteur, { type: 'offrir' })[0]).toMatchObject({ raison: 'indisponible' });
   });
 
-  it('des bonus achetés en graines accélèrent la partie suivante', () => {
+  it('se dépose en plusieurs fois, puis débloque l’île suivante et l’affiche', () => {
+    const moteur = avecSanctuaire();
+    const premiere = moteur.etatCourant as Etat;
+    const { partie } = premiere;
+    expect(premiere.populationMax).toBe(4);
+    partie.stocks.boisMort = 20;
+    partie.reglages.volume = 0.2;
+    expect(commander(moteur, { type: 'offrir' })).toEqual([]);
+    expect(premiere.offrande).toEqual({ boisMort: 20 });
+    expect(partie.stocks.boisMort).toBe(0);
+    expect(commander(moteur, { type: 'offrir' })[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
+    partie.stocks.boisMort = 50;
+    const messages = moteur.recevoir({ type: 'commande', commande: { type: 'offrir' } }, 0);
+    const instantane = instantaneDe(messages);
+    expect(instantane.prestige.graines).toBe(4);
+    expect(instantaneDe(messages).temps.pas).toBe(partie.pas);
+    expect(messages[0]).toMatchObject({ type: 'ile', indice: 1 });
+    expect(instantane).toMatchObject({ ile: 1, iles: [{ habitants: 4 }, { habitants: 2 }] });
+    expect(partie.stocks.boisMort).toBe(40);
+    const seconde = moteur.etatCourant;
+    expect(seconde).not.toBe(premiere);
+    expect(seconde.ile).not.toEqual(premiere.ile);
+    expect(seconde.batiments).toEqual([]);
+    expect(partie.reglages.volume).toBe(0.2);
+    // L'offrande de l'île 2 débloquera la 3e ; la première n'en a plus.
+    expect(instantane.offrande).toMatchObject({ objectif: { boisMort: 30 }, depose: {} });
+  });
+
+  it('toutes les îles vivent, les commandes visent l’île affichée', () => {
+    const contenu = contenuDeTest({ hutte: { logement: true }, cueillette: { production: { baies: 12 } } }, { baiesParMinute: 0 });
+    const moteur = avecSanctuaire(contenu);
+    const partie = moteur.partieCourante as Etat['partie'];
+    commander(moteur, poser('cueillette', caseLibre(moteur)));
+    partie.stocks.boisMort = 30;
+    commander(moteur, { type: 'offrir' });
+    expect(partie.vue).toBe(1);
+    commander(moteur, poser('hutte', caseLibre(moteur)));
+    expect(partie.iles[1]!.batiments.map((b) => b.type)).toEqual(['hutte']);
+    const baies = partie.stocks.baies;
+    moteur.simuler(5 * PAS_PAR_MINUTE);
+    // La cueillette de l'île 1 remplit le stock commun pendant qu'on regarde l'île 2.
+    expect(partie.stocks.baies).toBeGreaterThan(baies + 20);
+    const messages = moteur.recevoir({ type: 'commande', commande: { type: 'voirIle', ile: 0 } }, 0);
+    expect(messages[0]).toMatchObject({ type: 'ile', indice: 0 });
+    expect(instantaneDe(messages).batiments.map((b) => b.type)).toEqual(['sanctuaire', 'hutte', 'cueillette']);
+    expect(instantaneDe(messages).offrande).toBeNull();
+    expect(commander(moteur, { type: 'voirIle', ile: 5 })[0]).toMatchObject({ raison: 'introuvable' });
+  });
+
+  it('la dernière île n’a plus d’offrande', () => {
+    const moteur = avecSanctuaire();
+    const partie = moteur.partieCourante as Etat['partie'];
+    for (let i = 0; i < 2; i++) {
+      partie.stocks.boisMort = 30;
+      commander(moteur, poser('sanctuaire', caseLibre(moteur)));
+      moteur.simuler(1);
+      commander(moteur, { type: 'offrir' });
+    }
+    expect(partie.iles).toHaveLength(3);
+    commander(moteur, poser('sanctuaire', caseLibre(moteur)));
+    moteur.simuler(1);
+    expect(commander(moteur, { type: 'offrir' })[0]).toMatchObject({ raison: 'indisponible' });
+  });
+
+  it('des bonus achetés en graines servent sur l’île suivante', () => {
     const moteur = new Moteur(contenuDeTest({ hutte: { cout: { boisMort: 10 }, constructionSecondes: 10, logement: true } }), 0);
-    const etat = moteur.etatCourant;
-    etat.prestige.graines = 4;
+    const partie = moteur.partieCourante as Etat['partie'];
+    partie.prestige.graines = 4;
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'depart' }).every((e) => e.type === 'habitantArrive')).toBe(true);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'construction' })).toEqual([]);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })).toEqual([]);
     expect(commander(moteur, { type: 'acheterBonus', bonus: 'logement' })[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
-    expect(etat.prestige).toMatchObject({ graines: 1, bonus: { depart: 1, construction: 1, logement: 1 } });
+    expect(partie.prestige).toMatchObject({ graines: 1, bonus: { depart: 1, construction: 1, logement: 1 } });
     commander(moteur, poser('sanctuaire', caseLibre(moteur)));
-    commander(moteur, { type: 'renaitre' });
-    // Départ : un habitant et de la mousse en plus, logés dans la souche.
+    moteur.simuler(1);
+    partie.stocks.boisMort = 130;
+    commander(moteur, { type: 'offrir' });
+    const etat = moteur.etatCourant;
+    // Départ : un habitant de plus, logé dans la souche.
     expect(etat.habitants).toHaveLength(3);
-    expect(etat.stocks.mousse).toBe(10);
     // Construction : moitié prix, chantier deux fois plus rapide.
     commander(moteur, poser('hutte', caseLibre(moteur)));
-    expect(etat.stocks.boisMort).toBe(95);
+    expect(partie.stocks.boisMort).toBe(95);
     moteur.simuler(PAS_PAR_MINUTE / 12);
     expect(etat.batiments[0]!.chantier).toBeNull();
     // Logement : une place de plus par hutte (2 + 1) en plus des 3 de la souche.
@@ -998,32 +1060,52 @@ describe('Renaissance', () => {
     expect(etat.habitants).toHaveLength(6);
   });
 
-  it('se sauvegarde et se recharge à l’identique, et migre une sauvegarde de version 9', () => {
-    const contenu = contenuDeTest();
-    const moteur = new Moteur(contenu, 0);
-    const etat = moteur.etatCourant as Etat;
-    etat.prestige = { graines: 3, renaissances: 2, bonus: { production: 1, depart: 0, construction: 2, logement: 0 }, populationMax: 7 };
-    expect(charger(serialiser(etat))).toEqual(etat);
-    const { prestige: _p, ...ancien } = etat;
-    const migre = charger(JSON.stringify({ version: 9, etat: { ...ancien, palier: 2 } }));
-    expect(migre.prestige).toMatchObject({ graines: 0, renaissances: 0, populationMax: 2 });
-    expect(migre.batimentsDebloques).toContain('sanctuaire');
+  it('se sauvegarde et se recharge à l’identique, île affichée comprise', () => {
+    const moteur = avecSanctuaire();
+    const partie = moteur.partieCourante as Etat['partie'];
+    partie.stocks.boisMort = 30;
+    commander(moteur, { type: 'offrir' });
+    commander(moteur, { type: 'voirIle', ile: 0 });
+    const relue = charger(serialiser(partie));
+    expect(relue).toEqual(partie);
+    expect(relue.iles[1]!.partie).toBe(relue);
+    const reprise = new Moteur(contenuDeTest(), 0);
+    const [ile] = reprise.recevoir({ type: 'demarrer', sauvegardes: [serialiser(partie)] }, 0);
+    expect(ile).toMatchObject({ type: 'ile', indice: 0 });
+  });
+
+  it('migre une sauvegarde de version 9 et range l’île d’une version 12 en première île', () => {
+    const moteur = avecSanctuaire();
+    const plate = aplatir(moteur);
+    const { prestige: _p, ...v9 } = plate;
+    const migree = charger(JSON.stringify({ version: 9, etat: { ...v9, palier: 2 } }));
+    expect(migree.prestige).toEqual({ graines: 0, bonus: { production: 0, depart: 0, construction: 0, logement: 0 } });
+    expect(migree.iles[0]!.batimentsDebloques).toContain('sanctuaire');
+    (plate.prestige as { graines: number }).graines = 3;
+    const v12 = charger(JSON.stringify({ version: 12, etat: plate }));
+    expect(v12).toMatchObject({ vue: 0, pas: moteur.partieCourante.pas, prestige: { graines: 3 } });
+    expect(v12.iles).toHaveLength(1);
+    expect(v12.iles[0]).toMatchObject({ populationMax: 4, offrande: {}, graine: 1 });
+    expect(v12.iles[0]!.batiments).toEqual(moteur.etatCourant.batiments);
   });
 });
 
 describe('Nouvelle partie', () => {
-  it('efface tout, prestige compris, et renvoie la nouvelle île', () => {
+  it('efface tout, prestige et îles compris, et renvoie la nouvelle île', () => {
     const contenu = contenuDeTest();
     const moteur = new Moteur(contenu, 0);
     moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
-    const etat = moteur.etatCourant as Etat;
-    etat.prestige.graines = 12;
-    etat.stocks.boisMort = 3;
+    const partie = moteur.partieCourante as Etat['partie'];
+    partie.prestige.graines = 12;
+    partie.stocks.boisMort = 3;
     const messages = moteur.recevoir({ type: 'commande', commande: { type: 'recommencer', graine: 7 } }, 0);
     expect(messages[0]?.type).toBe('ile');
-    expect(etat.graine).toBe(7);
-    expect(etat.prestige.graines).toBe(0);
-    expect(etat.stocks.boisMort).toBe(contenu.stocksDeDepart.boisMort);
+    expect(moteur.partieCourante).toBe(partie);
+    expect(partie.iles).toHaveLength(1);
+    expect(partie.iles[0]!.partie).toBe(partie);
+    expect(moteur.etatCourant.graine).toBe(7);
+    expect(partie.prestige.graines).toBe(0);
+    expect(partie.stocks.boisMort).toBe(contenu.stocksDeDepart.boisMort);
   });
 });
 
@@ -1036,10 +1118,10 @@ describe('Récolte presque au plafond', () => {
     const element = etat.ile.elements.findIndex((e) => e.type === 'buisson');
     const ressource = contenu.recolte.buisson.ressource;
     etat.pousses[element] = 1;
-    etat.stocks[ressource] = contenu.plafondsDeBase[ressource] - 0.2;
+    etat.partie.stocks[ressource] = contenu.plafondsDeBase[ressource] - 0.2;
     const [message] = moteur.recevoir({ type: 'commande', commande: { type: 'recolter', element } }, 0);
     expect(message?.type === 'instantane' && message.evenements.some((e) => e.type === 'commandeRefusee')).toBe(false);
-    expect(etat.stocks[ressource]).toBeCloseTo(contenu.plafondsDeBase[ressource]);
+    expect(etat.partie.stocks[ressource]).toBeCloseTo(contenu.plafondsDeBase[ressource]);
   });
 });
 
@@ -1049,14 +1131,14 @@ describe('Bagages', () => {
     const moteur = new Moteur(contenu, 0);
     moteur.recevoir({ type: 'demarrer', sauvegardes: [] }, 0);
     const etat = moteur.etatCourant as Etat;
-    etat.prestige.graines = 100;
+    etat.partie.prestige.graines = 100;
     const { stocksDeDepart, habitantsDeDepart } = contenu.prestige.effets;
     const r = RESSOURCES.find((x) => (stocksDeDepart[x] ?? 0) > 0)!;
-    etat.stocks[r] = 0;
+    etat.partie.stocks[r] = 0;
     const habitants = etat.habitants.length;
     moteur.recevoir({ type: 'commande', commande: { type: 'acheterBonus', bonus: 'depart' } }, 0);
-    expect(etat.prestige.bonus.depart).toBe(1);
-    expect(etat.stocks[r]).toBe(Math.min(stocksDeDepart[r]!, contenu.plafondsDeBase[r]));
+    expect(etat.partie.prestige.bonus.depart).toBe(1);
+    expect(etat.partie.stocks[r]).toBe(Math.min(stocksDeDepart[r]!, contenu.plafondsDeBase[r]));
     expect(etat.habitants.length).toBe(habitants + habitantsDeDepart);
   });
 });
@@ -1098,21 +1180,5 @@ describe('Priorité des arrachages', () => {
     commander(moteur, { type: 'defricher', case: { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) } });
     moteur.simuler(PAS_PAR_MINUTE / 60);
     expect(etat.habitants.filter((h) => h.mission?.tache === 'arracher').length).toBeGreaterThan(0);
-  });
-});
-
-describe('Îles des renaissances', () => {
-  it('chaque renaissance donne une île moins riche en ressources naturelles', () => {
-    const compter = (renaissances: number) => {
-      const ile = genererIle(12, 5, renaissances);
-      return { elements: ile.elements.length, buissons: ile.terrain.filter((t) => t === 'buisson').length };
-    };
-    const [a, b, c] = [compter(0), compter(2), compter(6)];
-    expect(b.elements).toBeLessThan(a.elements);
-    expect(c.elements).toBeLessThan(b.elements);
-    expect(c.buissons).toBeLessThan(a.buissons);
-    // Plafonnée : il reste toujours de quoi démarrer.
-    expect(compter(20)).toEqual(c);
-    expect(c.elements).toBeGreaterThan(0);
   });
 });

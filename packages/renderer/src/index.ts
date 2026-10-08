@@ -61,6 +61,7 @@ export class Rendu {
   private readonly rayon = new THREE.Raycaster();
   private readonly sol = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private ile: Ile | null = null;
+  private indiceIle = 0;
   private decor: THREE.Group | null = null;
   private actif = false;
   private derniereImage = 0;
@@ -90,11 +91,13 @@ export class Rendu {
     this.redimensionner();
   }
 
-  appliquerIle(ile: Ile): void {
+  /** `indice` : rang de l'île dans l'archipel ; en changer repart de zéro pour les bâtiments et les habitants. */
+  appliquerIle(ile: Ile, indice = 0): void {
     if (this.decor) this.scene.remove(this.decor);
     this.decor = construireIle(ile);
     this.scene.add(this.decor);
-    this.entites.changerIle(ile);
+    this.entites.changerIle(ile, indice !== this.indiceIle);
+    this.indiceIle = indice;
     this.elements.changerIle(ile);
     this.aides.changerIle(ile);
     this.ambiance.changerIle(ile);

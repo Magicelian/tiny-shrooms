@@ -38,7 +38,7 @@ export interface EtatInterface {
   /** Change à chaque changement de langue, pour tout redessiner. */
   langue: Langue;
   bulle: Bulle | null;
-  /** Après la première renaissance : petite bulle au-dessus de la souche, jusqu'à ce qu'on l'ouvre. */
+  /** Après la première île débloquée : petite bulle au-dessus de la souche, jusqu'à ce qu'on l'ouvre. */
   astuceSouche: boolean;
   /** Bâtiment en cours de déplacement : il suit la souris jusqu'au clic. */
   deplacement: IdBatiment | null;

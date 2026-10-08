@@ -51,9 +51,10 @@ export class Entites {
     this.groupe.add(this.souche.groupe);
   }
 
-  changerIle(ile: Ile): void {
+  /** `autre` : une autre île de l'archipel, dont les identifiants ne disent rien de ceux de la précédente. */
+  changerIle(ile: Ile, autre = false): void {
     // Une case défrichée ou la souche arrachée ne déplacent rien : on ne repart de zéro que pour une autre île.
-    const autre = !this.ile || this.ile.largeur !== ile.largeur || this.ile.profondeur !== ile.profondeur;
+    autre ||= !this.ile || this.ile.largeur !== ile.largeur || this.ile.profondeur !== ile.profondeur;
     this.ile = ile;
     this.souche.changerIle(ile);
     if (!autre) return;

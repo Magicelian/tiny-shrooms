@@ -23,17 +23,17 @@ export function effetAmelioration(etat: Etat, contenu: Contenu, amelioration: Am
 
 /** Multiplicateur de production : outils de l'atelier et bonus de prestige. */
 export function bonusProduction(etat: Etat, contenu: Contenu): number {
-  return effetAmelioration(etat, contenu, 'outils') * effetsPrestige(contenu, etat.prestige.bonus).production;
+  return effetAmelioration(etat, contenu, 'outils') * effetsPrestige(contenu, etat.partie.prestige.bonus).production;
 }
 
 /** Prélève un coût s'il est entièrement disponible. */
 export function rembourser(etat: Etat, cout: Quantites): void {
-  for (const r of RESSOURCES) etat.stocks[r] += cout[r] ?? 0;
+  for (const r of RESSOURCES) etat.partie.stocks[r] += cout[r] ?? 0;
 }
 
 export function payer(etat: Etat, cout: Quantites): boolean {
   const ressources = RESSOURCES.filter((r) => cout[r] !== undefined);
-  if (ressources.some((r) => etat.stocks[r] < (cout[r] ?? 0))) return false;
-  for (const r of ressources) etat.stocks[r] -= cout[r] ?? 0;
+  if (ressources.some((r) => etat.partie.stocks[r] < (cout[r] ?? 0))) return false;
+  for (const r of ressources) etat.partie.stocks[r] -= cout[r] ?? 0;
   return true;
 }
