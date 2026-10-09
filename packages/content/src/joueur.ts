@@ -26,7 +26,7 @@ export const PAS_PAR_SECONDE = PAS_PAR_MINUTE / 60;
 export const BOURG = contenu.paliers.findIndex((p) => p.nom === 'bourg');
 
 /** Ce qu'on abat pour faire de la place. */
-const BOISES: readonly string[] = ['foret', 'roseaux'];
+const BOISES: readonly string[] = ['foret', 'roseaux', 'fleurs'];
 
 function nombre(etat: Etat, type: TypeBatiment): number {
   return etat.batiments.filter((b) => b.type === type).length;
@@ -68,7 +68,7 @@ export class Joueur {
     return this.commander({ type: 'poserBatiment', batiment: type, case: classees[0]!, orientation: 0 });
   }
 
-  /** Île pleine : fait abattre l'arbre (ou les roseaux) le plus proche du centre, un seul à la fois. */
+  /** Île pleine : fait abattre l'arbre (ou les roseaux, les fleurs) le plus proche du centre, un seul à la fois. */
   faireDeLaPlace(): boolean {
     const { ile, defrichages } = this.etat;
     if (defrichages.length > 0 || this.moteur.casesLibres().length > 0) return false;
@@ -97,16 +97,15 @@ export class Joueur {
     );
   }
 
-  /** Ruche là où elle couvre le plus de cueillettes qu'aucune ruche ne couvre encore (deux au moins). */
+  /** Ruche là où elle couvre le plus de cueillettes qu'aucune ruche ne couvre encore. */
   private ruche(): boolean {
     const etat = this.etat;
     if (!etat.batimentsDebloques.includes('ruche') || this.chantiers('ruche') > 0) return false;
     const ruches = this.ruches();
     const seules = etat.batiments.filter((b) => b.type === 'cueillette' && !ruches.some((r) => aPortee(contenu, r, b.case)));
-    if (seules.length < 2) return false;
+    if (seules.length === 0) return false;
     const couvertes = (c: Case) => seules.filter((b) => aPortee(contenu, { type: 'ruche', case: c, chantier: null }, b.case)).length;
-    const meilleure = Math.max(0, ...this.moteur.casesLibres().map(couvertes));
-    return meilleure >= 2 && this.poser('ruche', couvertes);
+    return Math.max(0, ...this.moteur.casesLibres().map(couvertes)) > 0 && this.poser('ruche', couvertes);
   }
 
   private production(type: TypeBatiment, terrain: string): boolean {
@@ -145,7 +144,7 @@ export class Joueur {
       () => this.offrir(),
       () => this.renforcerPourOffrande(population),
       () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.cueillette(),
-      // Sur la prairie, une ruche dès que deux cueillettes n'en ont pas.
+      // Sur la prairie, une ruche dès qu'une cueillette n'en a pas ; les suivantes se groupent autour.
       () => this.ruche(),
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       // Sur le marais, la tourbière remplace le tapis : c'est elle qui fait la mousse de l'archipel.
