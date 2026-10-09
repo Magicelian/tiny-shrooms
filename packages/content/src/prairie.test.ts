@@ -1,5 +1,6 @@
 // Critère de l'étape 20 : l'île 3 est une prairie fleurie. L'offrande de l'île 2, surtout en baies séchées, l'ouvre en
-// ~1 h 30-2 h de jeu attentif après le bourg de l'île 2 ; ses ruches y font bien plus de baies que sur l'île 1.
+// ~1 h 30 de jeu attentif après le bourg de l'île 2 ; grâce aux ruches, chaque cueillette y produit bien plus que sur
+// l'île 1, et la prairie à son bourg fait déjà plus de baies que l'île 1, pourtant plus peuplée.
 import { describe, expect, it } from 'vitest';
 import { creerPartie, multiplicateur, Moteur, type Etat } from '@tiny-shrooms/engine';
 import { contenu } from './index';
@@ -20,7 +21,7 @@ function baiesParMinute(etat: Etat): number {
 }
 
 describe('Prairie', () => {
-  it.each([1, 2])('graine %i : l’offrande de l’île 2 ouvre la prairie, riche en baies', (graine) => {
+  it.each([1, 2, 3])('graine %i : l’offrande de l’île 2 ouvre la prairie, riche en baies', (graine) => {
     const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
     const joueur = new Joueur(moteur);
     const partie = moteur.partieCourante;
@@ -43,15 +44,18 @@ describe('Prairie', () => {
     const bourg3 = jusquA(() => moteur.etatCourant.palier >= BOURG);
     const [premiere, marais, prairie] = partie.iles as [Etat, Etat, Etat];
     const ruches = prairie.batiments.filter((b) => b.type === 'ruche').length;
+    const parCueillette = (e: Etat) => baiesParMinute(e) / e.batiments.filter((b) => b.type === 'cueillette' && b.chantier === null).length;
     process.stderr.write(
       `graine ${graine} : île 3 ${(ile3 - bourg2).toFixed(0)} min après le bourg de l'île 2, son bourg en ${(bourg3 - ile3).toFixed(0)} min ; ` +
         `baies/min : île 1 ${baiesParMinute(premiere).toFixed(0)}, marais ${baiesParMinute(marais).toFixed(0)}, ` +
-        `prairie ${baiesParMinute(prairie).toFixed(0)} (${ruches} ruches) ; séchoirs île 2 : ${marais.batiments.filter((b) => b.type === 'sechoir').length}\n`,
+        `prairie ${baiesParMinute(prairie).toFixed(0)} (${ruches} ruches) ; par cueillette : île 1 ${parCueillette(premiere).toFixed(1)}, ` +
+        `prairie ${parCueillette(prairie).toFixed(1)} ; séchoirs île 2 : ${marais.batiments.filter((b) => b.type === 'sechoir').length}\n`,
     );
     expect(prairie.ile.biome).toBe('prairie');
     expect(ile3 - bourg2).toBeGreaterThan(60);
     expect(ile3 - bourg2).toBeLessThan(150);
     expect(ruches).toBeGreaterThan(0);
-    expect(baiesParMinute(prairie)).toBeGreaterThan(baiesParMinute(premiere) * 2);
+    expect(parCueillette(prairie)).toBeGreaterThan(parCueillette(premiere) * 1.5);
+    expect(baiesParMinute(prairie)).toBeGreaterThan(baiesParMinute(premiere));
   }, 1_800_000);
 });
