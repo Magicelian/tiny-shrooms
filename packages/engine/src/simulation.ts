@@ -7,7 +7,7 @@ import { coutBatiment, coutBonus, debloquerIle, offrande, offrandeRemplie, offri
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type Etat, type Partie } from './etat';
 import { problemesDe } from './problemes';
-import { dejaConstruit, majBonusVoisinage, verifierEmplacement } from './grille';
+import { dejaConstruit, majBonusVoisinage, multiplicateur, verifierEmplacement } from './grille';
 import { appelerArracheurs, avancerHabitants, estLaNuit, logements } from './habitants';
 import { coutTotal, majPalier, monterLogement, rangLogement } from './logements';
 import { demanderDefrichage, memeCase } from './defrichage';
@@ -55,7 +55,7 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
     const def = contenu.batiments[b.type];
     const cadence = cadenceTravail(etat, contenu, { x: b.case.x + 0.5, y: b.case.y + 0.5 }, nourri) * bonus;
     for (const r of cles(def.production ?? {})) {
-      const quantite = (def.production![r] ?? 0) * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence;
+      const quantite = (def.production![r] ?? 0) * multiplicateur(b) * facteurSaison(etat, contenu, r) * cadence;
       production[r] += quantite;
       estime[r] += quantite;
     }

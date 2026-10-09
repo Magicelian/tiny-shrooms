@@ -3,13 +3,13 @@ import type { Case, Evenement, Position, Ressource, Tache } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { ajouterHabitant, plafonds, type BatimentEtat, type Etat, type HabitantEtat, type Mission } from './etat';
-import { majBonusVoisinage } from './grille';
+import { majBonusVoisinage, multiplicateur } from './grille';
 import { centreSouche } from './ile';
 import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './saisons';
 import { bonusProduction, effetAmelioration } from './ameliorations';
 import { etapeVers, preparerGrille } from './chemins';
 import { avancerDefrichage, memeCase } from './defrichage';
-import { besoinsManquants, evaluerBesoins, placesLogement, placesSouche, rangLogement } from './logements';
+import { besoinsManquants, evaluerBesoins, majPollinisation, placesLogement, placesSouche, rangLogement } from './logements';
 import { effetsPrestige } from './prestige';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -52,7 +52,9 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   const nourri = nourrir(etat, contenu);
   etat.faim = etat.habitants.length > 0 && !nourri;
   preparerGrille(etat);
-  evaluerBesoins(etat, contenu, nourri, emploisTenus(etat));
+  const tenus = emploisTenus(etat);
+  evaluerBesoins(etat, contenu, nourri, tenus);
+  majPollinisation(etat, contenu, tenus);
   const { loges, capacite } = logements(etat, contenu);
   const nuit = estLaNuit(etat, contenu);
   const bonusBienEtre = effetsPrestige(contenu, etat.partie.prestige.bonus).bienEtre;
@@ -386,7 +388,7 @@ function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat
   // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {
-    produit[r] = (def.production![r]! * b.bonusVoisinage * facteurSaison(etat, contenu, r) * cadence) / PAS_PAR_MINUTE;
+    produit[r] = (def.production![r]! * multiplicateur(b) * facteurSaison(etat, contenu, r) * cadence) / PAS_PAR_MINUTE;
   }
   const consomme: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.consommation ?? {})) consomme[r] = (def.consommation![r]! * cadence) / PAS_PAR_MINUTE;

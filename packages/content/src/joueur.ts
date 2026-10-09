@@ -1,6 +1,9 @@
-// Joueur scripté des critères : nourriture, bois, mousse, logements, services manquants, montée en gamme, stockage.
+// Joueur scripté des critères : nourriture, bois, mousse, logements, services manquants, montée en gamme, stockage,
+// ruches de la prairie et offrandes.
 import {
   aPortee,
+  BONUS_PRESTIGE,
+  coutBonus,
   capaciteLogement,
   coutBatiment,
   Moteur,
@@ -41,6 +44,10 @@ export class Joueur {
     return this.moteur.etatCourant as Etat;
   }
 
+  get partie() {
+    return this.moteur.partieCourante;
+  }
+
   commander(commande: Commande): boolean {
     const message = this.moteur.recevoir({ type: 'commande', commande }, 0).find((m) => m.type === 'instantane');
     return message?.type === 'instantane' && !message.evenements.some((e) => e.type === 'commandeRefusee');
@@ -74,6 +81,32 @@ export class Joueur {
       }
     }
     return meilleure !== null && this.commander({ type: 'defricher', case: meilleure });
+  }
+
+  /** Ruches achevées ou en chantier de l'île. */
+  private ruches() {
+    return this.etat.batiments.filter((b) => contenu.batiments[b.type].pollinise);
+  }
+
+  /** Cueillette à portée d'une ruche de préférence, puis près d'un buisson. */
+  private cueillette(): boolean {
+    const cases = this.moteur.casesLibres();
+    const ruches = this.ruches();
+    return this.poser('cueillette', (c) =>
+      (ruches.some((r) => aPortee(contenu, r, c)) ? 200 : 0) + (pres(this.etat, c, 'buisson') ? 100 : 0) + cases.indexOf(c) / cases.length,
+    );
+  }
+
+  /** Ruche là où elle couvre le plus de cueillettes qu'aucune ruche ne couvre encore (deux au moins). */
+  private ruche(): boolean {
+    const etat = this.etat;
+    if (!etat.batimentsDebloques.includes('ruche') || this.chantiers('ruche') > 0) return false;
+    const ruches = this.ruches();
+    const seules = etat.batiments.filter((b) => b.type === 'cueillette' && !ruches.some((r) => aPortee(contenu, r, b.case)));
+    if (seules.length < 2) return false;
+    const couvertes = (c: Case) => seules.filter((b) => aPortee(contenu, { type: 'ruche', case: c, chantier: null }, b.case)).length;
+    const meilleure = Math.max(0, ...this.moteur.casesLibres().map(couvertes));
+    return meilleure >= 2 && this.poser('ruche', couvertes);
   }
 
   private production(type: TypeBatiment, terrain: string): boolean {
@@ -111,7 +144,9 @@ export class Joueur {
       // Au bourg, le sanctuaire passe avant tout : sinon, l'île pleine, chaque case libérée est reprise.
       () => this.offrir(),
       () => this.renforcerPourOffrande(population),
-      () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.production('cueillette', 'buisson'),
+      () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.cueillette(),
+      // Sur la prairie, une ruche dès que deux cueillettes n'en ont pas.
+      () => this.ruche(),
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       // Sur le marais, la tourbière remplace le tapis : c'est elle qui fait la mousse de l'archipel.
       () => population >= 2 && nombre(etat, 'tourbiere') < 1 + Math.floor(population / 8) && this.production('tourbiere', 'roseaux'),
@@ -143,12 +178,16 @@ export class Joueur {
     return plein && this.commander({ type: 'offrir' });
   }
 
-  /** Offrande en cours : un producteur de plus pour ce qui y manque encore (la mousse, pour ouvrir le marais). */
+  /**
+   * Offrande en cours : un producteur de plus pour ce qui y manque encore (la mousse pour ouvrir le marais, les baies
+   * séchées pour la prairie).
+   */
   private renforcerPourOffrande(population: number): boolean {
     const o = nombre(this.etat, 'sanctuaire') > 0 ? offrande(this.etat, contenu) : null;
     if (!o) return false;
-    const manque = (r: 'mousse' | 'boisMort') => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0);
+    const manque = (r: 'mousse' | 'boisMort' | 'baiesSechees') => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0);
     const limite = 2 + Math.floor(population / 8);
+    if (manque('baiesSechees') && nombre(this.etat, 'sechoir') < limite) return this.production('sechoir', 'herbe');
     if (manque('mousse') && nombre(this.etat, 'tapisDeMousse') < limite) return this.production('tapisDeMousse', 'eau');
     if (manque('boisMort') && nombre(this.etat, 'tasDeBois') < limite) return this.production('tasDeBois', 'foret');
     return false;
@@ -191,5 +230,16 @@ export class Joueur {
     if (plein('boisMort', 'remise') || plein('mousse', 'remise')) return this.production('remise', 'herbe');
     if (plein('baies', 'gardeManger')) return this.production('gardeManger', 'herbe');
     return false;
+  }
+}
+
+/** Dépense les graines : l'accueil des logements d'abord (la population fixe le rythme), puis le bonus le moins cher. */
+export function depenser(joueur: Joueur): void {
+  const { prestige } = joueur.partie;
+  for (;;) {
+    const prix = BONUS_PRESTIGE.map((b) => [b, coutBonus(contenu, b, prestige.bonus[b])] as const)
+      .filter((x): x is readonly [(typeof BONUS_PRESTIGE)[number], number] => x[1] !== null && x[1] <= prestige.graines)
+      .sort((a, b) => Number(b[0] === 'logement') - Number(a[0] === 'logement') || a[1] - b[1]);
+    if (prix.length === 0 || !joueur.commander({ type: 'acheterBonus', bonus: prix[0]![0] })) return;
   }
 }

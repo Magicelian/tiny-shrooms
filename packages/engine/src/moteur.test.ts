@@ -4,7 +4,8 @@ import type { Case, Commande, Evenement, MessageDepuisMoteur, Terrain, TypeBatim
 import { RESSOURCES, TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
 import { genererIle, terrainEn } from './ile';
-import { creerPartie } from './etat';
+import { ajouterIle, creerPartie } from './etat';
+import { natureEn } from './defrichage';
 import { Moteur } from './moteur';
 import { meteoAu } from './saisons';
 import { charger, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
@@ -36,6 +37,7 @@ function contenuDeTest(
     defrichage: {
       arbre: { cout: { boisMort: 5 }, secondes: 10, gain: { baies: 3 } },
       roseau: { cout: {}, secondes: 10 },
+      fleur: { cout: {}, secondes: 5 },
       buisson: { cout: {}, secondes: 10 },
       plante: { cout: {}, secondes: 5 },
     },
@@ -1202,5 +1204,65 @@ describe('Priorité des arrachages', () => {
     commander(moteur, { type: 'defricher', case: { x: arbre % ile.largeur, y: Math.floor(arbre / ile.largeur) } });
     moteur.simuler(PAS_PAR_MINUTE / 60);
     expect(etat.habitants.filter((h) => h.mission?.tache === 'arracher').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Ruche', () => {
+  const ruche = { postes: 1, portee: 2, pollinise: { cibles: ['cueillette' as const], bonus: 0.5 } };
+
+  /** Une case libre à `distance` (au sens du carré de portée) de `depuis`. */
+  function aDistance(moteur: Moteur, depuis: Case, min: number, max: number): Case {
+    const c = moteur.casesLibres().find((x) => {
+      const d = Math.max(Math.abs(x.x - depuis.x), Math.abs(x.y - depuis.y));
+      return d >= min && d <= max;
+    });
+    if (!c) throw new Error('aucune case');
+    return c;
+  }
+
+  it('tenue, elle fait produire plus les cueillettes à sa portée, sans cumul entre ruches', () => {
+    const contenu = contenuDeTest({ cueillette: { production: { baies: 6 } }, ruche }, { auDepart: 4, logementDeBase: 4 });
+    const moteur = new Moteur(contenu, 0);
+    const etat = moteur.etatCourant as Etat;
+    const r = caseLibre(moteur);
+    commander(moteur, poser('ruche', r));
+    commander(moteur, poser('cueillette', aDistance(moteur, r, 1, 2)));
+    commander(moteur, poser('cueillette', aDistance(moteur, r, 4, 99)));
+    commander(moteur, poser('ruche', aDistance(moteur, etat.batiments[1]!.case, 1, 1)));
+    moteur.simuler(PAS_PAR_MINUTE);
+    const [, proche, loin] = etat.batiments;
+    expect(etat.habitants.filter((h) => h.mission?.tache === 'tenir')).toHaveLength(2);
+    expect(proche!.pollinisation).toBe(0.5);
+    expect(loin!.pollinisation).toBeUndefined();
+  });
+
+  it('sans apiculteur, elle ne fait rien', () => {
+    const contenu = contenuDeTest({ cueillette: { production: { baies: 6 } }, ruche }, { auDepart: 0, logementDeBase: 0 });
+    const moteur = new Moteur(contenu, 0);
+    const etat = moteur.etatCourant as Etat;
+    const r = caseLibre(moteur);
+    commander(moteur, poser('ruche', r));
+    commander(moteur, poser('cueillette', aDistance(moteur, r, 1, 2)));
+    moteur.simuler(PAS_PAR_MINUTE);
+    expect(etat.batiments[1]!.pollinisation).toBeUndefined();
+  });
+
+  it('la prairie seule la propose, ses fleurs se défrichent', () => {
+    const contenu = contenuDeTest({ ruche: { ...ruche, biomes: ['prairie'] } }, {}, {
+      paliers: [{ nom: 'hameau', population: 0, debloque: ['hutte', 'ruche'] }],
+      archipel: { offrandes: [{}, {}], biomes: ['foret', 'marais', 'prairie'] },
+    });
+    const partie = creerPartie(contenu, 1);
+    const foret = partie.iles[0]!;
+    expect(foret.batimentsDebloques).not.toContain('ruche');
+    ajouterIle(partie, contenu);
+    const prairie = ajouterIle(partie, contenu);
+    expect(prairie.ile.biome).toBe('prairie');
+    expect(prairie.batimentsDebloques).toContain('ruche');
+    const { terrain } = prairie.ile;
+    expect(terrain.filter((t) => t === 'fleurs').length).toBeGreaterThan(5);
+    expect(terrain.filter((t) => t === 'buisson').length).toBeGreaterThan(foret.ile.terrain.filter((t) => t === 'buisson').length);
+    const fleur = terrain.indexOf('fleurs');
+    expect(natureEn(prairie.ile, { x: fleur % prairie.ile.largeur, y: Math.floor(fleur / prairie.ile.largeur) })).toBe('fleur');
   });
 });

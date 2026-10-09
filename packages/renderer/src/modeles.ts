@@ -31,7 +31,13 @@ const TEINTES = {
   suie: 0x3a302c,
   tourbe: 0x3b2a22,
   tourbeClaire: 0xa8805a,
+  paille: 0xb8862e,
+  rose: 0xf28cb8,
+  abeille: 0x2a2224,
 } as const;
+
+/** Couleurs des fleurs de la prairie, tirées tour à tour. */
+const PETALES = [TEINTES.jaune, TEINTES.rose, TEINTES.blanc, TEINTES.lilas] as const;
 
 // ─── Morceaux réutilisés ───────────────────────────────────────────────────────
 
@@ -169,6 +175,26 @@ function tourbiere(): Voxels {
   }
   poteau(v, -2, 2, 3, 7, TEINTES.boisClair);
   v.boite(-3, 1, 2, -1, 2, 2, TEINTES.metal);
+  return v;
+}
+
+function ruche(): Voxels {
+  const v = new Voxels();
+  const paille = COULEURS_BATIMENT.ruche;
+  // Socle de planches sur quatre pieds, ruche en paille tressée (anneaux alternés), entrée sombre en façade.
+  v.boite(-5, 0, -5, 4, 0, 4, COULEURS.herbe);
+  for (const [x, z] of [[-3, -3], [2, -3], [-3, 2], [2, 2]] as const) poteau(v, x, z, 1, 2);
+  v.boite(-4, 3, -4, 3, 3, 3, TEINTES.planche);
+  v.dome(C, C, 4, 4.6, 7, paille);
+  v.peindre((_, y, __, c) => c === paille && y % 2 === 1, TEINTES.paille);
+  v.boite(-1, 4, 2, 0, 5, 4, TEINTES.porte);
+  // Fleurs au pied, abeilles qui butinent autour.
+  for (const [x, z, i] of [[-5, 4, 0], [4, 4, 1], [4, -5, 2], [-5, -5, 3], [4, 0, 1]] as const) {
+    v.poser(x, 1, z, COULEURS.tige).poser(x, 2, z, PETALES[i]!);
+  }
+  for (const [x, y, z] of [[3, 9, 1], [-4, 7, -2], [1, 11, -3], [-2, 10, 3]] as const) {
+    v.poser(x, y, z, TEINTES.jaune).poser(x + 1, y, z, TEINTES.abeille);
+  }
   return v;
 }
 
@@ -318,6 +344,7 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   tasDeBois,
   tapisDeMousse,
   tourbiere,
+  ruche,
   gardeManger,
   remise,
   sechoir,
@@ -384,10 +411,10 @@ export function modeleSouche(tailleCases: number): Modele {
 
 // ─── Décor et éléments ─────────────────────────────────────────────────────────
 
-export type Decor = 'arbre' | 'roseau' | 'buisson' | 'caillou' | 'nenuphar';
+export type Decor = 'arbre' | 'roseau' | 'fleur' | 'buisson' | 'caillou' | 'nenuphar';
 let cacheDecor: Record<Decor, Modele> | null = null;
 
-/** Arbre, roseaux, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
+/** Arbre, roseaux, fleurs, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
 export function modelesDecor(): Record<Decor, Modele> {
   if (cacheDecor) return cacheDecor;
   const arbre = new Voxels();
@@ -418,7 +445,17 @@ export function modelesDecor(): Record<Decor, Modele> {
   nenuphar.boite(0, 0, 0, 3, 0, 0, null);
   nenuphar.poser(-2, 1, -1, COULEURS.fleurNenuphar).poser(-1, 1, -1, COULEURS.fleurNenuphar).poser(-2, 1, -2, COULEURS.fleurNenuphar);
   nenuphar.poser(-2, 2, -2, TEINTES.jaune);
-  cacheDecor = { arbre: arbre.modele(), roseau: roseau.modele(), buisson: buisson.modele(), caillou: caillou.modele(), nenuphar: nenuphar.modele(false) };
+  // Touffe de fleurs des champs : tiges courtes, corolles de quatre couleurs, quelques feuilles.
+  const fleur = new Voxels();
+  const corolles: [number, number, number][] = [[-4, -3, 4], [-1, 2, 6], [2, -4, 5], [3, 2, 3], [-3, 3, 5], [0, -1, 7], [4, -1, 4], [-5, 0, 3], [1, 4, 4]];
+  corolles.forEach(([x, z, h], i) => {
+    fleur.boite(x, 0, z, x, h - 1, z, COULEURS.tige);
+    const petale = PETALES[i % PETALES.length]!;
+    fleur.poser(x, h, z, i % 2 === 0 ? TEINTES.orange : petale).poser(x + 1, h, z, petale).poser(x - 1, h, z, petale);
+    fleur.poser(x, h, z + 1, petale).poser(x, h, z - 1, petale);
+  });
+  fleur.poser(-2, 1, -1, COULEURS.tige).poser(2, 1, 0, COULEURS.tige).poser(0, 1, 3, COULEURS.tige);
+  cacheDecor = { arbre: arbre.modele(), roseau: roseau.modele(), fleur: fleur.modele(), buisson: buisson.modele(), caillou: caillou.modele(), nenuphar: nenuphar.modele(false) };
   return cacheDecor;
 }
 

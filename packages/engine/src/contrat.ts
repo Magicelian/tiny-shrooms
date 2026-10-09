@@ -37,10 +37,10 @@ export interface Stock {
 
 // ─── Île ─────────────────────────────────────────────────────────────────────
 
-export type Terrain = 'vide' | 'herbe' | 'foret' | 'roseaux' | 'buisson' | 'eau' | 'rocher';
+export type Terrain = 'vide' | 'herbe' | 'foret' | 'roseaux' | 'fleurs' | 'buisson' | 'eau' | 'rocher';
 
 /** Chaque île a le sien : terrain, éléments et bâtiments propres. */
-export type Biome = 'foret' | 'marais';
+export type Biome = 'foret' | 'marais' | 'prairie';
 
 // ─── Éléments naturels ───────────────────────────────────────────────────────
 
@@ -48,8 +48,11 @@ export type Biome = 'foret' | 'marais';
 export const TYPES_ELEMENT = ['buisson', 'boisMort', 'mousse'] as const;
 export type TypeElement = (typeof TYPES_ELEMENT)[number];
 
-/** Ce qu'on peut faire arracher : un arbre de la forêt, des roseaux du marais, un buisson sauvage, une plante semée sur l'herbe. */
-export type Defrichable = 'arbre' | 'roseau' | 'buisson' | 'plante';
+/**
+ * Ce qu'on peut faire arracher : un arbre de la forêt, des roseaux du marais, des fleurs de la prairie, un buisson
+ * sauvage, une plante semée sur l'herbe.
+ */
+export type Defrichable = 'arbre' | 'roseau' | 'fleur' | 'buisson' | 'plante';
 
 /** Case en cours de défrichage. */
 export interface Defrichage {
@@ -93,6 +96,7 @@ export const TYPES_BATIMENT = [
   'tasDeBois',
   'tapisDeMousse',
   'tourbiere',
+  'ruche',
   'gardeManger',
   'remise',
   'sechoir',
@@ -121,6 +125,8 @@ export interface Batiment {
   amelioration: { village: AmeliorationVillage; avancement: number } | null;
   /** Bonus de voisinage appliqué, en multiplicateur (1 = aucun). */
   bonusVoisinage: number;
+  /** Bonus d'une ruche tenue alentour, qui s'ajoute au voisinage (0,5 → +50 %) ; absent ou 0 sans ruche. */
+  pollinisation?: number;
   /**
    * Logements seulement : besoins du rang actuel et du rang suivant, satisfaits ou non.
    * Vide pour les autres bâtiments et les chantiers.

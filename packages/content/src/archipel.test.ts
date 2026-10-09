@@ -2,29 +2,13 @@
 // la première île continue de vivre pendant qu'on bâtit la seconde (le marais), qui atteint le bourg plus vite
 // et fait bien plus de mousse.
 import { describe, expect, it } from 'vitest';
-import { BONUS_PRESTIGE, charger, coutBonus, creerPartie, Moteur, serialiser, type Commande, type Etat } from '@tiny-shrooms/engine';
+import { charger, creerPartie, Moteur, serialiser, type Etat } from '@tiny-shrooms/engine';
 import { contenu } from './index';
-import { BOURG, Joueur, PAS_PAR_SECONDE } from './joueur';
+import { BOURG, depenser, Joueur, PAS_PAR_SECONDE } from './joueur';
 
 const HEURES_MAX = 20;
 // Écrit même quand le test passe (vitest tait `console.log`).
 declare const process: { stderr: { write(texte: string): void } };
-
-function commander(moteur: Moteur, commande: Commande): boolean {
-  const message = moteur.recevoir({ type: 'commande', commande }, 0).find((m) => m.type === 'instantane');
-  return message?.type === 'instantane' && !message.evenements.some((e) => e.type === 'commandeRefusee');
-}
-
-/** Dépense les graines : l'accueil des logements d'abord (la population fixe le rythme), puis le bonus le moins cher. */
-function depenser(moteur: Moteur): void {
-  const { prestige } = moteur.partieCourante;
-  for (;;) {
-    const prix = BONUS_PRESTIGE.map((b) => [b, coutBonus(contenu, b, prestige.bonus[b])] as const)
-      .filter((x): x is readonly [(typeof BONUS_PRESTIGE)[number], number] => x[1] !== null && x[1] <= prestige.graines)
-      .sort((a, b) => Number(b[0] === 'logement') - Number(a[0] === 'logement') || a[1] - b[1]);
-    if (prix.length === 0 || !commander(moteur, { type: 'acheterBonus', bonus: prix[0]![0] })) return;
-  }
-}
 
 /** Mousse que produiraient les bâtiments achevés de l'île, tous postes pourvus. */
 function mousseParMinute(etat: Etat): number {
@@ -57,7 +41,7 @@ describe('Archipel', () => {
     expect(partie.vue).toBe(1);
     const graines = partie.prestige.graines;
     expect(graines).toBeGreaterThan(0);
-    depenser(moteur);
+    depenser(joueur);
     while (moteur.etatCourant.palier < BOURG) {
       jouer();
       if ((partie.iles[0] as Etat).faim) faimSurLaPremiere++;

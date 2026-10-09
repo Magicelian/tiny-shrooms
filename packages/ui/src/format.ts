@@ -56,6 +56,10 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   if (def.stockage) lignes.push(t('effet.stockage', { liste: listeQuantites(def.stockage).replace(/^|, /g, '$&+') }));
   const besoin = (Object.keys(contenu.logement.sources) as Besoin[]).find((b) => contenu.logement.sources[b] === type);
   if (besoin && def.portee) lignes.push(t('effet.portee', { besoin: nomBesoin(besoin), portee: def.portee }));
+  if (def.pollinise) {
+    const cible = def.pollinise.cibles.map((c) => nomBatiment(c).toLowerCase()).join(', ');
+    lignes.push(t('effet.pollinise', { pourcent: pourcent(def.pollinise.bonus), cible, portee: def.portee ?? 0 }));
+  }
   if (def.postes && !def.production) lignes.push(t('effet.tenu'));
   if (type === 'sanctuaire') lignes.push(t('effet.sanctuaire'));
   if (lignes.length === 0) lignes.push(t('effet.aVenir'));

@@ -55,6 +55,8 @@ export function construireIle(ile: Ile): THREE.Group {
         poser('arbre', 0, 'porte', decalage, echelle.set(t, t * (0.9 + bruit(x, y, 4) * 0.2), t), quart(b));
       } else if (terrain === 'roseaux') {
         poser('roseau', 0, 'porte', decalage, echelle.set(1, 0.85 + bruit(x, y, 4) * 0.3, 1), quart(b));
+      } else if (terrain === 'fleurs') {
+        poser('fleur', 0, 'porte', decalage, echelle.setScalar(0.85 + b * 0.3), quart(b));
       } else if (terrain === 'eau' && ile.biome === 'marais' && bruit(x, y, 5) < 0.45) {
         poser('nenuphar', 0, 'recoit', decalage.setY(hautSurface + 0.01), echelle.setScalar(0.7 + b * 0.3), quart(b));
       } else if (terrain === 'buisson') {

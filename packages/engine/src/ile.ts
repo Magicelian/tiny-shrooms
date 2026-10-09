@@ -7,11 +7,13 @@ const TAILLE_SOUCHE = 2;
 const ELEMENTS_EPARS: Record<Biome, Partial<Record<TypeElement, number>>> = {
   foret: { boisMort: 3, mousse: 3 },
   marais: { boisMort: 1, mousse: 6 },
+  prairie: { boisMort: 2, mousse: 1 },
 };
 
 /**
  * Île ronde, la souche-dépôt au centre ; même graine et même biome, même île. Forêt : bordée d'arbres, une
  * mare. Marais : bordé de roseaux (quelques arbres, peu de buissons), trois mares cernées de roseaux.
+ * Prairie : bordée de fleurs et de buissons sauvages, presque sans arbres, une mare.
  */
 export function genererIle(taille: number, graine: number, biome: Biome = 'foret'): Ile {
   const hasard = creerHasard(graine);
@@ -37,6 +39,7 @@ export function genererIle(taille: number, graine: number, biome: Biome = 'foret
       if (d > rayon + r * 0.4) t = 'vide';
       else if (presDeLaSouche) t = 'herbe';
       else if (biome === 'marais') t = terrainMarais(d > rayon - 1.4 + r * 0.8, versMare, r);
+      else if (biome === 'prairie') t = terrainPrairie(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (d > rayon - 1.4 + r * 0.8) t = r < 0.8 ? 'foret' : 'buisson';
       else if (versMare < 1.3) t = 'eau';
       else if (r < 0.05) t = 'rocher';
@@ -56,6 +59,16 @@ function terrainMarais(lisiere: boolean, versMare: number, r: number): Terrain {
   if (versMare < 1.9 && r < 0.3) return 'roseaux';
   if (r < 0.03) return 'rocher';
   if (r < 0.05) return 'buisson';
+  return 'herbe';
+}
+
+/** Case de la prairie hors des abords de la souche : `lisiere` vaut vrai sur le pourtour de l'île. */
+function terrainPrairie(lisiere: boolean, versMare: number, r: number): Terrain {
+  if (lisiere) return r < 0.5 ? 'fleurs' : r < 0.88 ? 'buisson' : 'foret';
+  if (versMare < 1.3) return 'eau';
+  if (r < 0.02) return 'rocher';
+  if (r < 0.14) return 'buisson';
+  if (r < 0.22) return 'fleurs';
   return 'herbe';
 }
 

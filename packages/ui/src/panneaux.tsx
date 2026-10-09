@@ -104,11 +104,10 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const enChantier = batiment.chantier !== null;
   // Construction, agrandissement ou amélioration : il faut des bâtisseurs.
   const enTravaux = enChantier || batiment.agrandissement !== null || batiment.amelioration !== null;
-  // Bâtisseurs pendant les travaux, récolteurs ensuite.
-  const postes = enTravaux ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : 0;
-  const pourvus = instantane.habitants.filter(
-    (h) => h.lieu === batiment.id && h.tache === (enTravaux ? 'construire' : 'recolter'),
-  ).length;
+  // Bâtisseurs pendant les travaux, ensuite récolteurs, ou l'habitant qui le tient (ruche, marché).
+  const postes = enTravaux ? contenu.habitants.ouvriersParChantier : def.production ? (def.postes ?? 1) : (def.postes ?? 0);
+  const tache = enTravaux ? 'construire' : def.production ? 'recolter' : 'tenir';
+  const pourvus = instantane.habitants.filter((h) => h.lieu === batiment.id && h.tache === tache).length;
   return (
     <>
       {enChantier && (
@@ -129,6 +128,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
         <p key={ligne}>{ligne}</p>
       ))}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
+      {(batiment.pollinisation ?? 0) > 0 && <p class="bonus">{t('effet.pollinisation', { pourcent: pourcent(batiment.pollinisation!) })}</p>}
       {batiment.type === 'atelier' && !enChantier && <Ameliorations controleur={controleur} instantane={instantane} />}
       {batiment.type === 'sanctuaire' && !enChantier && <Sanctuaire controleur={controleur} instantane={instantane} />}
       <div class="actions">

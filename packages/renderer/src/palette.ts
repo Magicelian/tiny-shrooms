@@ -14,6 +14,7 @@ export const COULEURS = {
   massette: 0x6b3f22,
   nenuphar: 0x3f8a4a,
   fleurNenuphar: 0xf2a6c8,
+  tige: 0x4f9a3c,
   caillou: 0x9a9ea8,
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
@@ -29,6 +30,7 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   tasDeBois: 0x9c6b3f,
   tapisDeMousse: 0x5fae6e,
   tourbiere: 0x6b4a33,
+  ruche: 0xe2b04e,
   gardeManger: 0xe0b04a,
   remise: 0x7d5a44,
   sechoir: 0xe38a3a,
@@ -43,6 +45,7 @@ export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
   herbe: COULEURS.herbe,
   foret: COULEURS.herbe,
   roseaux: COULEURS.herbe,
+  fleurs: COULEURS.herbe,
   buisson: COULEURS.herbe,
   rocher: COULEURS.herbe,
   eau: COULEURS.eau,
@@ -50,9 +53,12 @@ export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
 
 /** Le marais : herbe plus sombre et eau verdâtre. */
 const HERBE_MARAIS = 0x6f9a4c;
+/** La prairie : herbe tendre, plus claire. */
+const HERBE_PRAIRIE = 0x95d35e;
 export const SURFACES_PAR_BIOME: Record<Biome, Record<Exclude<Terrain, 'vide'>, number>> = {
   foret: COULEURS_SURFACE,
-  marais: { herbe: HERBE_MARAIS, foret: HERBE_MARAIS, roseaux: HERBE_MARAIS, buisson: HERBE_MARAIS, rocher: HERBE_MARAIS, eau: 0x4a9a8e },
+  marais: { herbe: HERBE_MARAIS, foret: HERBE_MARAIS, roseaux: HERBE_MARAIS, fleurs: HERBE_MARAIS, buisson: HERBE_MARAIS, rocher: HERBE_MARAIS, eau: 0x4a9a8e },
+  prairie: { herbe: HERBE_PRAIRIE, foret: HERBE_PRAIRIE, roseaux: HERBE_PRAIRIE, fleurs: HERBE_PRAIRIE, buisson: HERBE_PRAIRIE, rocher: HERBE_PRAIRIE, eau: COULEURS.eau },
 };
 
 /** Trois paliers de lumière, sans dégradé. */

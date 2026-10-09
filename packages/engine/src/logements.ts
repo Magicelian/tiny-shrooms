@@ -111,6 +111,23 @@ function sourceAPortee(etat: Etat, contenu: Contenu, besoin: Besoin, logement: B
   return etat.batiments.some((b) => b.type === type && b.chantier === null && aPortee(contenu, b, logement.case) && tenu(b));
 }
 
+/**
+ * Bonus des ruches pour chaque bâtiment : le plus fort parmi les ruches achevées et tenues qui le couvrent
+ * (elles ne se cumulent pas). `tenus` : bâtiments dont au moins un emploi est pourvu.
+ */
+export function majPollinisation(etat: Etat, contenu: Contenu, tenus: ReadonlySet<number>): void {
+  const ruches = etat.batiments.filter((b) => contenu.batiments[b.type].pollinise && b.chantier === null && tenus.has(b.id));
+  for (const b of etat.batiments) {
+    let bonus = 0;
+    for (const ruche of ruches) {
+      const { cibles, bonus: effet } = contenu.batiments[ruche.type].pollinise!;
+      if (b.chantier === null && cibles.includes(b.type) && aPortee(contenu, ruche, b.case)) bonus = Math.max(bonus, effet);
+    }
+    if (bonus > 0) b.pollinisation = bonus;
+    else delete b.pollinisation;
+  }
+}
+
 function estRessource(besoin: Besoin): besoin is Besoin & Ressource {
   return (RESSOURCES as readonly string[]).includes(besoin);
 }

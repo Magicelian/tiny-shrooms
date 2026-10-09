@@ -42,6 +42,11 @@ export function bonusVoisinage(ile: Ile, batiments: readonly Emprise[], contenu:
   return bonus;
 }
 
+/** Multiplicateur de production d'un bâtiment : voisinage et ruche additionnés (1 = aucun bonus). */
+export function multiplicateur(b: Pick<Batiment, 'bonusVoisinage' | 'pollinisation'>): number {
+  return b.bonusVoisinage + (b.pollinisation ?? 0);
+}
+
 /** Case libre, et qui convient au type s'il est donné. */
 export function verifierEmplacement(etat: Etat, c: Case, ignorer?: IdBatiment, type?: TypeBatiment, contenu?: Contenu): RaisonRefus | null {
   const refus = emplacementRefuse(etat.ile, etat.batiments, c, ignorer);

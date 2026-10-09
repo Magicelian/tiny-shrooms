@@ -4,7 +4,7 @@ export { Moteur } from './moteur';
 export { charger, chargerPremiereValide, SauvegardeAncienne, serialiser, VERSION_SAUVEGARDE } from './sauvegarde';
 export { ajouterIle, creerEtat, creerPartie, plafonds, type Partie, type BatimentEtat, type Etat, type HabitantEtat, type Mission } from './etat';
 export { centreSouche, dansLaSouche, elementEn, genererIle, placerElements, terrainEn } from './ile';
-export { bonusVoisinage, casesLibres, dejaConstruit, disponibleSur, emplacementRefuse, terrainManquant, verifierEmplacement } from './grille';
+export { bonusVoisinage, casesLibres, dejaConstruit, disponibleSur, emplacementRefuse, multiplicateur, terrainManquant, verifierEmplacement } from './grille';
 export { appliquerCommande, avancer, instantane } from './simulation';
 export { calendrier, meteoAu, type Calendrier } from './saisons';
 export { problemes, problemesDe } from './problemes';

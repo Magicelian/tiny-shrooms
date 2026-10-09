@@ -43,6 +43,11 @@ export interface DefinitionBatiment {
   /** Terrain qu'il doit toucher (une des 8 cases voisines) pour être posé. */
   exige?: Terrain;
   voisinage?: RegleVoisinage[];
+  /**
+   * Ruche : tenue, elle ajoute `bonus` aux bâtiments `cibles` à sa portée. Plusieurs ruches ne se cumulent pas
+   * sur un même bâtiment.
+   */
+  pollinise?: { cibles: TypeBatiment[]; bonus: number };
 }
 
 /** Récolte à la main d'un type d'élément naturel. */
