@@ -145,7 +145,7 @@ export const contenu: Contenu = {
     biomes: ['foret', 'marais', 'prairie'],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
-      { boisMort: 2000, mousse: 2000, baiesSechees: 1500, spores: 3600 },
+      { boisMort: 2000, mousse: 2000, baiesSechees: 3000, spores: 3600 },
       { boisMort: 4000, mousse: 14000, baiesSechees: 2000, spores: 7200 },
       { boisMort: 8000, mousse: 28000, baiesSechees: 4000, spores: 14400 },
     ],
