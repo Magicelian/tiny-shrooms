@@ -119,6 +119,7 @@ function visible(g: Grille, a: Position, b: Position, rayon?: number): boolean {
 
 /**
  * A* à 8 directions, sans couper les coins ; renvoie les centres des cases après la case de départ.
+ * Une case d'arrivée doit voir la cible en ligne droite.
  * Cible inaccessible : le chemin vers la case atteignable la plus proche, marqué `partiel`.
  */
 function chercher(g: Grille, depuis: Position, cible: Position, rayon: number): { points: Position[] | null; partiel: boolean } {
@@ -142,7 +143,11 @@ function chercher(g: Grille, depuis: Position, cible: Position, rayon: number): 
     const i = ouverts.splice(meilleur, 1)[0]!;
     if (ferme[i]) continue;
     ferme[i] = 1;
-    if (i !== depart && distance(centre(i), cible) <= rayon + MARGE_BUT) return { points: remonter(precedent, i, depart, centre), partiel: false };
+    // Arrivée : assez près, et la dernière ligne droite ne frôle pas l'eau (une case en diagonale d'un bâtiment
+    // coincé entre deux mares ne convient pas).
+    if (i !== depart && distance(centre(i), cible) <= rayon + MARGE_BUT && visible(g, centre(i), cible, rayon)) {
+      return { points: remonter(precedent, i, depart, centre), partiel: false };
+    }
     if (distance(centre(i), cible) < distance(centre(plusProche), cible)) plusProche = i;
     const x = i % g.largeur;
     const y = Math.floor(i / g.largeur);

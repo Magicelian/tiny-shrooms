@@ -1,14 +1,14 @@
 // Île en coupe : herbe, terre et roche empilées par colonne, décor posé sur les cases.
 import * as THREE from 'three';
 import type { Ile } from '@tiny-shrooms/engine';
-import { COULEURS, COULEURS_SURFACE, materiau } from './palette';
-import { modelesDecor } from './modeles';
+import { COULEURS, SURFACES_PAR_BIOME, materiau } from './palette';
+import { modelesDecor, type Decor } from './modeles';
 import { bruit, centreCase } from './repere';
 import { sansNuance } from './voxels';
 
 const CUBE = sansNuance(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0));
 /** `cube` prend la couleur de la pièce ; les autres formes sont des modèles en voxels. */
-type Forme = 'cube' | 'arbre' | 'buisson' | 'caillou';
+type Forme = 'cube' | Decor;
 
 interface Piece {
   forme: Forme;
@@ -33,6 +33,7 @@ export function construireIle(ile: Ile): THREE.Group {
   };
 
   const bords = distancesAuBord(ile);
+  const surfaces = SURFACES_PAR_BIOME[ile.biome];
   for (let y = 0; y < ile.profondeur; y++) {
     for (let x = 0; x < ile.largeur; x++) {
       const terrain = ile.terrain[y * ile.largeur + x] ?? 'vide';
@@ -42,7 +43,7 @@ export function construireIle(ile: Ile): THREE.Group {
 
       // Colonne : surface, terre, puis roche plus profonde vers le centre.
       const hautSurface = terrain === 'eau' ? -0.12 : 0;
-      poser('cube', COULEURS_SURFACE[terrain], 'recoit', centre.clone().setY(HAUT_TERRE), echelle.set(1, hautSurface - HAUT_TERRE, 1));
+      poser('cube', surfaces[terrain], 'recoit', centre.clone().setY(HAUT_TERRE), echelle.set(1, hautSurface - HAUT_TERRE, 1));
       poser('cube', COULEURS.terre, 'recoit', centre.clone().setY(HAUT_ROCHE), echelle.set(1, HAUT_TERRE - HAUT_ROCHE, 1));
       const profondeurRoche = Math.min(4, 0.5 + (bords[y * ile.largeur + x] ?? 0) * 0.8 + b * 0.5);
       poser('cube', COULEURS.roche, 'recoit', centre.clone().setY(HAUT_ROCHE - profondeurRoche), echelle.set(1, profondeurRoche, 1));
@@ -52,6 +53,10 @@ export function construireIle(ile: Ile): THREE.Group {
       if (terrain === 'foret') {
         const t = 0.8 + b * 0.4;
         poser('arbre', 0, 'porte', decalage, echelle.set(t, t * (0.9 + bruit(x, y, 4) * 0.2), t), quart(b));
+      } else if (terrain === 'roseaux') {
+        poser('roseau', 0, 'porte', decalage, echelle.set(1, 0.85 + bruit(x, y, 4) * 0.3, 1), quart(b));
+      } else if (terrain === 'eau' && ile.biome === 'marais' && bruit(x, y, 5) < 0.45) {
+        poser('nenuphar', 0, 'recoit', decalage.setY(hautSurface + 0.01), echelle.setScalar(0.7 + b * 0.3), quart(b));
       } else if (terrain === 'buisson') {
         poser('buisson', 0, 'porte', decalage, echelle.setScalar(0.85 + b * 0.25), quart(b));
       } else if (terrain === 'rocher') {

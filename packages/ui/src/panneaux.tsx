@@ -11,12 +11,14 @@ import {
   coutBonus,
   coutTotal,
   dejaConstruit,
+  disponibleSur,
   effetsPrestige,
   placesLogement,
   placesSouche,
   rangLogement,
   refusMontee,
   RESSOURCES,
+  terrainManquant,
 } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, nomRessource, pourcent } from './format';
@@ -31,14 +33,16 @@ interface Props {
 
 export function BulleConstruire({ controleur, instantane, bulle }: Props & { bulle: Extract<Bulle, { type: 'construire' }> }) {
   const { contenu } = controleur;
-  const { bonusVise } = useMagasin(controleur.magasin);
+  const { bonusVise, ile } = useMagasin(controleur.magasin);
   const { choix } = bulle;
-  const payable = choix !== null && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix, instantane.batiments), instantane.stocks);
+  // La tourbière doit toucher l'eau : la case choisie peut ne pas lui convenir.
+  const refus = choix && ile ? terrainManquant(ile, contenu, choix, bulle.case) : null;
+  const payable = choix !== null && !refus && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix, instantane.batiments), instantane.stocks);
   // Un bâtiment en un seul exemplaire disparaît du catalogue tant qu'il est là.
   const batissables = instantane.batimentsDebloques.filter((type) => !dejaConstruit(contenu, instantane.batiments, type));
   // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
   const verrouilles = contenu.paliers.flatMap((p, palier) =>
-    p.debloque.filter((type) => !instantane.batimentsDebloques.includes(type)).map((type): [TypeBatiment, number] => [type, palier]),
+    p.debloque.filter((type) => !instantane.batimentsDebloques.includes(type) && (!ile || disponibleSur(contenu, type, ile.biome))).map((type): [TypeBatiment, number] => [type, palier]),
   );
   return (
     <>
@@ -79,6 +83,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
           {effets(contenu, choix).map((ligne) => (
             <p key={ligne}>{ligne}</p>
           ))}
+          {refus && <p class="manque">{t(`refus.${refus}`)}</p>}
           {bonusVise !== null && bonusVise > 1 && (
             <p class="bonus">{t('construction.bonusIci', { pourcent: pourcent(bonusVise - 1) })}</p>
           )}

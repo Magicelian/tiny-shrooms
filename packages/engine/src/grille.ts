@@ -1,6 +1,6 @@
 // Placement sur la grille et bonus de voisinage. Emprise d'une case par bâtiment en V1.
 // Les fonctions pures ne lisent que des types du contrat : le frontend s'en sert pour l'aperçu fantôme.
-import type { Batiment, Case, IdBatiment, Ile, RaisonRefus, TypeBatiment } from './contrat';
+import type { Batiment, Biome, Case, IdBatiment, Ile, RaisonRefus, TypeBatiment } from './contrat';
 import type { Contenu } from './contenu';
 import type { Etat } from './etat';
 import { dansLaSouche, elementEn, terrainEn } from './ile';
@@ -14,6 +14,18 @@ export function emplacementRefuse(ile: Ile, batiments: readonly Emprise[], c: Ca
   if (terrain !== 'herbe' || dansLaSouche(ile, c.x, c.y) || elementEn(ile, c.x, c.y) >= 0) return 'emplacementOccupe';
   if (batiments.some((b) => b.id !== ignorer && b.case.x === c.x && b.case.y === c.y)) return 'emplacementOccupe';
   return null;
+}
+
+/** Vrai si ce type se bâtit sur ce biome (la tourbière, seulement sur le marais). */
+export function disponibleSur(contenu: Contenu, type: TypeBatiment, biome: Biome): boolean {
+  const { biomes } = contenu.batiments[type];
+  return !biomes || biomes.includes(biome);
+}
+
+/** `terrainRequis` si ce type doit toucher un terrain absent autour de `c` (la tourbière, l'eau), sinon `null`. */
+export function terrainManquant(ile: Ile, contenu: Contenu, type: TypeBatiment, c: Case): RaisonRefus | null {
+  const { exige } = contenu.batiments[type];
+  return exige && !voisinTrouve(ile, [], c, exige) ? 'terrainRequis' : null;
 }
 
 /** Vrai si ce type ne se bâtit qu'une fois et qu'il est déjà posé (chantier compris). */
@@ -30,8 +42,10 @@ export function bonusVoisinage(ile: Ile, batiments: readonly Emprise[], contenu:
   return bonus;
 }
 
-export function verifierEmplacement(etat: Etat, c: Case, ignorer?: IdBatiment): RaisonRefus | null {
-  return emplacementRefuse(etat.ile, etat.batiments, c, ignorer);
+/** Case libre, et qui convient au type s'il est donné. */
+export function verifierEmplacement(etat: Etat, c: Case, ignorer?: IdBatiment, type?: TypeBatiment, contenu?: Contenu): RaisonRefus | null {
+  const refus = emplacementRefuse(etat.ile, etat.batiments, c, ignorer);
+  return refus ?? (type && contenu ? terrainManquant(etat.ile, contenu, type, c) : null);
 }
 
 /** Cases où l'on peut bâtir, de la plus proche à la plus lointaine de la souche-dépôt. */

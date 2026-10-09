@@ -9,7 +9,7 @@ import type { Modele } from './voxels';
 const TAILLE = 24;
 const ENCRE = [27, 19, 32] as const;
 
-export type VignetteNature = 'arbre' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies';
+export type VignetteNature = 'arbre' | 'roseau' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies';
 
 export class Vignettes {
   private readonly scene = new THREE.Scene();
@@ -36,7 +36,7 @@ export class Vignettes {
   nature(nom: VignetteNature): string {
     return this.dessiner(`n:${nom}`, () => {
       if (nom === 'souche') return modeleSouche(1);
-      if (nom === 'arbre' || nom === 'buisson') return modelesDecor()[nom];
+      if (nom === 'arbre' || nom === 'roseau' || nom === 'buisson') return modelesDecor()[nom];
       return modelesElements()[nom === 'boisMort' ? 'bois' : nom];
     });
   }

@@ -18,6 +18,7 @@ import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { creerHasard } from './hasard';
 import { centreSouche, genererIle } from './ile';
+import { disponibleSur } from './grille';
 import { effetsPrestige, prestigeNeuf } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
 
@@ -129,7 +130,7 @@ export function graineIle(partie: Pick<Partie, 'graine'>, indice: number): numbe
 
 /** Nouvelle île vierge au bout de l'archipel, avec sa souche et ses habitants de départ. */
 export function ajouterIle(partie: Partie, contenu: Contenu, graine = graineIle(partie, partie.iles.length)): Etat {
-  const ile = genererIle(contenu.ile.taille, graine);
+  const ile = genererIle(contenu.ile.taille, graine, contenu.archipel.biomes[partie.iles.length] ?? 'foret');
   const effets = effetsPrestige(contenu, partie.prestige.bonus);
   const etat: Etat = {
     partie,
@@ -141,7 +142,7 @@ export function ajouterIle(partie: Partie, contenu: Contenu, graine = graineIle(
     pousses: ile.elements.map(() => 1),
     prochainIdHabitant: 1,
     pasAvantArrivee: (contenu.habitants.premiereArriveeSecondes ?? contenu.habitants.delaiArriveeSecondes) * effets.arrivee * (PAS_PAR_MINUTE / 60),
-    batimentsDebloques: [...(contenu.paliers[0]?.debloque ?? [])],
+    batimentsDebloques: (contenu.paliers[0]?.debloque ?? []).filter((type) => disponibleSur(contenu, type, ile.biome)),
     palier: 0,
     retraitSouche: null,
     defrichages: [],

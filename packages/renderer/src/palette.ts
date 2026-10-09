@@ -1,6 +1,6 @@
 // Palette limitée et matériaux partagés, ombrés en paliers.
 import * as THREE from 'three';
-import type { Terrain, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Biome, Terrain, TypeBatiment } from '@tiny-shrooms/engine';
 
 export const COULEURS = {
   herbe: 0x7cc452,
@@ -10,6 +10,10 @@ export const COULEURS = {
   feuillage: 0x3f8f3a,
   tronc: 0x6b4226,
   buisson: 0x2f7d4a,
+  roseau: 0x86a83c,
+  massette: 0x6b3f22,
+  nenuphar: 0x3f8a4a,
+  fleurNenuphar: 0xf2a6c8,
   caillou: 0x9a9ea8,
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
@@ -24,6 +28,7 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   cueillette: 0xc2358a,
   tasDeBois: 0x9c6b3f,
   tapisDeMousse: 0x5fae6e,
+  tourbiere: 0x6b4a33,
   gardeManger: 0xe0b04a,
   remise: 0x7d5a44,
   sechoir: 0xe38a3a,
@@ -37,9 +42,17 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
   herbe: COULEURS.herbe,
   foret: COULEURS.herbe,
+  roseaux: COULEURS.herbe,
   buisson: COULEURS.herbe,
   rocher: COULEURS.herbe,
   eau: COULEURS.eau,
+};
+
+/** Le marais : herbe plus sombre et eau verdâtre. */
+const HERBE_MARAIS = 0x6f9a4c;
+export const SURFACES_PAR_BIOME: Record<Biome, Record<Exclude<Terrain, 'vide'>, number>> = {
+  foret: COULEURS_SURFACE,
+  marais: { herbe: HERBE_MARAIS, foret: HERBE_MARAIS, roseaux: HERBE_MARAIS, buisson: HERBE_MARAIS, rocher: HERBE_MARAIS, eau: 0x4a9a8e },
 };
 
 /** Trois paliers de lumière, sans dégradé. */

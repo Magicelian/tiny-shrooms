@@ -19,6 +19,16 @@ export const contenu: Contenu = {
         { voisin: 'foret', bonus: 0.25 },
       ],
     },
+    // Le bâtiment phare du marais : bien plus de mousse qu'un tapis, mais il doit toucher l'eau.
+    tourbiere: {
+      cout: { boisMort: 20, baies: 10 },
+      constructionSecondes: 40,
+      production: { mousse: 8 },
+      postes: 2,
+      biomes: ['marais'],
+      exige: 'eau',
+      voisinage: [{ voisin: 'roseaux', bonus: 0.25 }],
+    },
     gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 50 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },
     sechoir: {
@@ -53,11 +63,12 @@ export const contenu: Contenu = {
   souche: { coutRetrait: { spores: 40 }, retraitSecondes: 45 },
   defrichage: {
     arbre: { cout: { spores: 4 }, secondes: 20, gain: { boisMort: 4 } },
+    roseau: { cout: { spores: 2 }, secondes: 10, gain: { mousse: 2 } },
     buisson: { cout: { spores: 2 }, secondes: 10 },
     plante: { cout: { spores: 2 }, secondes: 6 },
   },
   paliers: [
-    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'gardeManger', 'remise', 'feuDeCamp'] },
+    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
     { nom: 'bourg', population: 50, debloque: ['marche', 'sanctuaire'] },
     { nom: 'cite', population: 150, debloque: [] },
@@ -116,14 +127,16 @@ export const contenu: Contenu = {
       accueil: 0.15,
     },
   },
-  // Offrandes au sanctuaire : l'île i débloque l'île i + 1 (cinq îles). La première prend ~1 h après le bourg au
-  // joueur attentif (`archipel.test.ts`) ; les suivantes doublent, en attendant les ressources des biomes.
+  // Offrandes au sanctuaire : l'île i débloque l'île i + 1 (cinq îles) et exige surtout la ressource phare de
+  // l'île qu'elle ouvre (la mousse pour le marais). La première prend 1 h 40 à 2 h après le bourg au joueur attentif
+  // (`archipel.test.ts`) ; les suivantes doublent, en attendant les biomes suivants.
   archipel: {
+    biomes: ['foret', 'marais'],
     offrandes: [
-      { boisMort: 1100, mousse: 800, baiesSechees: 350, spores: 1300 },
-      { boisMort: 2200, mousse: 1600, baiesSechees: 700, spores: 2600 },
-      { boisMort: 4400, mousse: 3200, baiesSechees: 1400, spores: 5200 },
-      { boisMort: 8800, mousse: 6400, baiesSechees: 2800, spores: 10400 },
+      { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
+      { boisMort: 2000, mousse: 7000, baiesSechees: 1000, spores: 3600 },
+      { boisMort: 4000, mousse: 14000, baiesSechees: 2000, spores: 7200 },
+      { boisMort: 8000, mousse: 28000, baiesSechees: 4000, spores: 14400 },
     ],
   },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.

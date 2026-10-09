@@ -37,9 +37,10 @@ export interface Stock {
 
 // ─── Île ─────────────────────────────────────────────────────────────────────
 
-export type Terrain = 'vide' | 'herbe' | 'foret' | 'buisson' | 'eau' | 'rocher';
+export type Terrain = 'vide' | 'herbe' | 'foret' | 'roseaux' | 'buisson' | 'eau' | 'rocher';
 
-export type Biome = 'foret';
+/** Chaque île a le sien : terrain, éléments et bâtiments propres. */
+export type Biome = 'foret' | 'marais';
 
 // ─── Éléments naturels ───────────────────────────────────────────────────────
 
@@ -47,8 +48,8 @@ export type Biome = 'foret';
 export const TYPES_ELEMENT = ['buisson', 'boisMort', 'mousse'] as const;
 export type TypeElement = (typeof TYPES_ELEMENT)[number];
 
-/** Ce qu'on peut faire arracher : un arbre de la forêt, un buisson sauvage, une plante semée sur l'herbe. */
-export type Defrichable = 'arbre' | 'buisson' | 'plante';
+/** Ce qu'on peut faire arracher : un arbre de la forêt, des roseaux du marais, un buisson sauvage, une plante semée sur l'herbe. */
+export type Defrichable = 'arbre' | 'roseau' | 'buisson' | 'plante';
 
 /** Case en cours de défrichage. */
 export interface Defrichage {
@@ -91,6 +92,7 @@ export const TYPES_BATIMENT = [
   'cueillette',
   'tasDeBois',
   'tapisDeMousse',
+  'tourbiere',
   'gardeManger',
   'remise',
   'sechoir',
@@ -307,6 +309,8 @@ export type RaisonRefus =
   | 'depotRequis'
   /** Ce bâtiment ne se bâtit qu'une fois et il est déjà là. */
   | 'dejaConstruit'
+  /** Ce bâtiment doit toucher un terrain précis (la tourbière, l'eau). */
+  | 'terrainRequis'
   /** L'action n'est pas possible pour l'instant (fonction à venir…). */
   | 'indisponible';
 

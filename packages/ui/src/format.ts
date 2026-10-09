@@ -59,6 +59,7 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   if (def.postes && !def.production) lignes.push(t('effet.tenu'));
   if (type === 'sanctuaire') lignes.push(t('effet.sanctuaire'));
   if (lignes.length === 0) lignes.push(t('effet.aVenir'));
+  if (def.exige) lignes.push(t('effet.exige', { terrain: t(`terrain.${def.exige}`) }));
   for (const regle of def.voisinage ?? []) {
     const voisin = (TYPES_BATIMENT as readonly string[]).includes(regle.voisin)
       ? nomBatiment(regle.voisin as TypeBatiment).toLowerCase()

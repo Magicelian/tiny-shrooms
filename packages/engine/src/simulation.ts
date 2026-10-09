@@ -157,7 +157,7 @@ export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Co
     case 'poserBatiment': {
       if (!etat.batimentsDebloques.includes(commande.batiment)) return refus('nonDebloque');
       if (dejaConstruit(contenu, etat.batiments, commande.batiment)) return refus('dejaConstruit');
-      const emplacement = verifierEmplacement(etat, commande.case);
+      const emplacement = verifierEmplacement(etat, commande.case, undefined, commande.batiment, contenu);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];
       if (!payer(etat, coutBatiment(contenu, etat.partie.prestige.bonus, commande.batiment, etat.batiments))) return refus('ressourcesInsuffisantes');
@@ -180,7 +180,7 @@ export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Co
     case 'deplacerBatiment': {
       const b = etat.batiments.find((x) => x.id === commande.id);
       if (!b) return refus('introuvable');
-      const emplacement = verifierEmplacement(etat, commande.case, b.id);
+      const emplacement = verifierEmplacement(etat, commande.case, b.id, b.type, contenu);
       if (emplacement) return refus(emplacement);
       b.case = { ...commande.case };
       b.orientation = commande.orientation;

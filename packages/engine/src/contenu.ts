@@ -2,6 +2,7 @@
 import type {
   AmeliorationVillage,
   BonusPrestige,
+  Biome,
   Defrichable,
   Besoin,
   Meteo,
@@ -37,6 +38,10 @@ export interface DefinitionBatiment {
   portee?: number;
   /** Un seul exemplaire par île : le catalogue ne le propose plus tant qu'il est là. */
   unique?: boolean;
+  /** Biomes où il se bâtit ; partout s'il est absent. */
+  biomes?: Biome[];
+  /** Terrain qu'il doit toucher (une des 8 cases voisines) pour être posé. */
+  exige?: Terrain;
   voisinage?: RegleVoisinage[];
 }
 
@@ -192,9 +197,9 @@ export interface Contenu {
   prestige: ContenuPrestige;
   /**
    * `offrandes[i]` : ce qu'il faut déposer au sanctuaire de l'île i pour débloquer l'île i + 1 ;
-   * l'archipel compte donc une île de plus que d'offrandes.
+   * l'archipel compte donc une île de plus que d'offrandes. `biomes[i]` : biome de l'île i (forêt au-delà).
    */
-  archipel: { offrandes: Quantites[] };
+  archipel: { offrandes: Quantites[]; biomes: Biome[] };
   /** Hausse du prix d'un bâtiment par exemplaire du même type déjà posé (0,06 → +6 % composés). */
   hausseParExemplaire: number;
   /** Part du coût rendue à la démolition, entre 0 et 1. */

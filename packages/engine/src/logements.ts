@@ -5,6 +5,7 @@ import { RESSOURCES } from './contrat';
 import type { Contenu, DefinitionRang } from './contenu';
 import type { BatimentEtat, Etat } from './etat';
 import { payer } from './ameliorations';
+import { disponibleSur } from './grille';
 import { terrainEn } from './ile';
 import { coutBatiment, effetsPrestige } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
@@ -159,7 +160,7 @@ export function coutTotal(
 export function majPalier(etat: Etat, contenu: Contenu, evenements: Evenement[]): void {
   for (let suivant = contenu.paliers[etat.palier + 1]; suivant && etat.habitants.length >= suivant.population; suivant = contenu.paliers[etat.palier + 1]) {
     etat.palier++;
-    const debloques = suivant.debloque.filter((type) => !etat.batimentsDebloques.includes(type));
+    const debloques = suivant.debloque.filter((type) => !etat.batimentsDebloques.includes(type) && disponibleSur(contenu, type, etat.ile.biome));
     etat.batimentsDebloques.push(...debloques);
     evenements.push({ type: 'palierAtteint', palier: etat.palier, debloques });
   }

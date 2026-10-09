@@ -13,6 +13,7 @@ import { PAS_DE_SIMULATION_MS } from './temps';
 export function natureEn(ile: Ile, c: Case): Defrichable | null {
   const terrain = terrainEn(ile, c.x, c.y);
   if (terrain === 'foret') return 'arbre';
+  if (terrain === 'roseaux') return 'roseau';
   if (terrain === 'buisson') return 'buisson';
   if (terrain === 'herbe' && elementEn(ile, c.x, c.y) >= 0) return 'plante';
   return null;

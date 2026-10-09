@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Contenu, ContenuHabitants, DefinitionBatiment } from './contenu';
-import type { Case, Commande, Evenement, MessageDepuisMoteur, TypeBatiment } from './contrat';
+import type { Case, Commande, Evenement, MessageDepuisMoteur, Terrain, TypeBatiment } from './contrat';
 import { RESSOURCES, TYPES_BATIMENT } from './contrat';
 import { Horloge } from './horloge';
 import { genererIle, terrainEn } from './ile';
@@ -35,6 +35,7 @@ function contenuDeTest(
     souche: { coutRetrait: { spores: 0 }, retraitSecondes: 10 },
     defrichage: {
       arbre: { cout: { boisMort: 5 }, secondes: 10, gain: { baies: 3 } },
+      roseau: { cout: {}, secondes: 10 },
       buisson: { cout: {}, secondes: 10 },
       plante: { cout: {}, secondes: 5 },
     },
@@ -88,7 +89,7 @@ function contenuDeTest(
         accueil: 0,
       },
     },
-    archipel: { offrandes: [{ boisMort: 30 }, { boisMort: 30 }] },
+    archipel: { offrandes: [{ boisMort: 30 }, { boisMort: 30 }], biomes: ['foret'] },
     hausseParExemplaire: 0,
     remboursementDemolition: 0.5,
     temps: { minutesParSaison: 30, minutesParJour: 10, heureDeDepart: 0 },
@@ -815,6 +816,27 @@ describe('Chemins', () => {
     }
     expect(etat.partie.stocks.baies).toBeGreaterThan(100);
     expect(entrees).toBe(0);
+  });
+
+  it('un chantier coincé entre deux mares se termine', () => {
+    const moteur = new Moteur(contenuDeTest({ hutte: { constructionSecondes: 20 } }, { auDepart: 2, logementDeBase: 2 }), 0);
+    const etat = moteur.etatCourant;
+    const { ile } = etat;
+    const c = { x: ile.souche.x + ile.tailleSouche + 2, y: ile.souche.y + 1 };
+    const regler = (dx: number, dy: number, terrain: Terrain) => (ile.terrain[(c.y + dy) * ile.largeur + c.x + dx] = terrain);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) regler(dx, dy, 'herbe');
+    ile.elements = ile.elements.filter((e) => Math.abs(e.case.x - c.x) > 1 || Math.abs(e.case.y - c.y) > 1);
+    // De l'eau au nord, au nord-est, à l'est et au sud-ouest ; des chantiers à l'ouest et au sud. Restent le
+    // nord-ouest et le sud-est, dont la ligne droite frôle l'eau : on travaille de là sans tourner en rond.
+    regler(0, -1, 'eau');
+    regler(1, -1, 'eau');
+    regler(1, 0, 'eau');
+    regler(-1, 1, 'eau');
+    expect(commander(moteur, poser('hutte', { x: c.x - 1, y: c.y }))).toEqual([]);
+    expect(commander(moteur, poser('hutte', { x: c.x, y: c.y + 1 }))).toEqual([]);
+    expect(commander(moteur, poser('hutte', c))).toEqual([]);
+    moteur.simuler(10 * PAS_PAR_MINUTE);
+    expect(etat.batiments.map((b) => b.chantier)).toEqual([null, null, null]);
   });
 });
 

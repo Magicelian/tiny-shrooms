@@ -1,5 +1,6 @@
-// Critère de l'étape 18 : au bourg, l'offrande du sanctuaire débloque l'île suivante en ~1 h de jeu attentif ;
-// la première île continue de vivre pendant qu'on bâtit la seconde, qui atteint le bourg plus vite.
+// Critères des étapes 18 et 19 : au bourg, l'offrande du sanctuaire débloque l'île suivante en ~1 h 30-2 h de jeu attentif ;
+// la première île continue de vivre pendant qu'on bâtit la seconde (le marais), qui atteint le bourg plus vite
+// et fait bien plus de mousse.
 import { describe, expect, it } from 'vitest';
 import { BONUS_PRESTIGE, charger, coutBonus, creerPartie, Moteur, serialiser, type Commande, type Etat } from '@tiny-shrooms/engine';
 import { contenu } from './index';
@@ -25,8 +26,18 @@ function depenser(moteur: Moteur): void {
   }
 }
 
+/** Mousse que produiraient les bâtiments achevés de l'île, tous postes pourvus. */
+function mousseParMinute(etat: Etat): number {
+  return etat.batiments
+    .filter((b) => b.chantier === null)
+    .reduce((somme, b) => {
+      const def = contenu.batiments[b.type];
+      return somme + (def.production?.mousse ?? 0) * (def.postes ?? 1) * b.bonusVoisinage;
+    }, 0);
+}
+
 describe('Archipel', () => {
-  it.each([1, 2, 3])('graine %i : l’offrande débloque l’île 2 en ~1 h, qui atteint le bourg plus vite', (graine) => {
+  it.each([1, 2, 3])('graine %i : l’offrande débloque l’île 2 en ~1 h 30-2 h, qui atteint le bourg plus vite', (graine) => {
     const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
     const joueur = new Joueur(moteur);
     const partie = moteur.partieCourante;
@@ -54,14 +65,19 @@ describe('Archipel', () => {
     instants.push(secondes);
     const [bourg1, ile2, bourg2] = instants.map((s) => s / 60) as [number, number, number];
     const premiere = partie.iles[0]!;
+    const marais = partie.iles[1]!;
     process.stderr.write(
       `graine ${graine} : bourg ${bourg1.toFixed(0)} min, île 2 ${(ile2 - bourg1).toFixed(0)} min plus tard (+${graines} graines), ` +
         `bourg de l'île 2 en ${(bourg2 - ile2).toFixed(0)} min ; île 1 : ${premiere.habitants.length} habitants (max ${premiere.populationMax}), ` +
-        `faim ${((faimSurLaPremiere * 5) / 60).toFixed(0)} min\n`,
+        `faim ${((faimSurLaPremiere * 5) / 60).toFixed(0)} min ; mousse/min : île 1 ${mousseParMinute(premiere).toFixed(0)}, ` +
+        `marais ${mousseParMinute(marais).toFixed(0)}\n`,
     );
-    expect(ile2 - bourg1).toBeGreaterThan(30);
-    expect(ile2 - bourg1).toBeLessThan(90);
+    expect(ile2 - bourg1).toBeGreaterThan(60);
+    expect(ile2 - bourg1).toBeLessThan(150);
     expect(bourg2 - ile2).toBeLessThan(bourg1);
+    // L'île 2 est le marais : ses tourbières y font bien plus de mousse que la forêt.
+    expect(marais.ile.biome).toBe('marais');
+    expect(mousseParMinute(marais)).toBeGreaterThan(mousseParMinute(premiere) * 2);
     // La première île vit sans qu'on s'en occupe : elle garde l'essentiel de ses habitants.
     expect(premiere.habitants.length).toBeGreaterThan(premiere.populationMax * 0.8);
     // La sauvegarde garde les deux îles et le prestige.

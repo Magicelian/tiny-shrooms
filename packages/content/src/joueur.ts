@@ -10,6 +10,7 @@ import {
   RESSOURCES,
   refusMontee,
   terrainEn,
+  terrainManquant,
   type Besoin,
   type Case,
   type Commande,
@@ -20,6 +21,9 @@ import { contenu } from './index';
 
 export const PAS_PAR_SECONDE = PAS_PAR_MINUTE / 60;
 export const BOURG = contenu.paliers.findIndex((p) => p.nom === 'bourg');
+
+/** Ce qu'on abat pour faire de la place. */
+const BOISES: readonly string[] = ['foret', 'roseaux'];
 
 function nombre(etat: Etat, type: TypeBatiment): number {
   return etat.batiments.filter((b) => b.type === type).length;
@@ -50,21 +54,21 @@ export class Joueur {
   /** Pose un bâtiment sur la première case qui convient ; les cases sont triées de la souche vers le bord. */
   poser(type: TypeBatiment, preferer?: (c: Case) => number): boolean {
     if (!this.etat.batimentsDebloques.includes(type) || !this.abordable(type)) return false;
-    const cases = this.moteur.casesLibres();
+    const cases = this.moteur.casesLibres().filter((c) => !terrainManquant(this.etat.ile, contenu, type, c));
     if (cases.length === 0) return false;
     // Les logements restent près du centre ; le reste s'installe plus loin pour leur laisser la place.
     const classees = preferer ? [...cases].sort((a, b) => preferer(b) - preferer(a)) : cases;
     return this.commander({ type: 'poserBatiment', batiment: type, case: classees[0]!, orientation: 0 });
   }
 
-  /** Île pleine : fait abattre l'arbre le plus proche du centre, un seul à la fois. */
+  /** Île pleine : fait abattre l'arbre (ou les roseaux) le plus proche du centre, un seul à la fois. */
   faireDeLaPlace(): boolean {
     const { ile, defrichages } = this.etat;
     if (defrichages.length > 0 || this.moteur.casesLibres().length > 0) return false;
     let meilleure: Case | null = null;
     for (let y = 0; y < ile.profondeur; y++) {
       for (let x = 0; x < ile.largeur; x++) {
-        if (terrainEn(ile, x, y) !== 'foret') continue;
+        if (!BOISES.includes(terrainEn(ile, x, y))) continue;
         const d = Math.hypot(x - ile.largeur / 2, y - ile.profondeur / 2);
         if (!meilleure || d < Math.hypot(meilleure.x - ile.largeur / 2, meilleure.y - ile.profondeur / 2)) meilleure = { x, y };
       }
@@ -106,9 +110,12 @@ export class Joueur {
     const actions: (() => boolean)[] = [
       // Au bourg, le sanctuaire passe avant tout : sinon, l'île pleine, chaque case libérée est reprise.
       () => this.offrir(),
+      () => this.renforcerPourOffrande(population),
       () => nombre(etat, 'cueillette') < 1 + Math.floor(population / 5) && this.production('cueillette', 'buisson'),
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
-      () => population >= 4 && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
+      // Sur le marais, la tourbière remplace le tapis : c'est elle qui fait la mousse de l'archipel.
+      () => population >= 2 && nombre(etat, 'tourbiere') < 1 + Math.floor(population / 8) && this.production('tourbiere', 'roseaux'),
+      () => population >= 4 && !etat.batimentsDebloques.includes('tourbiere') && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
       // Un bâtiment qui vient d'être débloqué est essayé tout de suite.
       () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 + Math.floor(population / 15) && this.production('sechoir', 'herbe'),
       () => etat.palier >= 1 && nombre(etat, 'atelier') < 1 && this.production('atelier', 'herbe'),
@@ -136,6 +143,17 @@ export class Joueur {
     return plein && this.commander({ type: 'offrir' });
   }
 
+  /** Offrande en cours : un producteur de plus pour ce qui y manque encore (la mousse, pour ouvrir le marais). */
+  private renforcerPourOffrande(population: number): boolean {
+    const o = nombre(this.etat, 'sanctuaire') > 0 ? offrande(this.etat, contenu) : null;
+    if (!o) return false;
+    const manque = (r: 'mousse' | 'boisMort') => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0);
+    const limite = 2 + Math.floor(population / 8);
+    if (manque('mousse') && nombre(this.etat, 'tapisDeMousse') < limite) return this.production('tapisDeMousse', 'eau');
+    if (manque('boisMort') && nombre(this.etat, 'tasDeBois') < limite) return this.production('tasDeBois', 'foret');
+    return false;
+  }
+
   /** Île pleine sans arbre à abattre : un tas de bois cède sa place (le bois déborde à ce stade). */
   private demolirPourLeSanctuaire(): boolean {
     const { batiments, defrichages } = this.etat;
@@ -147,7 +165,7 @@ export class Joueur {
   private forets(): number {
     const { ile } = this.etat;
     let n = 0;
-    for (let y = 0; y < ile.profondeur; y++) for (let x = 0; x < ile.largeur; x++) if (terrainEn(ile, x, y) === 'foret') n++;
+    for (let y = 0; y < ile.profondeur; y++) for (let x = 0; x < ile.largeur; x++) if (BOISES.includes(terrainEn(ile, x, y))) n++;
     return n;
   }
 

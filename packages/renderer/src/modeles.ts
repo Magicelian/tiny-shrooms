@@ -29,6 +29,8 @@ const TEINTES = {
   mousseClaire: 0x6fc27a,
   fleur: 0xffe06b,
   suie: 0x3a302c,
+  tourbe: 0x3b2a22,
+  tourbeClaire: 0xa8805a,
 } as const;
 
 // ─── Morceaux réutilisés ───────────────────────────────────────────────────────
@@ -150,6 +152,23 @@ function tapisDeMousse(): Voxels {
     v.poser(x, 2, z, TEINTES.mousseClaire).poser(x + 1, 2, z, COULEURS_BATIMENT.tapisDeMousse);
   }
   v.poser(-1, 2, -3, TEINTES.fleur).poser(2, 2, 2, TEINTES.fleur);
+  return v;
+}
+
+function tourbiere(): Voxels {
+  const v = new Voxels();
+  // Fosse de tourbe cernée de mousse, briques qui sèchent en piles, bêche plantée.
+  v.boite(-5, 0, -5, 4, 0, 4, TEINTES.mousseClaire);
+  v.boite(-4, 0, -4, 0, 0, 3, TEINTES.tourbe);
+  v.peindre((x, y, z, c) => c === TEINTES.tourbe && y === 0 && (x * 2 + z) % 4 === 0, COULEURS_BATIMENT.tourbiere);
+  // Piles de briques sur des palettes, une rangée sur deux plus claire (la tourbe sèche).
+  for (const [z0, hauteur] of [[-4, 6], [0, 4]] as const) {
+    v.boite(0, 1, z0, 4, 1, z0 + 3, TEINTES.boisClair);
+    v.boite(0, 2, z0, 4, hauteur, z0 + 2, COULEURS_BATIMENT.tourbiere);
+    v.peindre((x, y, _, c) => c === COULEURS_BATIMENT.tourbiere && (y % 2 === 0 ? x % 2 === 0 : x % 2 !== 0), TEINTES.tourbeClaire);
+  }
+  poteau(v, -2, 2, 3, 7, TEINTES.boisClair);
+  v.boite(-3, 1, 2, -1, 2, 2, TEINTES.metal);
   return v;
 }
 
@@ -298,6 +317,7 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   cueillette,
   tasDeBois,
   tapisDeMousse,
+  tourbiere,
   gardeManger,
   remise,
   sechoir,
@@ -364,10 +384,11 @@ export function modeleSouche(tailleCases: number): Modele {
 
 // ─── Décor et éléments ─────────────────────────────────────────────────────────
 
-let cacheDecor: Record<'arbre' | 'buisson' | 'caillou', Modele> | null = null;
+export type Decor = 'arbre' | 'roseau' | 'buisson' | 'caillou' | 'nenuphar';
+let cacheDecor: Record<Decor, Modele> | null = null;
 
-/** Arbre, buisson sauvage et rocher, posés en instances sur le terrain. */
-export function modelesDecor(): Record<'arbre' | 'buisson' | 'caillou', Modele> {
+/** Arbre, roseaux, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
+export function modelesDecor(): Record<Decor, Modele> {
   if (cacheDecor) return cacheDecor;
   const arbre = new Voxels();
   arbre.boite(-1, 0, -1, 0, 4, 0, COULEURS.tronc);
@@ -384,7 +405,20 @@ export function modelesDecor(): Record<'arbre' | 'buisson' | 'caillou', Modele> 
   caillou.boule(2.5, 1, 2, 2.5, 2, 2.5, COULEURS.caillou);
   caillou.peindre((x, y, z) => y <= 0 || (x * 3 + z * 5 + y) % 7 === 0, COULEURS.roche);
   caillou.boite(-7, -1, -7, 6, -1, 6, null);
-  cacheDecor = { arbre: arbre.modele(), buisson: buisson.modele(), caillou: caillou.modele() };
+  // Touffe de roseaux : tiges de hauteurs variées, massette brune au bout des plus hautes.
+  const roseau = new Voxels();
+  const tiges: [number, number, number][] = [[-4, -2, 9], [-2, 1, 12], [0, -4, 10], [1, 2, 13], [3, -1, 8], [-1, 4, 7], [2, -5, 11], [-5, 3, 6]];
+  for (const [x, z, h] of tiges) {
+    roseau.boite(x, 0, z, x, h, z, COULEURS.roseau);
+    if (h >= 9) roseau.boite(x, h + 1, z, x, h + 3, z, COULEURS.massette);
+  }
+  // Feuille de nénuphar à fleur d'eau, entaillée, avec sa fleur.
+  const nenuphar = new Voxels();
+  nenuphar.disque(C, 0, C, 3.4, COULEURS.nenuphar);
+  nenuphar.boite(0, 0, 0, 3, 0, 0, null);
+  nenuphar.poser(-2, 1, -1, COULEURS.fleurNenuphar).poser(-1, 1, -1, COULEURS.fleurNenuphar).poser(-2, 1, -2, COULEURS.fleurNenuphar);
+  nenuphar.poser(-2, 2, -2, TEINTES.jaune);
+  cacheDecor = { arbre: arbre.modele(), roseau: roseau.modele(), buisson: buisson.modele(), caillou: caillou.modele(), nenuphar: nenuphar.modele(false) };
   return cacheDecor;
 }
 

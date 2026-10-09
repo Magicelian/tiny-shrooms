@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, Instantane, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { AMELIORATIONS_VILLAGE, bonusVoisinage, casesCouvertes, centreSouche, coutAmelioration, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn, refusMontee } from '@tiny-shrooms/engine';
+import { AMELIORATIONS_VILLAGE, bonusVoisinage, casesCouvertes, centreSouche, coutAmelioration, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn, refusMontee, terrainManquant } from '@tiny-shrooms/engine';
 import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
 
 export type { Langue };
@@ -41,7 +41,7 @@ export interface OptionsInterface {
   /** Images des modèles pour les bulles ; absentes, les bulles s'en passent. */
   vignettes?: {
     batiment(type: TypeBatiment, niveau?: number): string;
-    nature(nom: 'arbre' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
+    nature(nom: 'arbre' | 'roseau' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
   };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
@@ -66,7 +66,7 @@ const NOMS_TAILLE = ['accueil.taillePetite', 'accueil.tailleGrande', 'accueil.ta
 const TOUR_ACCUEIL_MS = 6000;
 
 /** Hauteur du surlignage de ce qu'on peut faire arracher. */
-const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, buisson: 0.6, plante: 0.35 };
+const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, roseau: 0.9, buisson: 0.6, plante: 0.35 };
 
 /** Ce qu'on peut faire arracher sur une case : la souche-dépôt, ou un arbre, un buisson, une plante. */
 export function natureVisee(ile: Ile, c: Case): Defrichable | 'souche' | null {
@@ -515,8 +515,9 @@ export class ControleurInterface {
     if (!ile || !instantane) return;
     const visee = this.options.scene.viser(x, y);
     if (deplacement !== null) {
-      if (visee.case && emplacementRefuse(ile, instantane.batiments, visee.case, deplacement) === null) {
-        const orientation = this.batiment(deplacement)?.orientation ?? 0;
+      const deplace = this.batiment(deplacement);
+      if (visee.case && deplace && emplacementRefuse(ile, instantane.batiments, visee.case, deplacement) === null && !terrainManquant(ile, this.contenu, deplace.type, visee.case)) {
+        const orientation = deplace.orientation;
         this.envoyer({ type: 'deplacerBatiment', id: deplacement, case: visee.case, orientation });
         this.fermer();
       }
@@ -561,7 +562,8 @@ export class ControleurInterface {
     // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
     if (bulle?.type === 'construire') {
       const { choix } = bulle;
-      scene.montrerFantome(bulle.case, choix, !choix || abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix, batiments), instantane.stocks));
+      const convient = !choix || (!terrainManquant(ile, this.contenu, choix, bulle.case) && abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix, batiments), instantane.stocks));
+      scene.montrerFantome(bulle.case, choix, convient);
       scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
       scene.surligner(null);
       this.magasin.modifier({ bonusVise: choix && bonusVoisinage(ile, batiments, this.contenu, choix, bulle.case) });
@@ -571,7 +573,7 @@ export class ControleurInterface {
     const deplace = deplacement === null ? undefined : this.batiment(deplacement);
     if (deplace) {
       const autres = batiments.filter((b) => b.id !== deplace.id);
-      const libre = !!visee?.case && emplacementRefuse(ile, autres, visee.case) === null;
+      const libre = !!visee?.case && emplacementRefuse(ile, autres, visee.case) === null && !terrainManquant(ile, this.contenu, deplace.type, visee.case);
       if (visee?.case) scene.montrerFantome(visee.case, deplace.type, libre);
       else scene.cacherFantome();
       scene.montrerPortee(visee?.case ? casesCouvertes(ile, this.contenu, { type: deplace.type, case: visee.case }) : []);
