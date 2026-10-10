@@ -36,7 +36,7 @@ export const contenu: Contenu = {
       postes: 1,
       portee: 2,
       biomes: ['prairie'],
-      pollinise: { cibles: ['cueillette'], bonus: 0.5 },
+      pollinise: { cibles: ['cueillette'], bonus: 1 },
     },
     gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 50 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },

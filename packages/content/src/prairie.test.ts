@@ -55,7 +55,7 @@ describe('Prairie', () => {
     expect(ile3 - bourg2).toBeGreaterThan(60);
     expect(ile3 - bourg2).toBeLessThan(150);
     expect(ruches).toBeGreaterThan(0);
-    expect(parCueillette(prairie)).toBeGreaterThan(parCueillette(premiere) * 1.25);
+    expect(parCueillette(prairie)).toBeGreaterThan(parCueillette(premiere) * 1.5);
     expect(baiesParMinute(prairie)).toBeGreaterThan(baiesParMinute(premiere));
   }, 1_800_000);
 });
