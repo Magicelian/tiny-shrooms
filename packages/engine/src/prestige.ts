@@ -4,6 +4,7 @@ import type { Batiment, BonusPrestige, Offrande, Prestige, Quantites, Ressource,
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import { ajouterIle, creerPartie, type Etat, type Partie } from './etat';
+import { calendrier } from './saisons';
 
 /** Effets cumulés des bonus achetés. */
 export interface EffetsPrestige {
@@ -78,7 +79,20 @@ export function offrande(etat: Etat, contenu: Contenu): Offrande | null {
   const indice = etat.partie.iles.indexOf(etat);
   const objectif = contenu.archipel.offrandes[indice];
   if (!objectif || indice !== etat.partie.iles.length - 1) return null;
-  return { objectif: { ...objectif }, depose: { ...etat.offrande }, graines: gainGraines(contenu, etat.populationMax) };
+  return { objectif: { ...objectif }, depose: { ...etat.offrande }, graines: gainGraines(contenu, etat.populationMax), reserve: reserveDHiver(etat.partie, contenu) };
+}
+
+/**
+ * Baies séchées à garder pour l'hiver, qui ne produit aucune baie : en automne, de quoi nourrir tout l'archipel un hiver
+ * entier ; en hiver, jusqu'au printemps. Les baies fraîches en stock comptent d'abord.
+ */
+export function reserveDHiver(partie: Partie, contenu: Contenu): Quantites {
+  const { saison, avancement } = calendrier(partie.pas, contenu);
+  const minutes = contenu.temps.minutesParSaison * (saison === 'automne' ? 1 : saison === 'hiver' ? 1 - avancement : 0);
+  const population = partie.iles.reduce((n, ile) => n + ile.habitants.length, 0);
+  const manque = population * contenu.habitants.baiesParMinute * minutes - partie.stocks.baies;
+  const sechees = Math.ceil(Math.max(0, manque) / contenu.habitants.valeurBaieSechee);
+  return sechees > 0 ? { baiesSechees: sechees } : {};
 }
 
 /** Vrai si un sanctuaire achevé permet de déposer l'offrande. */
@@ -89,11 +103,12 @@ export function sanctuaireAcheve(etat: Etat): boolean {
 /** Dépose du stock commun ce qui manque à l'offrande, autant que possible ; rend ce qui a été déposé. */
 export function offrir(etat: Etat, contenu: Contenu): Quantites {
   const depose: Quantites = {};
-  const objectif = offrande(etat, contenu)?.objectif ?? {};
+  const o = offrande(etat, contenu);
+  const objectif = o?.objectif ?? {};
   for (const r of Object.keys(objectif) as Ressource[]) {
     const manque = (objectif[r] ?? 0) - (etat.offrande[r] ?? 0);
     // Le stock s'affiche arrondi à l'unité inférieure : on ne dépose que des unités entières.
-    const quantite = Math.min(manque, Math.floor(etat.partie.stocks[r]));
+    const quantite = Math.min(manque, Math.floor(etat.partie.stocks[r] - (o?.reserve[r] ?? 0)));
     if (quantite <= 0) continue;
     etat.partie.stocks[r] -= quantite;
     etat.offrande[r] = (etat.offrande[r] ?? 0) + quantite;

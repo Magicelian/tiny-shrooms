@@ -124,6 +124,7 @@ export const fr = {
   'offrande.objectif': "Offrande pour découvrir l'île {numero} :",
   'offrande.graines': 'Rapportera {graines} graines de prestige (selon le record d’habitants de cette île)',
   'offrande.deposer': 'Déposer depuis le stock',
+  'offrande.reserve': '{quantite} baies séchées restent au garde-manger pour passer l’hiver',
   'offrande.faite': 'Cette île a déjà ouvert le chemin de la suivante.',
   'offrande.archipel': 'Tout l’archipel est découvert !',
   'archipel.ile': 'Île {numero}',

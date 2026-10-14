@@ -358,7 +358,8 @@ function Sanctuaire({ controleur, instantane }: Props) {
   if (!offrande) return <p class="discret">{t(ile < iles.length - 1 ? 'offrande.faite' : 'offrande.archipel')}</p>;
   const ressources = RESSOURCES.filter((r) => offrande.objectif[r]);
   const reste = (r: Ressource) => (offrande.objectif[r] ?? 0) - (offrande.depose[r] ?? 0);
-  const possible = ressources.some((r) => reste(r) > 0 && stocks[r].quantite >= 1);
+  const possible = ressources.some((r) => reste(r) > 0 && stocks[r].quantite - (offrande.reserve[r] ?? 0) >= 1);
+  const gardees = offrande.objectif.baiesSechees ? (offrande.reserve.baiesSechees ?? 0) : 0;
   return (
     <>
       <p>{t('offrande.objectif', { numero: ile + 2 })}</p>
@@ -374,6 +375,7 @@ function Sanctuaire({ controleur, instantane }: Props) {
         ))}
       </ul>
       <p class="discret">{t('offrande.graines', { graines: offrande.graines })}</p>
+      {gardees > 0 && <p class="discret">{t('offrande.reserve', { quantite: nombre(gardees) })}</p>}
       <button class="bouton large valider" disabled={!possible} onClick={() => controleur.envoyer({ type: 'offrir' })}>
         {t('offrande.deposer')}
       </button>

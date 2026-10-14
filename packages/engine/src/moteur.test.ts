@@ -1022,6 +1022,25 @@ describe('Archipel', () => {
     expect(instantane.offrande).toMatchObject({ objectif: { boisMort: 30 }, depose: {} });
   });
 
+  it('laisse au garde-manger les baies séchées de l’hiver', () => {
+    const objectif: Partial<Contenu> = { archipel: { offrandes: [{ baiesSechees: 500 }], biomes: ['foret'] } };
+    const moteur = avecSanctuaire(contenuDeTest({ hutte: { logement: true } }, { baiesParMinute: 1, valeurBaieSechee: 2 }, objectif));
+    const { partie, habitants } = moteur.etatCourant as Etat;
+    // Milieu de l'hiver : 15 min à 1 baie par habitant, moins les 20 baies fraîches, en baies séchées qui en valent 2.
+    partie.pas = Math.round(3.5 * 30 * PAS_PAR_MINUTE);
+    partie.stocks.baies = 20;
+    partie.stocks.baiesSechees = 100;
+    const gardees = Math.ceil((habitants.length * 15 - 20) / 2);
+    expect(gardees).toBeGreaterThan(0);
+    commander(moteur, { type: 'offrir' });
+    expect(partie.stocks.baiesSechees).toBe(gardees);
+    expect(commander(moteur, { type: 'offrir' })[0]).toMatchObject({ raison: 'ressourcesInsuffisantes' });
+    // Au printemps, plus rien n'est gardé.
+    partie.pas = 4 * 30 * PAS_PAR_MINUTE;
+    commander(moteur, { type: 'offrir' });
+    expect(partie.stocks.baiesSechees).toBe(0);
+  });
+
   it('toutes les îles vivent, les commandes visent l’île affichée', () => {
     const contenu = contenuDeTest({ hutte: { logement: true }, cueillette: { production: { baies: 12 } } }, { baiesParMinute: 0 });
     const moteur = avecSanctuaire(contenu);

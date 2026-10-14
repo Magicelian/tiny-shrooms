@@ -173,6 +173,8 @@ export interface Offrande {
   depose: Quantites;
   /** Graines gagnées en débloquant l'île suivante, avec la population maximale de celle-ci. */
   graines: number;
+  /** Stock que le dépôt laisse en place : les baies séchées qui doivent nourrir l'archipel jusqu'au printemps. */
+  reserve: Quantites;
 }
 
 // ─── Habitants ───────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ export const contenu: Contenu = {
   ile: { taille: 12 },
   // Partie neuve : rien en stock, tout commence par la récolte à la main.
   stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
-  plafondsDeBase: { baies: 50, baiesSechees: 20, boisMort: 80, mousse: 30, spores: 40 },
+  plafondsDeBase: { baies: 50, baiesSechees: 40, boisMort: 80, mousse: 30, spores: 40 },
   batiments: {
     hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: true },
     cueillette: { cout: { boisMort: 15 }, constructionSecondes: 20, production: { baies: 6 }, voisinage: [{ voisin: 'buisson', bonus: 0.25 }] },
@@ -38,7 +38,7 @@ export const contenu: Contenu = {
       biomes: ['prairie'],
       pollinise: { cibles: ['cueillette'], bonus: 1 },
     },
-    gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 50 } },
+    gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 80 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },
     sechoir: {
       cout: { boisMort: 20, mousse: 10 },
@@ -109,7 +109,8 @@ export const contenu: Contenu = {
     reevaluationSecondes: 30,
     nuit: { debut: 0.85, fin: 0.05 },
     travailAffame: 0.5,
-    valeurBaieSechee: 3,
+    // L'hiver ne produit aucune baie : les séchées, concentrées, doivent pouvoir le faire passer (14/10/2026).
+    valeurBaieSechee: 5,
     // Affamé, le village glisse vers 35 % au plus : il passe sous le seuil de départ en ~4 min.
     bienEtre: { base: 0.3, loge: 0.2, besoins: 0.5, affame: -0.2, plafondAffame: 0.35, minutesPourSeStabiliser: 3 },
   },
