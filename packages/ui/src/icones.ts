@@ -149,19 +149,16 @@ const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }
     ],
     palette: { v: '#6fc25a' },
   },
-  // Flèche dorée au-dessus des bâtiments qu'on peut améliorer (9 × 10).
+  // Petite flèche dorée au-dessus des bâtiments qu'on peut améliorer (7 × 7) : discrète, pour ne pas cacher le village.
   amelioration: {
     motif: [
-      '....#....',
-      '...#w#...',
-      '..#wyy#..',
-      '.#wyyyo#.',
-      '#wyyyyyo#',
-      '###wyo###',
-      '..#wyo#..',
-      '..#wyo#..',
-      '..#yoo#..',
-      '..#####..',
+      '...#...',
+      '..#w#..',
+      '.#wyo#.',
+      '#wyyyo#',
+      '##wyo##',
+      '.#yoo#.',
+      '.#####.',
     ],
     palette: { w: '#ffe9a8', y: '#f2b53a', o: '#c9822a' },
   },

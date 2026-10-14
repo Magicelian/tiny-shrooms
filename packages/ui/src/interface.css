@@ -960,16 +960,17 @@
   position: absolute;
   left: 0;
   top: 0;
-  /* Motif de 9 × 10 à 2 px par pixel, comme les icônes du jeu. */
-  width: 18px;
-  height: 20px;
-  margin-top: -2px;
+  /* Motif de 7 × 7 à 2 px par pixel, comme les icônes du jeu ; un peu transparente pour laisser voir le village. */
+  width: 14px;
+  height: 14px;
+  margin-top: -1px;
+  opacity: 0.85;
   image-rendering: pixelated;
   pointer-events: none;
-  animation: fleche-amelioration 0.7s steps(2) infinite alternate;
+  animation: fleche-amelioration 0.9s steps(2) infinite alternate;
 }
 @keyframes fleche-amelioration {
   to {
-    margin-top: -6px;
+    margin-top: -3px;
   }
 }
