@@ -42,7 +42,7 @@ export const contenu: Contenu = {
     champignonniere: {
       cout: { boisMort: 30, mousse: 15 },
       constructionSecondes: 45,
-      production: { spores: 2 },
+      production: { spores: 3 },
       postes: 2,
       stockage: { spores: 40 },
       biomes: ['grotte'],
@@ -159,7 +159,7 @@ export const contenu: Contenu = {
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600 },
-      { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 6000 },
+      { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000 },
       { boisMort: 8000, mousse: 28000, baiesSechees: 4000, spores: 14400 },
     ],
   },

@@ -1,6 +1,6 @@
 // Critère de l'étape 21 : l'île 4 est une grotte (rochers, champignons luisants), seule à proposer la champignonnière,
 // qui se pose contre un rocher. Les luisants s'arrachent et rapportent des spores. La production est mesurée dans
-// `prairie.test.ts`, qui joue jusqu'au bourg de la grotte.
+// `prairie-grotte.ts`, qui joue jusqu'au bourg de la grotte.
 import { describe, expect, it } from 'vitest';
 import { ajouterIle, casesLibres, creerPartie, natureEn, terrainManquant, type Etat, type Terrain } from '@tiny-shrooms/engine';
 import { contenu } from './index';
