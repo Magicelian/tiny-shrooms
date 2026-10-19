@@ -38,6 +38,7 @@ function contenuDeTest(
       arbre: { cout: { boisMort: 5 }, secondes: 10, gain: { baies: 3 } },
       roseau: { cout: {}, secondes: 10 },
       fleur: { cout: {}, secondes: 5 },
+      luisant: { cout: {}, secondes: 5 },
       buisson: { cout: {}, secondes: 10 },
       plante: { cout: {}, secondes: 5 },
     },

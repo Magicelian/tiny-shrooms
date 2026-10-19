@@ -8,12 +8,14 @@ const ELEMENTS_EPARS: Record<Biome, Partial<Record<TypeElement, number>>> = {
   foret: { boisMort: 3, mousse: 3 },
   marais: { boisMort: 1, mousse: 6 },
   prairie: { boisMort: 2, mousse: 1 },
+  grotte: { boisMort: 3, mousse: 3 },
 };
 
 /**
  * Île ronde, la souche-dépôt au centre ; même graine et même biome, même île. Forêt : bordée d'arbres, une
  * mare. Marais : bordé de roseaux (quelques arbres, peu de buissons), trois mares cernées de roseaux.
  * Prairie : bordée de fleurs et de buissons sauvages, presque sans arbres, une mare.
+ * Grotte : bordée de rochers et de champignons luisants, rochers épars, très peu d'arbres, une mare.
  */
 export function genererIle(taille: number, graine: number, biome: Biome = 'foret'): Ile {
   const hasard = creerHasard(graine);
@@ -40,6 +42,7 @@ export function genererIle(taille: number, graine: number, biome: Biome = 'foret
       else if (presDeLaSouche) t = 'herbe';
       else if (biome === 'marais') t = terrainMarais(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (biome === 'prairie') t = terrainPrairie(d > rayon - 1.4 + r * 0.8, versMare, r);
+      else if (biome === 'grotte') t = terrainGrotte(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (d > rayon - 1.4 + r * 0.8) t = r < 0.8 ? 'foret' : 'buisson';
       else if (versMare < 1.3) t = 'eau';
       else if (r < 0.05) t = 'rocher';
@@ -69,6 +72,16 @@ function terrainPrairie(lisiere: boolean, versMare: number, r: number): Terrain 
   if (r < 0.02) return 'rocher';
   if (r < 0.14) return 'buisson';
   if (r < 0.22) return 'fleurs';
+  return 'herbe';
+}
+
+/** Case de la grotte hors des abords de la souche : `lisiere` vaut vrai sur le pourtour de l'île. */
+function terrainGrotte(lisiere: boolean, versMare: number, r: number): Terrain {
+  if (lisiere) return r < 0.42 ? 'rocher' : r < 0.78 ? 'luisants' : r < 0.92 ? 'buisson' : 'foret';
+  if (versMare < 1.3) return 'eau';
+  if (r < 0.07) return 'rocher';
+  if (r < 0.15) return 'buisson';
+  if (r < 0.24) return 'luisants';
   return 'herbe';
 }
 

@@ -34,6 +34,8 @@ const TEINTES = {
   paille: 0xb8862e,
   rose: 0xf28cb8,
   abeille: 0x2a2224,
+  terreau: 0x3a2f45,
+  mycelium: 0xb8b0d8,
 } as const;
 
 /** Couleurs des fleurs de la prairie, tirées tour à tour. */
@@ -339,12 +341,43 @@ function sanctuaire(): Voxels {
   return v;
 }
 
+/** Petit champignon luisant : pied pâle, chapeau en croix, une bosse au sommet des plus grands. */
+function luisant(v: Voxels, x: number, y0: number, z: number, hauteur: number): void {
+  const l = COULEURS.luisant;
+  v.boite(x, y0, z, x, y0 + hauteur - 1, z, COULEURS.piedLuisant);
+  const h = y0 + hauteur;
+  v.poser(x, h, z, l).poser(x + 1, h, z, l).poser(x - 1, h, z, l).poser(x, h, z + 1, l).poser(x, h, z - 1, l);
+  if (hauteur >= 4) v.poser(x, h + 1, z, l);
+}
+
+function champignonniere(): Voxels {
+  const v = new Voxels();
+  const violet = COULEURS_BATIMENT.champignonniere;
+  // Lit de terreau sombre veiné de mycélium, deux rondins couchés couverts de champignons luisants.
+  v.boite(-5, 0, -5, 4, 0, 4, TEINTES.terreau);
+  v.peindre((x, _, z, c) => c === TEINTES.terreau && (x * 3 + z * 2) % 5 === 0, TEINTES.mycelium);
+  for (const z0 of [-3, 1]) {
+    v.boite(-4, 1, z0, 3, 2, z0 + 2, TEINTES.bois);
+    v.boite(-4, 1, z0, -4, 2, z0 + 2, TEINTES.boisClair);
+    v.peindre((x, y, z, c) => c === TEINTES.bois && y === 2 && (x + z) % 3 === 0, TEINTES.boisFonce);
+  }
+  for (const [x, z, h] of [[-3, -2, 3], [0, -3, 4], [2, -1, 2], [-2, 2, 4], [1, 3, 3], [3, 2, 2]] as const) luisant(v, x, 3, z, h);
+  // Auvent de toile violette au fond, sur deux poteaux.
+  for (const x of [-5, 4]) poteau(v, x, -5, 1, 9);
+  for (let z = -6; z <= -2; z++) v.boite(-6, 10 - Math.floor((z + 6) / 2), z, 5, 10 - Math.floor((z + 6) / 2), z, violet);
+  v.peindre((x, _, __, c) => c === violet && x % 3 === 0, TEINTES.lilas);
+  // Spores qui s'échappent.
+  v.poser(-2, 10, 1, COULEURS.luisant).poser(2, 12, -1, COULEURS.luisant).poser(0, 13, 2, COULEURS.luisant);
+  return v;
+}
+
 const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   cueillette,
   tasDeBois,
   tapisDeMousse,
   tourbiere,
   ruche,
+  champignonniere,
   gardeManger,
   remise,
   sechoir,
@@ -411,10 +444,10 @@ export function modeleSouche(tailleCases: number): Modele {
 
 // ─── Décor et éléments ─────────────────────────────────────────────────────────
 
-export type Decor = 'arbre' | 'roseau' | 'fleur' | 'buisson' | 'caillou' | 'nenuphar';
+export type Decor = 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'buisson' | 'caillou' | 'nenuphar';
 let cacheDecor: Record<Decor, Modele> | null = null;
 
-/** Arbre, roseaux, fleurs, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
+/** Arbre, roseaux, fleurs, luisants, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
 export function modelesDecor(): Record<Decor, Modele> {
   if (cacheDecor) return cacheDecor;
   const arbre = new Voxels();
@@ -455,7 +488,18 @@ export function modelesDecor(): Record<Decor, Modele> {
     fleur.poser(x, h, z + 1, petale).poser(x, h, z - 1, petale);
   });
   fleur.poser(-2, 1, -1, COULEURS.tige).poser(2, 1, 0, COULEURS.tige).poser(0, 1, 3, COULEURS.tige);
-  cacheDecor = { arbre: arbre.modele(), roseau: roseau.modele(), fleur: fleur.modele(), buisson: buisson.modele(), caillou: caillou.modele(), nenuphar: nenuphar.modele(false) };
+  // Touffe de champignons luisants de la grotte : jamais sous la neige, pour qu'ils brillent aussi l'hiver.
+  const luisants = new Voxels();
+  for (const [x, z, h] of [[-3, -2, 3], [0, 1, 5], [2, -3, 2], [-1, -4, 4], [3, 2, 3], [-4, 3, 2], [1, 4, 2]] as const) luisant(luisants, x, 0, z, h);
+  cacheDecor = {
+    arbre: arbre.modele(),
+    roseau: roseau.modele(),
+    fleur: fleur.modele(),
+    luisant: luisants.modele(false),
+    buisson: buisson.modele(),
+    caillou: caillou.modele(),
+    nenuphar: nenuphar.modele(false),
+  };
   return cacheDecor;
 }
 

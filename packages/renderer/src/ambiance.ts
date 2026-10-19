@@ -31,6 +31,8 @@ const CIEL_NUIT = new THREE.Color(0x5a6ab8);
 const LUNE = new THREE.Color(0x8fa6ff);
 /** Part de la lumière de jour gardée la nuit ; `particules` : part du glissement vers le bleu de nuit. */
 const PART_NUIT = { ciel: 0.45, soleil: 0.2, particules: 0.7 };
+/** Lueur propre des champignons luisants (part de leur couleur), le jour et en pleine nuit. */
+const LUEUR = { jour: 0.25, nuit: 0.9 };
 
 interface Lumieres {
   ciel: THREE.HemisphereLight;
@@ -139,6 +141,9 @@ export class Ambiance {
     const pas = dt === 0 ? 1 : dt / CREPUSCULE_S;
     this.obscurite += Math.sign(cible - this.obscurite) * Math.min(pas, Math.abs(cible - this.obscurite));
     const o = this.obscurite;
+    const lueur = materiau(COULEURS.luisant);
+    lueur.emissive.setHex(COULEURS.luisant);
+    lueur.emissiveIntensity = LUEUR.jour + (LUEUR.nuit - LUEUR.jour) * o;
     // Particules : dessinées sans éclairage, on les teinte nous-mêmes vers le bleu de la nuit.
     for (const [p, jour] of TEINTES_PARTICULES) {
       (this[p].objet.material as THREE.LineBasicMaterial | THREE.PointsMaterial).color.lerpColors(jour, NUIT_PARTICULES, o * PART_NUIT.particules);

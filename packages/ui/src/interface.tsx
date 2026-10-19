@@ -155,7 +155,7 @@ function vignetteNature(controleur: ControleurInterface, c: { x: number; y: numb
   const ile = controleur.magasin.valeur.ile;
   if (!vignettes || !ile) return undefined;
   const nature = natureVisee(ile, c);
-  if (nature === 'souche' || nature === 'arbre' || nature === 'roseau' || nature === 'fleur' || nature === 'buisson') return vignettes.nature(nature);
+  if (nature === 'souche' || nature === 'arbre' || nature === 'roseau' || nature === 'fleur' || nature === 'luisant' || nature === 'buisson') return vignettes.nature(nature);
   const element = elementEn(ile, c.x, c.y);
   const type = element >= 0 ? ile.elements[element]!.type : null;
   if (type === 'buisson') return vignettes.nature('baies');

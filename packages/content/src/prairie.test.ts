@@ -1,12 +1,15 @@
-// Critère de l'étape 20 : l'île 3 est une prairie fleurie. L'offrande de l'île 2, surtout en baies séchées, l'ouvre en
-// ~1 h 30 de jeu attentif après le bourg de l'île 2 ; grâce aux ruches, chaque cueillette y produit plus que sur
-// l'île 1, et la prairie à son bourg fait déjà plus de baies que l'île 1, pourtant plus peuplée.
+// Critères des étapes 20 et 21, sur une même partie (jouer jusqu'à l'île 4 est long, on ne le fait qu'une fois).
+// Prairie (île 3) : l'offrande de l'île 2, surtout en baies séchées, l'ouvre en ~1 h 30 de jeu attentif après le bourg
+// de l'île 2 ; grâce aux ruches, chaque cueillette y produit plus que sur l'île 1, et la prairie à son bourg fait déjà
+// plus de baies que l'île 1, pourtant plus peuplée.
+// Grotte (île 4) : l'offrande de l'île 3, surtout en spores, l'ouvre en ~1 h 30 à 2 h après le bourg de la prairie ;
+// grâce aux champignonnières, la grotte à son bourg fait au moins deux fois plus de spores que l'île 1.
 import { describe, expect, it } from 'vitest';
-import { creerPartie, multiplicateur, Moteur, type Etat } from '@tiny-shrooms/engine';
+import { creerPartie, multiplicateur, Moteur, rangLogement, type Etat } from '@tiny-shrooms/engine';
 import { contenu } from './index';
 import { BOURG, depenser, Joueur, PAS_PAR_SECONDE } from './joueur';
 
-const HEURES_MAX = 30;
+const HEURES_MAX = 45;
 // Écrit même quand le test passe (vitest tait `console.log`).
 declare const process: { stderr: { write(texte: string): void } };
 
@@ -20,8 +23,19 @@ function baiesParMinute(etat: Etat): number {
     }, 0);
 }
 
-describe('Prairie', () => {
-  it.each([1, 2, 3])('graine %i : l’offrande de l’île 2 ouvre la prairie, riche en baies', (graine) => {
+/** Spores que donneraient les logements pleins et les bâtiments achevés de l'île, tous postes pourvus. */
+function sporesParMinute(etat: Etat): number {
+  return etat.batiments
+    .filter((b) => b.chantier === null)
+    .reduce((somme, b) => {
+      const def = contenu.batiments[b.type];
+      const rang = rangLogement(contenu, b);
+      return somme + (def.production?.spores ?? 0) * (def.postes ?? 1) * multiplicateur(b) + (rang ? rang.sporesParMinute * rang.places : 0);
+    }, 0);
+}
+
+describe('Prairie puis grotte', () => {
+  it.each([1, 2, 3])('graine %i : la prairie, riche en baies, puis la grotte, riche en spores', (graine) => {
     const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
     const joueur = new Joueur(moteur);
     const partie = moteur.partieCourante;
@@ -57,5 +71,22 @@ describe('Prairie', () => {
     expect(ruches).toBeGreaterThan(0);
     expect(parCueillette(prairie)).toBeGreaterThan(parCueillette(premiere) * 1.5);
     expect(baiesParMinute(prairie)).toBeGreaterThan(baiesParMinute(premiere));
-  }, 1_800_000);
+
+    const ile4 = jusquA(() => partie.iles.length === 4);
+    depenser(joueur);
+    const bourg4 = jusquA(() => moteur.etatCourant.palier >= BOURG);
+    const grotte = partie.iles[3]!;
+    const champignonnieres = grotte.batiments.filter((b) => b.type === 'champignonniere').length;
+    process.stderr.write(
+      `graine ${graine} : île 4 ${(ile4 - bourg3).toFixed(0)} min après le bourg de la prairie, son bourg en ${(bourg4 - ile4).toFixed(0)} min ; ` +
+        `spores/min : île 1 ${sporesParMinute(premiere).toFixed(0)} (${premiere.habitants.length} habitants), ` +
+        `grotte ${sporesParMinute(grotte).toFixed(0)} (${grotte.habitants.length} habitants, ${champignonnieres} champignonnières) ; ` +
+        `faim sur l'archipel : ${partie.iles.filter((e) => e.faim).length} île(s)\n`,
+    );
+    expect(grotte.ile.biome).toBe('grotte');
+    expect(ile4 - bourg3).toBeGreaterThan(60);
+    expect(ile4 - bourg3).toBeLessThan(150);
+    expect(champignonnieres).toBeGreaterThan(0);
+    expect(sporesParMinute(grotte)).toBeGreaterThan(sporesParMinute(premiere) * 2);
+  }, 3_600_000);
 });

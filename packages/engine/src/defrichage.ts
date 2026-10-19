@@ -15,6 +15,7 @@ export function natureEn(ile: Ile, c: Case): Defrichable | null {
   if (terrain === 'foret') return 'arbre';
   if (terrain === 'roseaux') return 'roseau';
   if (terrain === 'fleurs') return 'fleur';
+  if (terrain === 'luisants') return 'luisant';
   if (terrain === 'buisson') return 'buisson';
   if (terrain === 'herbe' && elementEn(ile, c.x, c.y) >= 0) return 'plante';
   return null;

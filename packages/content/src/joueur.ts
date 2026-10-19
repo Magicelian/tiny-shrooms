@@ -1,5 +1,5 @@
 // Joueur scripté des critères : nourriture, bois, mousse, logements, services manquants, montée en gamme, stockage,
-// ruches de la prairie et offrandes.
+// ruches de la prairie, champignonnières de la grotte et offrandes.
 import {
   aPortee,
   BONUS_PRESTIGE,
@@ -26,7 +26,7 @@ export const PAS_PAR_SECONDE = PAS_PAR_MINUTE / 60;
 export const BOURG = contenu.paliers.findIndex((p) => p.nom === 'bourg');
 
 /** Ce qu'on abat pour faire de la place. */
-const BOISES: readonly string[] = ['foret', 'roseaux', 'fleurs'];
+const BOISES: readonly string[] = ['foret', 'roseaux', 'fleurs', 'luisants'];
 
 function nombre(etat: Etat, type: TypeBatiment): number {
   return etat.batiments.filter((b) => b.type === type).length;
@@ -149,6 +149,8 @@ export class Joueur {
       () => nombre(etat, 'tasDeBois') < 1 + Math.floor(population / 10) && this.production('tasDeBois', 'foret'),
       // Sur le marais, la tourbière remplace le tapis : c'est elle qui fait la mousse de l'archipel.
       () => population >= 2 && nombre(etat, 'tourbiere') < 1 + Math.floor(population / 8) && this.production('tourbiere', 'roseaux'),
+      // Sur la grotte, des champignonnières contre les rochers, près des luisants : les spores de l'archipel.
+      () => population >= 2 && nombre(etat, 'champignonniere') < 1 + Math.floor(population / 8) && this.production('champignonniere', 'luisants'),
       () => population >= 4 && !etat.batimentsDebloques.includes('tourbiere') && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
       // Un bâtiment qui vient d'être débloqué est essayé tout de suite.
       () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 + Math.floor(population / 15) && this.production('sechoir', 'herbe'),
@@ -184,8 +186,11 @@ export class Joueur {
   private renforcerPourOffrande(population: number): boolean {
     const o = nombre(this.etat, 'sanctuaire') > 0 ? offrande(this.etat, contenu) : null;
     if (!o) return false;
-    const manque = (r: 'mousse' | 'boisMort' | 'baiesSechees') => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0);
+    const manque = (r: 'mousse' | 'boisMort' | 'baiesSechees' | 'spores') => (o.objectif[r] ?? 0) > (o.depose[r] ?? 0);
     const limite = 2 + Math.floor(population / 8);
+    if (manque('spores') && this.etat.batimentsDebloques.includes('champignonniere') && nombre(this.etat, 'champignonniere') < limite) {
+      return this.production('champignonniere', 'luisants');
+    }
     if (manque('baiesSechees') && nombre(this.etat, 'sechoir') < limite) return this.production('sechoir', 'herbe');
     if (manque('mousse') && nombre(this.etat, 'tapisDeMousse') < limite) return this.production('tapisDeMousse', 'eau');
     if (manque('boisMort') && nombre(this.etat, 'tasDeBois') < limite) return this.production('tasDeBois', 'foret');

@@ -41,7 +41,7 @@ export interface OptionsInterface {
   /** Images des modèles pour les bulles ; absentes, les bulles s'en passent. */
   vignettes?: {
     batiment(type: TypeBatiment, niveau?: number): string;
-    nature(nom: 'arbre' | 'roseau' | 'fleur' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
+    nature(nom: 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
   };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
@@ -66,7 +66,7 @@ const NOMS_TAILLE = ['accueil.taillePetite', 'accueil.tailleGrande', 'accueil.ta
 const TOUR_ACCUEIL_MS = 6000;
 
 /** Hauteur du surlignage de ce qu'on peut faire arracher. */
-const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, roseau: 0.9, fleur: 0.4, buisson: 0.6, plante: 0.35 };
+const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, roseau: 0.9, fleur: 0.4, luisant: 0.45, buisson: 0.6, plante: 0.35 };
 
 /** Ce qu'on peut faire arracher sur une case : la souche-dépôt, ou un arbre, un buisson, une plante. */
 export function natureVisee(ile: Ile, c: Case): Defrichable | 'souche' | null {

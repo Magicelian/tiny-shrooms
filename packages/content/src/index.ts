@@ -38,6 +38,17 @@ export const contenu: Contenu = {
       biomes: ['prairie'],
       pollinise: { cibles: ['cueillette'], bonus: 1 },
     },
+    // Le bâtiment phare de la grotte : le seul qui fasse des spores, adossé à un rocher ; il en garde un peu sur place.
+    champignonniere: {
+      cout: { boisMort: 30, mousse: 15 },
+      constructionSecondes: 45,
+      production: { spores: 2 },
+      postes: 2,
+      stockage: { spores: 40 },
+      biomes: ['grotte'],
+      exige: 'rocher',
+      voisinage: [{ voisin: 'luisants', bonus: 0.25 }],
+    },
     gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 80 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },
     sechoir: {
@@ -74,11 +85,12 @@ export const contenu: Contenu = {
     arbre: { cout: { spores: 4 }, secondes: 20, gain: { boisMort: 4 } },
     roseau: { cout: { spores: 2 }, secondes: 10, gain: { mousse: 2 } },
     fleur: { cout: { spores: 2 }, secondes: 6, gain: { baies: 2 } },
+    luisant: { cout: { spores: 2 }, secondes: 8, gain: { spores: 5 } },
     buisson: { cout: { spores: 2 }, secondes: 10 },
     plante: { cout: { spores: 2 }, secondes: 6 },
   },
   paliers: [
-    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'ruche', 'gardeManger', 'remise', 'feuDeCamp'] },
+    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'ruche', 'champignonniere', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
     { nom: 'bourg', population: 50, debloque: ['marche', 'sanctuaire'] },
     { nom: 'cite', population: 150, debloque: [] },
@@ -139,15 +151,15 @@ export const contenu: Contenu = {
     },
   },
   // Offrandes au sanctuaire : l'île i débloque l'île i + 1 (cinq îles) et exige surtout la ressource phare de
-  // l'île qu'elle ouvre (la mousse pour le marais, les baies séchées pour la prairie). La première prend 1 h 40 à 2 h
-  // après le bourg au joueur attentif (`archipel.test.ts`), la deuxième autant (`prairie.test.ts`) ; les suivantes
-  // doublent, en attendant les biomes suivants.
+  // l'île qu'elle ouvre (la mousse pour le marais, les baies séchées pour la prairie, les spores pour la grotte).
+  // Chacune prend 1 h 30 à 2 h après le bourg au joueur attentif (`archipel.test.ts`, `grotte.test.ts`) ; la dernière
+  // double, en attendant le biome de l'île 5.
   archipel: {
-    biomes: ['foret', 'marais', 'prairie'],
+    biomes: ['foret', 'marais', 'prairie', 'grotte'],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600 },
-      { boisMort: 4000, mousse: 14000, baiesSechees: 2000, spores: 7200 },
+      { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 6000 },
       { boisMort: 8000, mousse: 28000, baiesSechees: 4000, spores: 14400 },
     ],
   },
