@@ -28,11 +28,13 @@ export const en: Record<keyof typeof fr, string> = {
   'batiment.puits': 'Well',
   'batiment.marche': 'Market square',
   'batiment.sanctuaire': 'Spore shrine',
+  'batiment.kiosque': 'Lantern bandstand',
 
   // Rangs des logements
   'rang.1': 'Cap hut',
   'rang.2': 'Cap house',
   'rang.3': 'Cap manor',
+  'rang.4': 'Cap tower',
 
   'effet.production': 'Makes {liste} per villager',
   'effet.consommation': 'Uses {liste}',
@@ -110,6 +112,7 @@ export const en: Record<keyof typeof fr, string> = {
   'besoin.eau': 'Water',
   'besoin.mousse': 'Moss delivered',
   'besoin.commerce': 'Trade',
+  'besoin.fete': 'Festivities',
 
   // Paliers
   'palier.hameau': 'Hamlet',

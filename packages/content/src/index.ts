@@ -74,6 +74,9 @@ export const contenu: Contenu = {
     puits: { cout: { boisMort: 30, mousse: 10 }, constructionSecondes: 30, portee: 3 },
     marche: { cout: { boisMort: 60, mousse: 30 }, constructionSecondes: 60, postes: 2, portee: 4 },
     sanctuaire: { cout: { boisMort: 80, mousse: 40, spores: 20 }, constructionSecondes: 90, unique: true },
+    // Le bâtiment de la cité : un musicien y joue sous les lanternes, et la fête qu'il donne fait monter les manoirs
+    // alentour en tours-chapeaux.
+    kiosque: { cout: { boisMort: 120, mousse: 60, spores: 40 }, constructionSecondes: 90, postes: 1, portee: 3 },
   },
   logement: {
     rangs: [
@@ -88,8 +91,18 @@ export const contenu: Contenu = {
         agrandissementSecondes: 90,
         consommation: { mousse: 0.5 },
       },
+      // La tour-chapeau, réservée à la cité : de quoi continuer de grandir une fois les 150 habitants atteints.
+      {
+        places: 12,
+        besoins: ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce', 'fete'],
+        cout: { boisMort: 320, mousse: 160, spores: 120 },
+        palier: 3,
+        sporesParMinute: 0.8,
+        agrandissementSecondes: 150,
+        consommation: { mousse: 0.75 },
+      },
     ],
-    sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche' },
+    sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche', fete: 'kiosque' },
   },
   souche: { coutRetrait: { spores: 40 }, retraitSecondes: 45 },
   defrichage: {
@@ -106,7 +119,7 @@ export const contenu: Contenu = {
     { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'ruche', 'champignonniere', 'scierie', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
     { nom: 'bourg', population: 50, debloque: ['marche', 'sanctuaire'] },
-    { nom: 'cite', population: 150, debloque: [] },
+    { nom: 'cite', population: 150, debloque: ['kiosque'] },
   ],
   recolte: {
     buisson: { ressource: 'baies', quantite: 3, repousseSecondes: 45 },

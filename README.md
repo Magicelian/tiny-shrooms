@@ -22,6 +22,8 @@
 - 🧺 **On commence seul** : un clic sur un buisson, du bois mort ou de la mousse, et on récolte.
 - 🏡 **Les habitants arrivent**, prennent les emplois et construisent tout seuls.
 - ⬆️ **Les huttes montent en gamme** (maison, puis manoir) quand leurs besoins sont satisfaits : nourriture, chaleur, eau, commerce.
+- 🏮 **À 150 habitants, l'île devient une cité** : son kiosque à lanternes donne la fête, et les manoirs alentour
+  deviennent des tours-chapeaux.
 - 🌦️ **Les saisons passent** : la pluie, la neige et la nuit changent l'île et le rythme de la production.
 - 🏝️ **Au bourg, une offrande au sanctuaire ouvre l'île suivante.** Cinq îles en tout, chacune avec son paysage
   et son bâtiment phare :

@@ -34,7 +34,8 @@ export interface DefinitionBatiment {
   stockage?: Quantites;
   /** Fait du bâtiment un logement : places et besoins suivent son rang (`Contenu.logement`). */
   logement?: boolean;
-  /** Rayon d'effet en cases (carré centré sur le bâtiment) : chaleur d'un feu, eau d'un puits, commerce d'un marché. */
+  /** Rayon d'effet en cases (carré centré sur le bâtiment) : chaleur d'un feu, eau d'un puits, commerce d'un marché,
+   * fête d'un kiosque. */
   portee?: number;
   /** Un seul exemplaire par île : le catalogue ne le propose plus tant qu'il est là. */
   unique?: boolean;

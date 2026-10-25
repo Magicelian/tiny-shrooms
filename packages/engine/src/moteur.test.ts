@@ -1133,6 +1133,19 @@ describe('Archipel', () => {
     expect(v12.iles[0]).toMatchObject({ populationMax: 4, offrande: {}, graine: 1 });
     expect(v12.iles[0]!.batiments).toEqual(moteur.etatCourant.batiments);
   });
+
+  it('donne le kiosque à une île de version 13 déjà au palier cité', () => {
+    const moteur = avecSanctuaire();
+    ajouterIle(moteur.partieCourante as Etat['partie'], contenuDeTest());
+    const v13 = JSON.parse(serialiser(moteur.partieCourante));
+    v13.version = 13;
+    v13.etat.iles[0].palier = 3;
+    v13.etat.iles[0].batimentsDebloques = ['hutte'];
+    v13.etat.iles[1].batimentsDebloques = ['hutte'];
+    const migree = charger(JSON.stringify(v13));
+    expect(migree.iles[0]!.batimentsDebloques).toEqual(['hutte', 'kiosque']);
+    expect(migree.iles[1]!.batimentsDebloques).toEqual(['hutte']);
+  });
 });
 
 describe('Nouvelle partie', () => {

@@ -25,11 +25,13 @@ export const fr = {
   'batiment.puits': 'Puits',
   'batiment.marche': 'Place du marché',
   'batiment.sanctuaire': 'Sanctuaire des spores',
+  'batiment.kiosque': 'Kiosque à lanternes',
 
   // Rangs des logements
   'rang.1': 'Hutte-chapeau',
   'rang.2': 'Maison-chapeau',
   'rang.3': 'Manoir-chapeau',
+  'rang.4': 'Tour-chapeau',
 
   'effet.production': 'Produit {liste} par habitant',
   'effet.consommation': 'Consomme {liste}',
@@ -107,6 +109,7 @@ export const fr = {
   'besoin.eau': 'Eau',
   'besoin.mousse': 'Mousse livrée',
   'besoin.commerce': 'Commerce',
+  'besoin.fete': 'Fête',
 
   // Paliers
   'palier.hameau': 'Hameau',

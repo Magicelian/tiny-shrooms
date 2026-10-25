@@ -110,7 +110,7 @@ function hutte(niveau: number): Voxels {
     v.boite(2, 15, -3, 3, 15, -2, TEINTES.suie);
     // Perron.
     v.boite(-3, 0, 3, 1, 0, 5, TEINTES.planche);
-  } else {
+  } else if (niveau === 3) {
     // Manoir : un grand pied et une tourelle accolée, reliés par un balcon.
     pied(v, -1.5, -1.5, 0, 10, 3.2, [3, 6, 9]);
     chapeau(v, -1.5, -1.5, 11, 4.9, 4, rouge, TEINTES.blanc, 7);
@@ -119,6 +119,18 @@ function hutte(niveau: number): Voxels {
     v.boite(0, 5, 0, 3, 5, 1, TEINTES.planche);
     v.boite(-6, 0, 4, -3, 0, 5, TEINTES.fenetre);
     v.boite(-6, 1, 4, -3, 1, 5, COULEURS.herbe);
+  } else {
+    // Tour-chapeau : un très haut pied ceint d'une collerette à mi-hauteur, un grand chapeau et un petit
+    // champignon perché au sommet, une lanterne à la porte.
+    pied(v, C, C, 0, 16, 3, [3, 6, 10, 13]);
+    v.disque(C, 8, C, 4.6, rouge);
+    v.disque(C, 7, C, 3.6, TEINTES.lamelles);
+    taches(v, C, C, 8, 4.6, 1, rouge, TEINTES.blanc, 5, 1);
+    chapeau(v, C, C, 17, 5.6, 4, rouge, TEINTES.blanc, 8);
+    v.cylindre(C, C, 21, 23, 1, TEINTES.pied);
+    chapeau(v, C, C, 24, 2.4, 2, rouge, TEINTES.blanc, 3);
+    poteau(v, 2, 3, 0, 3);
+    v.poser(2, 3, 4, TEINTES.boisFonce).poser(2, 2, 4, COULEURS.lanterne);
   }
   return v;
 }
@@ -341,6 +353,31 @@ function sanctuaire(): Voxels {
   return v;
 }
 
+function kiosque(): Voxels {
+  const v = new Voxels();
+  const turquoise = COULEURS_BATIMENT.kiosque;
+  // Estrade ronde à deux marches, six poteaux sous un grand chapeau de champignon, des lanternes à son bord.
+  v.disque(C, 0, C, 5.6, TEINTES.boisFonce);
+  v.disque(C, 1, C, 4.6, TEINTES.planche);
+  v.peindre((x, y, z, c) => c === TEINTES.planche && y === 1 && (x + z) % 2 === 0, TEINTES.boisClair);
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2;
+    poteau(v, Math.round(C + Math.cos(a) * 3.8), Math.round(C + Math.sin(a) * 3.8), 2, 8, TEINTES.boisClair);
+  }
+  chapeau(v, C, C, 9, 6, 4, turquoise, TEINTES.blanc, 7);
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2 + Math.PI / 6;
+    const x = Math.round(C + Math.cos(a) * 5.2);
+    const z = Math.round(C + Math.sin(a) * 5.2);
+    v.poser(x, 8, z, TEINTES.boisFonce).poser(x, 7, z, COULEURS.lanterne);
+  }
+  // Un tambour au milieu de l'estrade, et une petite flamme de lanterne au sommet.
+  v.cylindre(C, C, 2, 3, 1.4, TEINTES.baie);
+  v.disque(C, 4, C, 1.4, TEINTES.toile);
+  v.poser(0, 14, 0, COULEURS.lanterne);
+  return v;
+}
+
 /** Petit champignon luisant : pied pâle, chapeau en croix, une bosse au sommet des plus grands. */
 function luisant(v: Voxels, x: number, y0: number, z: number, hauteur: number): void {
   const l = COULEURS.luisant;
@@ -422,6 +459,7 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   puits,
   marche,
   sanctuaire,
+  kiosque,
 };
 
 const cacheBatiments = new Map<string, Modele>();

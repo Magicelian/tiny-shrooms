@@ -5,7 +5,7 @@ import type { Etat, Partie } from './etat';
 import { placerElements } from './ile';
 import { prestigeNeuf } from './prestige';
 
-export const VERSION_SAUVEGARDE = 13;
+export const VERSION_SAUVEGARDE = 14;
 
 /** Première version du modèle actuel ; les parties plus anciennes ne se migrent pas (réorientation). */
 export const PREMIERE_VERSION_LISIBLE = 4;
@@ -82,6 +82,14 @@ const MIGRATIONS: Record<number, (etat: Record<string, unknown>) => Record<strin
       iles: [{ ...ile, graine, populationMax, offrande: {} }],
     };
   },
+  // Version 14 : la cité (palier 3) débloque le kiosque ; une île qui l'a déjà atteinte le reçoit tout de suite.
+  13: (etat) => ({
+    ...etat,
+    iles: (etat.iles as Record<string, unknown>[]).map((ile) => ({
+      ...ile,
+      batimentsDebloques: [...(ile.batimentsDebloques as string[]), ...((ile.palier as number) >= 3 ? ['kiosque'] : [])],
+    })),
+  }),
 };
 
 export function serialiser(partie: Readonly<Partie>): string {

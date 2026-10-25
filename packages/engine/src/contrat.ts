@@ -107,6 +107,7 @@ export const TYPES_BATIMENT = [
   'puits',
   'marche',
   'sanctuaire',
+  'kiosque',
 ] as const;
 export type TypeBatiment = (typeof TYPES_BATIMENT)[number];
 
@@ -137,10 +138,10 @@ export interface Batiment {
 }
 
 /**
- * Besoins d'un logement : la nourriture du village, la proximité d'un bâtiment (chaleur, eau, commerce)
+ * Besoins d'un logement : la nourriture du village, la proximité d'un bâtiment (chaleur, eau, commerce, fête)
  * ou une ressource consommée par le logement lui-même (mousse).
  */
-export const BESOINS = ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce'] as const;
+export const BESOINS = ['nourriture', 'chaleur', 'eau', 'mousse', 'commerce', 'fete'] as const;
 export type Besoin = (typeof BESOINS)[number];
 
 export const AMELIORATIONS_VILLAGE = ['vitesse', 'outils'] as const;

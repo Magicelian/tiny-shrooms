@@ -18,6 +18,8 @@ export const COULEURS = {
   /** Chapeaux des champignons luisants de la grotte : ils brillent, plus fort la nuit (`Ambiance`). */
   luisant: 0x5ff0e6,
   piedLuisant: 0xc9d4f2,
+  /** Lanternes du kiosque et de la tour-chapeau : éteintes le jour, allumées la nuit (`Ambiance`). */
+  lanterne: 0xffc65a,
   /** Vieux chênes de la futaie : tronc épais, feuillage sombre. */
   troncChene: 0x5a3a24,
   feuillageChene: 0x2e6e35,
@@ -48,6 +50,7 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   puits: 0x6fa8c9,
   marche: 0xd9a441,
   sanctuaire: 0xb58fd6,
+  kiosque: 0x3fae9a,
 };
 
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
