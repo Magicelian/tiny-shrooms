@@ -39,6 +39,7 @@ function contenuDeTest(
       roseau: { cout: {}, secondes: 10 },
       fleur: { cout: {}, secondes: 5 },
       luisant: { cout: {}, secondes: 5 },
+      chene: { cout: {}, secondes: 5 },
       buisson: { cout: {}, secondes: 10 },
       plante: { cout: {}, secondes: 5 },
     },

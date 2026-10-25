@@ -1,5 +1,5 @@
 // Joueur scripté des critères : nourriture, bois, mousse, logements, services manquants, montée en gamme, stockage,
-// ruches de la prairie, champignonnières de la grotte et offrandes.
+// ruches de la prairie, champignonnières de la grotte, scieries de la futaie et offrandes.
 import {
   aPortee,
   BONUS_PRESTIGE,
@@ -26,7 +26,7 @@ export const PAS_PAR_SECONDE = PAS_PAR_MINUTE / 60;
 export const BOURG = contenu.paliers.findIndex((p) => p.nom === 'bourg');
 
 /** Ce qu'on abat pour faire de la place. */
-const BOISES: readonly string[] = ['foret', 'roseaux', 'fleurs', 'luisants'];
+const BOISES: readonly string[] = ['foret', 'roseaux', 'fleurs', 'luisants', 'chenes'];
 
 function nombre(etat: Etat, type: TypeBatiment): number {
   return etat.batiments.filter((b) => b.type === type).length;
@@ -151,6 +151,8 @@ export class Joueur {
       () => population >= 2 && nombre(etat, 'tourbiere') < 1 + Math.floor(population / 8) && this.production('tourbiere', 'roseaux'),
       // Sur la grotte, des champignonnières contre les rochers, près des luisants : les spores de l'archipel.
       () => population >= 2 && nombre(etat, 'champignonniere') < 1 + Math.floor(population / 8) && this.production('champignonniere', 'luisants'),
+      // Sur la futaie, des scieries au bord de l'eau, près des vieux chênes : le bois de l'archipel.
+      () => population >= 2 && nombre(etat, 'scierie') < 1 + Math.floor(population / 8) && this.production('scierie', 'chenes'),
       () => population >= 4 && !etat.batimentsDebloques.includes('tourbiere') && nombre(etat, 'tapisDeMousse') < 1 + Math.floor(population / 12) && this.production('tapisDeMousse', 'eau'),
       // Un bâtiment qui vient d'être débloqué est essayé tout de suite.
       () => etat.palier >= 1 && nombre(etat, 'sechoir') < 1 + Math.floor(population / 15) && this.production('sechoir', 'herbe'),

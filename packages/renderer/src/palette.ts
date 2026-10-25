@@ -18,6 +18,10 @@ export const COULEURS = {
   /** Chapeaux des champignons luisants de la grotte : ils brillent, plus fort la nuit (`Ambiance`). */
   luisant: 0x5ff0e6,
   piedLuisant: 0xc9d4f2,
+  /** Vieux chênes de la futaie : tronc épais, feuillage sombre. */
+  troncChene: 0x5a3a24,
+  feuillageChene: 0x2e6e35,
+  feuillageCheneClair: 0x4a8f3e,
   caillou: 0x9a9ea8,
   pied: 0xf2e6cf,
   chantier: 0xd9c9a3,
@@ -35,6 +39,7 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   tourbiere: 0x6b4a33,
   ruche: 0xe2b04e,
   champignonniere: 0x7a5fb8,
+  scierie: 0xb5703a,
   gardeManger: 0xe0b04a,
   remise: 0x7d5a44,
   sechoir: 0xe38a3a,
@@ -51,6 +56,7 @@ export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {
   roseaux: COULEURS.herbe,
   fleurs: COULEURS.herbe,
   luisants: COULEURS.herbe,
+  chenes: COULEURS.herbe,
   buisson: COULEURS.herbe,
   rocher: COULEURS.herbe,
   eau: COULEURS.eau,
@@ -62,15 +68,18 @@ const HERBE_MARAIS = 0x6f9a4c;
 const HERBE_PRAIRIE = 0x95d35e;
 /** La grotte : mousse sombre bleu-violet, eau plus profonde. */
 const MOUSSE_GROTTE = 0x5d5a9e;
+/** La futaie : herbe ombragée, vert profond. */
+const HERBE_FUTAIE = 0x5f9e4a;
 /** Même couleur sur toute l'île, sauf l'eau. */
 function surfaces(sol: number, eau: number): Record<Exclude<Terrain, 'vide'>, number> {
-  return { herbe: sol, foret: sol, roseaux: sol, fleurs: sol, luisants: sol, buisson: sol, rocher: sol, eau };
+  return { herbe: sol, foret: sol, roseaux: sol, fleurs: sol, luisants: sol, chenes: sol, buisson: sol, rocher: sol, eau };
 }
 export const SURFACES_PAR_BIOME: Record<Biome, Record<Exclude<Terrain, 'vide'>, number>> = {
   foret: COULEURS_SURFACE,
   marais: surfaces(HERBE_MARAIS, 0x4a9a8e),
   prairie: surfaces(HERBE_PRAIRIE, COULEURS.eau),
   grotte: surfaces(MOUSSE_GROTTE, 0x3d74a8),
+  futaie: surfaces(HERBE_FUTAIE, 0x4a93b8),
 };
 
 /** Trois paliers de lumière, sans dégradé. */

@@ -1,7 +1,7 @@
 // Mise en mots des données du contenu : coûts, effets et bonus des bâtiments.
 import type { Cle } from '@tiny-shrooms/i18n';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import type { Batiment, Besoin, Contenu, Quantites, Ressource, Stock, TypeBatiment } from '@tiny-shrooms/engine';
+import type { Batiment, Besoin, Contenu, Quantites, RaisonRefus, Ressource, Stock, TypeBatiment } from '@tiny-shrooms/engine';
 import { RESSOURCES, TYPES_BATIMENT } from '@tiny-shrooms/engine';
 
 export function nomRessource(r: Ressource): string {
@@ -12,6 +12,13 @@ export function nomRessource(r: Ressource): string {
 export function nomBatiment(type: TypeBatiment, contenu?: Contenu, niveau = 1): string {
   if (contenu?.batiments[type].logement) return nomRang(niveau);
   return t(`batiment.${type}`);
+}
+
+/** Raison d'un refus ; pour un terrain manquant, dit lequel (l'eau, un rocher…). */
+export function texteRefus(raison: RaisonRefus, contenu?: Contenu, type?: TypeBatiment): string {
+  const exige = type && contenu ? contenu.batiments[type].exige : undefined;
+  if (raison === 'terrainRequis') return exige ? t('refus.terrainRequis', { terrain: t(`terrain.${exige}`) }) : t('refus.indisponible');
+  return t(`refus.${raison}`);
 }
 
 export function nomRang(niveau: number): string {

@@ -21,7 +21,7 @@ import {
   terrainManquant,
 } from '@tiny-shrooms/engine';
 import { nombre, t } from '@tiny-shrooms/i18n';
-import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, nomRessource, pourcent } from './format';
+import { abordable, effets, listeQuantites, nomBatiment, nomBesoin, nomPalier, nomRang, nomRessource, pourcent, texteRefus } from './format';
 import { Cout, Icone, Phrase } from './composants';
 import { natureVisee, type ControleurInterface } from './index';
 import { useMagasin, type Bulle } from './magasin';
@@ -83,7 +83,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
           {effets(contenu, choix).map((ligne) => (
             <p key={ligne}>{ligne}</p>
           ))}
-          {refus && <p class="manque">{t(`refus.${refus}`)}</p>}
+          {refus && <p class="manque">{texteRefus(refus, contenu, choix)}</p>}
           {bonusVise !== null && bonusVise > 1 && (
             <p class="bonus">{t('construction.bonusIci', { pourcent: pourcent(bonusVise - 1) })}</p>
           )}

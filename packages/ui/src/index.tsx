@@ -6,7 +6,7 @@ import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
 
 export type { Langue };
 import { installerCurseurs, type Curseur } from './curseurs';
-import { abordable, nomBatiment, nomPalier, nomPose, nomRang } from './format';
+import { abordable, nomBatiment, nomPalier, nomPose, nomRang, texteRefus } from './format';
 import { Interface } from './interface';
 import { Magasin, type Bulle } from './magasin';
 import { Sons, type Effet } from './sons';
@@ -41,7 +41,7 @@ export interface OptionsInterface {
   /** Images des modèles pour les bulles ; absentes, les bulles s'en passent. */
   vignettes?: {
     batiment(type: TypeBatiment, niveau?: number): string;
-    nature(nom: 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
+    nature(nom: 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'chene' | 'buisson' | 'souche' | 'boisMort' | 'mousse' | 'baies'): string;
   };
   /** Déplace la fenêtre tant que le bouton reste enfoncé (Tauri) ; absent dans un navigateur. */
   deplacerFenetre?: () => void;
@@ -66,7 +66,7 @@ const NOMS_TAILLE = ['accueil.taillePetite', 'accueil.tailleGrande', 'accueil.ta
 const TOUR_ACCUEIL_MS = 6000;
 
 /** Hauteur du surlignage de ce qu'on peut faire arracher. */
-const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, roseau: 0.9, fleur: 0.4, luisant: 0.45, buisson: 0.6, plante: 0.35 };
+const HAUTEURS_NATURE: Record<Defrichable, number> = { arbre: 1.3, roseau: 0.9, fleur: 0.4, luisant: 0.45, chene: 1.7, buisson: 0.6, plante: 0.35 };
 
 /** Ce qu'on peut faire arracher sur une case : la souche-dépôt, ou un arbre, un buisson, une plante. */
 export function natureVisee(ile: Ile, c: Case): Defrichable | 'souche' | null {
@@ -264,7 +264,7 @@ export class ControleurInterface {
       } else if (e.type === 'commandeRefusee') {
         this.sons.jouer('refus');
         if (e.commande.type === 'recolter') this.recoltes.delete(e.commande.element);
-        this.magasin.annoncer(t(`refus.${e.raison}`));
+        this.magasin.annoncer(texteRefus(e.raison, this.contenu, e.commande.type === 'poserBatiment' ? e.commande.batiment : undefined));
       }
       else if (e.type === 'habitantArrive') {
         this.magasin.annoncer(t('message.habitantArrive'));

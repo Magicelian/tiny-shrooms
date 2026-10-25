@@ -23,7 +23,15 @@
 - 🏡 **Les habitants arrivent**, prennent les emplois et construisent tout seuls.
 - ⬆️ **Les huttes montent en gamme** (maison, puis manoir) quand leurs besoins sont satisfaits : nourriture, chaleur, eau, commerce.
 - 🌦️ **Les saisons passent** : la pluie, la neige et la nuit changent l'île et le rythme de la production.
-- 🌱 **Au bourg, on renaît** sur une nouvelle île, avec des pouvoirs qui rendent chaque partie plus rapide.
+- 🏝️ **Au bourg, une offrande au sanctuaire ouvre l'île suivante.** Cinq îles en tout, chacune avec son paysage
+  et son bâtiment phare :
+  - 🌲 **la forêt**, où tout commence ;
+  - 🐸 **le marais** et ses tourbières, pour la mousse ;
+  - 🌼 **la prairie** et ses ruches, qui font pousser les cueillettes ;
+  - 💎 **la grotte** et ses champignonnières, pour les spores ;
+  - 🌳 **la futaie**, ses vieux chênes et ses scieries au bord de l'eau, pour le bois.
+- 🌱 **Les îles déjà bâties continuent de vivre**, avec un stock commun, et chaque île ouverte rapporte des graines,
+  qui donnent des pouvoirs pour accélérer les suivantes.
 
 C'est un jeu **idle** et apaisant : on n'y perd jamais rien, et on y jette un œil quand on veut. La fenêtre fait
 320 × 320 pixels et reste au-dessus des autres.

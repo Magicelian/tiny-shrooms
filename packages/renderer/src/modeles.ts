@@ -371,6 +371,41 @@ function champignonniere(): Voxels {
   return v;
 }
 
+function scierie(): Voxels {
+  const v = new Voxels();
+  const ocre = COULEURS_BATIMENT.scierie;
+  // Plancher sous un auvent, un tronc sur l'établi face à la lame, une pile de planches.
+  v.boite(-5, 0, -5, 2, 0, 4, TEINTES.planche);
+  for (const [x, z] of [[-5, -5], [2, -5], [-5, 4], [2, 4]] as const) poteau(v, x, z, 1, 7);
+  for (let x = -6; x <= 3; x++) {
+    const h = 10 - Math.floor(Math.abs(x + 1.5) / 2);
+    v.boite(x, h, -6, x, h, 5, ocre);
+  }
+  v.peindre((_, __, z, c) => c === ocre && z % 3 === 0, TEINTES.boisFonce);
+  v.boite(-4, 1, -1, 0, 2, 0, TEINTES.boisClair);
+  buche(v, -5, 0, 3.5, -0.5, 1.2, TEINTES.boisFonce);
+  // Lame circulaire, dressée au bout de l'établi.
+  for (let x = 0; x <= 3; x++) for (let y = 2; y <= 6; y++) if (Math.hypot(x - 1.5, y - 4) <= 1.9) v.poser(x, y, -1, TEINTES.metal);
+  v.boite(-5, 1, 2, -1, 2, 4, TEINTES.planche);
+  v.peindre((x, y, z, c) => c === TEINTES.planche && y === 2 && x % 2 === 0, TEINTES.boisClair);
+  // Roue à aube sur le côté, qui trempe dans l'eau : jante, quatre rayons, huit aubes et l'axe.
+  for (let y = 0; y <= 11; y++) {
+    for (let z = -6; z <= 5; z++) {
+      const d = Math.hypot(y - 5.5, z + 0.5);
+      if (d <= 5.5 && d >= 4.5) v.poser(4, y, z, TEINTES.boisFonce);
+      else if (d < 4.5 && (Math.abs(y - 5.5) < 0.6 || Math.abs(z + 0.5) < 0.6)) v.poser(4, y, z, TEINTES.bois);
+    }
+  }
+  for (let k = 0; k < 8; k++) {
+    const a = (k * Math.PI) / 4 + Math.PI / 8;
+    const y = Math.round(5 + 5 * Math.sin(a));
+    const z = Math.round(-1 + 5 * Math.cos(a));
+    v.boite(3, y, z, 5, y, z, TEINTES.boisClair);
+  }
+  v.boite(3, 5, -1, 5, 6, 0, TEINTES.metal);
+  return v;
+}
+
 const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   cueillette,
   tasDeBois,
@@ -378,6 +413,7 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   tourbiere,
   ruche,
   champignonniere,
+  scierie,
   gardeManger,
   remise,
   sechoir,
@@ -444,10 +480,10 @@ export function modeleSouche(tailleCases: number): Modele {
 
 // ─── Décor et éléments ─────────────────────────────────────────────────────────
 
-export type Decor = 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'buisson' | 'caillou' | 'nenuphar';
+export type Decor = 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'chene' | 'buisson' | 'caillou' | 'nenuphar';
 let cacheDecor: Record<Decor, Modele> | null = null;
 
-/** Arbre, roseaux, fleurs, luisants, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
+/** Arbre, roseaux, fleurs, luisants, vieux chêne, buisson sauvage, rocher et nénuphar, posés en instances sur le terrain. */
 export function modelesDecor(): Record<Decor, Modele> {
   if (cacheDecor) return cacheDecor;
   const arbre = new Voxels();
@@ -491,11 +527,21 @@ export function modelesDecor(): Record<Decor, Modele> {
   // Touffe de champignons luisants de la grotte : jamais sous la neige, pour qu'ils brillent aussi l'hiver.
   const luisants = new Voxels();
   for (const [x, z, h] of [[-3, -2, 3], [0, 1, 5], [2, -3, 2], [-1, -4, 4], [3, 2, 3], [-4, 3, 2], [1, 4, 2]] as const) luisant(luisants, x, 0, z, h);
+  // Vieux chêne de la futaie : tronc épais aux racines saillantes, large couronne en trois touffes.
+  const chene = new Voxels();
+  chene.cylindre(C, C, 0, 7, 2.2, COULEURS.troncChene);
+  for (const [x, z] of [[-3, -1], [2, -1], [-1, -3], [-1, 2]] as const) chene.poser(x, 0, z, COULEURS.troncChene);
+  chene.boite(1, 7, -1, 3, 8, 0, COULEURS.troncChene);
+  chene.boule(C, 11, C, 6, 3.6, 6, COULEURS.feuillageChene);
+  chene.boule(2.5, 13, 1, 3.6, 2.8, 3.6, COULEURS.feuillageChene);
+  chene.boule(-3, 13.5, -2, 3.2, 2.6, 3.2, COULEURS.feuillageChene);
+  chene.peindre((x, y, z, c) => c === COULEURS.feuillageChene && (x * 5 + y * 3 + z * 7) % 6 === 0, COULEURS.feuillageCheneClair);
   cacheDecor = {
     arbre: arbre.modele(),
     roseau: roseau.modele(),
     fleur: fleur.modele(),
     luisant: luisants.modele(false),
+    chene: chene.modele(),
     buisson: buisson.modele(),
     caillou: caillou.modele(),
     nenuphar: nenuphar.modele(false),

@@ -49,6 +49,17 @@ export const contenu: Contenu = {
       exige: 'rocher',
       voisinage: [{ voisin: 'luisants', bonus: 0.25 }],
     },
+    // Le bâtiment phare de la futaie : une scierie à roue à aube, au bord de l'eau, qui débite bien plus de bois
+    // qu'un tas, mieux encore près des vieux chênes.
+    scierie: {
+      cout: { boisMort: 30, mousse: 15 },
+      constructionSecondes: 45,
+      production: { boisMort: 8 },
+      postes: 2,
+      biomes: ['futaie'],
+      exige: 'eau',
+      voisinage: [{ voisin: 'chenes', bonus: 0.25 }],
+    },
     gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 80 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },
     sechoir: {
@@ -86,11 +97,13 @@ export const contenu: Contenu = {
     roseau: { cout: { spores: 2 }, secondes: 10, gain: { mousse: 2 } },
     fleur: { cout: { spores: 2 }, secondes: 6, gain: { baies: 2 } },
     luisant: { cout: { spores: 2 }, secondes: 8, gain: { spores: 5 } },
+    // Un vieux chêne est long à abattre, mais il donne beaucoup de bois.
+    chene: { cout: { spores: 6 }, secondes: 40, gain: { boisMort: 15 } },
     buisson: { cout: { spores: 2 }, secondes: 10 },
     plante: { cout: { spores: 2 }, secondes: 6 },
   },
   paliers: [
-    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'ruche', 'champignonniere', 'gardeManger', 'remise', 'feuDeCamp'] },
+    { nom: 'hameau', population: 0, debloque: ['hutte', 'cueillette', 'tasDeBois', 'tapisDeMousse', 'tourbiere', 'ruche', 'champignonniere', 'scierie', 'gardeManger', 'remise', 'feuDeCamp'] },
     { nom: 'village', population: 15, debloque: ['sechoir', 'puits', 'atelier'] },
     { nom: 'bourg', population: 50, debloque: ['marche', 'sanctuaire'] },
     { nom: 'cite', population: 150, debloque: [] },
@@ -151,16 +164,16 @@ export const contenu: Contenu = {
     },
   },
   // Offrandes au sanctuaire : l'île i débloque l'île i + 1 (cinq îles) et exige surtout la ressource phare de
-  // l'île qu'elle ouvre (la mousse pour le marais, les baies séchées pour la prairie, les spores pour la grotte).
-  // Chacune prend 1 h 30 à 2 h après le bourg au joueur attentif (`archipel.test.ts`, `grotte.test.ts`) ; la dernière
-  // double, en attendant le biome de l'île 5.
+  // l'île qu'elle ouvre (la mousse pour le marais, les baies séchées pour la prairie, les spores pour la grotte, le bois
+  // mort pour la futaie). Chacune prend 1 h 30 à 2 h après le bourg au joueur attentif (`archipel.test.ts`,
+  // `iles-3-a-5.ts`).
   archipel: {
-    biomes: ['foret', 'marais', 'prairie', 'grotte'],
+    biomes: ['foret', 'marais', 'prairie', 'grotte', 'futaie'],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600 },
       { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000 },
-      { boisMort: 8000, mousse: 28000, baiesSechees: 4000, spores: 14400 },
+      { boisMort: 16000, mousse: 4000, baiesSechees: 2000, spores: 6000 },
     ],
   },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.

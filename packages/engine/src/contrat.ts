@@ -37,10 +37,10 @@ export interface Stock {
 
 // ─── Île ─────────────────────────────────────────────────────────────────────
 
-export type Terrain = 'vide' | 'herbe' | 'foret' | 'roseaux' | 'fleurs' | 'luisants' | 'buisson' | 'eau' | 'rocher';
+export type Terrain = 'vide' | 'herbe' | 'foret' | 'roseaux' | 'fleurs' | 'luisants' | 'chenes' | 'buisson' | 'eau' | 'rocher';
 
 /** Chaque île a le sien : terrain, éléments et bâtiments propres. */
-export type Biome = 'foret' | 'marais' | 'prairie' | 'grotte';
+export type Biome = 'foret' | 'marais' | 'prairie' | 'grotte' | 'futaie';
 
 // ─── Éléments naturels ───────────────────────────────────────────────────────
 
@@ -50,9 +50,9 @@ export type TypeElement = (typeof TYPES_ELEMENT)[number];
 
 /**
  * Ce qu'on peut faire arracher : un arbre de la forêt, des roseaux du marais, des fleurs de la prairie, des luisants
- * de la grotte, un buisson sauvage, une plante semée sur l'herbe.
+ * de la grotte, un vieux chêne de la futaie, un buisson sauvage, une plante semée sur l'herbe.
  */
-export type Defrichable = 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'buisson' | 'plante';
+export type Defrichable = 'arbre' | 'roseau' | 'fleur' | 'luisant' | 'chene' | 'buisson' | 'plante';
 
 /** Case en cours de défrichage. */
 export interface Defrichage {
@@ -98,6 +98,7 @@ export const TYPES_BATIMENT = [
   'tourbiere',
   'ruche',
   'champignonniere',
+  'scierie',
   'gardeManger',
   'remise',
   'sechoir',

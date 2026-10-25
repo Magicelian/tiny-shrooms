@@ -9,6 +9,7 @@ const ELEMENTS_EPARS: Record<Biome, Partial<Record<TypeElement, number>>> = {
   marais: { boisMort: 1, mousse: 6 },
   prairie: { boisMort: 2, mousse: 1 },
   grotte: { boisMort: 3, mousse: 3 },
+  futaie: { boisMort: 5, mousse: 3 },
 };
 
 /**
@@ -16,13 +17,14 @@ const ELEMENTS_EPARS: Record<Biome, Partial<Record<TypeElement, number>>> = {
  * mare. Marais : bordé de roseaux (quelques arbres, peu de buissons), trois mares cernées de roseaux.
  * Prairie : bordée de fleurs et de buissons sauvages, presque sans arbres, une mare.
  * Grotte : bordée de rochers et de champignons luisants, rochers épars, très peu d'arbres, une mare.
+ * Futaie : bordée de vieux chênes et d'arbres, des chênes épars, deux mares (les scieries tournent au bord de l'eau).
  */
 export function genererIle(taille: number, graine: number, biome: Biome = 'foret'): Ile {
   const hasard = creerHasard(graine);
   const milieu = taille / 2;
   const rayon = taille * 0.47;
   const angleMare = hasard() * Math.PI * 2;
-  const mares = biome === 'marais' ? 3 : 1;
+  const mares = biome === 'marais' ? 3 : biome === 'futaie' ? 2 : 1;
   const centresMares = Array.from({ length: mares }, (_, i) => {
     const angle = angleMare + (i * Math.PI * 2) / mares;
     return { x: milieu + Math.cos(angle) * taille * 0.22, y: milieu + Math.sin(angle) * taille * 0.22 };
@@ -43,6 +45,7 @@ export function genererIle(taille: number, graine: number, biome: Biome = 'foret
       else if (biome === 'marais') t = terrainMarais(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (biome === 'prairie') t = terrainPrairie(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (biome === 'grotte') t = terrainGrotte(d > rayon - 1.4 + r * 0.8, versMare, r);
+      else if (biome === 'futaie') t = terrainFutaie(d > rayon - 1.4 + r * 0.8, versMare, r);
       else if (d > rayon - 1.4 + r * 0.8) t = r < 0.8 ? 'foret' : 'buisson';
       else if (versMare < 1.3) t = 'eau';
       else if (r < 0.05) t = 'rocher';
@@ -82,6 +85,17 @@ function terrainGrotte(lisiere: boolean, versMare: number, r: number): Terrain {
   if (r < 0.07) return 'rocher';
   if (r < 0.15) return 'buisson';
   if (r < 0.24) return 'luisants';
+  return 'herbe';
+}
+
+/** Case de la futaie hors des abords de la souche : `lisiere` vaut vrai sur le pourtour de l'île. */
+function terrainFutaie(lisiere: boolean, versMare: number, r: number): Terrain {
+  if (lisiere) return r < 0.45 ? 'chenes' : r < 0.85 ? 'foret' : 'buisson';
+  if (versMare < 1.3) return 'eau';
+  if (r < 0.02) return 'rocher';
+  if (r < 0.06) return 'buisson';
+  if (r < 0.11) return 'chenes';
+  if (r < 0.14) return 'foret';
   return 'herbe';
 }
 
