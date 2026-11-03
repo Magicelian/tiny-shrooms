@@ -124,7 +124,8 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
       )}
       {postes > 0 && <p><strong>{t(enTravaux ? 'construction.batisseurs' : 'construction.emplois', { pourvus, postes })}</strong></p>}
       {!enChantier && def.logement && <Logement controleur={controleur} instantane={instantane} batiment={batiment} />}
-      {!def.logement && effets(contenu, batiment.type).map((ligne) => (
+      {/* Le sanctuaire achevé montre son offrande : sa description ne servait qu'au choix de la construction. */}
+      {!def.logement && !(batiment.type === 'sanctuaire' && !enChantier) && effets(contenu, batiment.type).map((ligne) => (
         <p key={ligne}>{ligne}</p>
       ))}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
@@ -362,7 +363,6 @@ function Sanctuaire({ controleur, instantane }: Props) {
   const gardees = offrande.objectif.baiesSechees ? (offrande.reserve.baiesSechees ?? 0) : 0;
   return (
     <>
-      <p>{t('offrande.objectif', { numero: ile + 2 })}</p>
       <ul class="offrande">
         {ressources.map((r) => (
           <li key={r}>
@@ -374,11 +374,15 @@ function Sanctuaire({ controleur, instantane }: Props) {
           </li>
         ))}
       </ul>
-      <p class="discret">{t('offrande.graines', { graines: offrande.graines })}</p>
       {gardees > 0 && <p class="discret">{t('offrande.reserve', { quantite: nombre(gardees) })}</p>}
-      <button class="bouton large valider" disabled={!possible} onClick={() => controleur.envoyer({ type: 'offrir' })}>
-        {t('offrande.deposer')}
-      </button>
+      <div class="offrir">
+        <span class="titre-ligne">
+          <Icone nom="graine" />+{nombre(offrande.graines)}
+        </span>
+        <button class="bouton valider" disabled={!possible} onClick={() => controleur.envoyer({ type: 'offrir' })}>
+          {t('offrande.deposer', { numero: ile + 2 })}
+        </button>
+      </div>
     </>
   );
 }

@@ -133,10 +133,8 @@ export const en: Record<keyof typeof fr, string> = {
   'amelioration.travaux': 'Work: {pourcent}%',
 
   // Renaissance
-  'offrande.objectif': 'Offering to discover island {numero}:',
-  'offrande.graines': 'Will bring {graines} prestige seeds (based on this island’s population record)',
-  'offrande.deposer': 'Give from stock',
-  'offrande.reserve': '{quantite} dried berries stay in the pantry to last the winter',
+  'offrande.deposer': 'Offer for island {numero}',
+  'offrande.reserve': '{quantite} dried berries kept for winter',
   'offrande.faite': 'This island has already opened the way to the next one.',
   'offrande.archipel': 'The whole archipelago is discovered!',
   'archipel.ile': 'Island {numero}',

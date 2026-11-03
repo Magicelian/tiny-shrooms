@@ -148,6 +148,8 @@
 /* Habitants et ressources : rangée de petites planches en bas à gauche */
 .rangee {
   position: absolute;
+  /* Au-dessus des messages : l'infobulle d'une ressource survolée passe devant eux. */
+  z-index: 2;
   left: 4px;
   bottom: 4px;
   margin: 0;
@@ -753,6 +755,18 @@
 .offrande .discret {
   min-width: 64px;
   text-align: right;
+}
+/* Graines gagnées et bouton d'offrande sur une seule ligne, juste sous les jauges. */
+.offrir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.offrir .bouton {
+  flex: 1;
 }
 
 /* Messages et bandeau dans le même habit */
