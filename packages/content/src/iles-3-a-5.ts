@@ -138,7 +138,9 @@ export function ilesTroisACinq(graine: number): void {
   );
   expect(futaie.ile.biome).toBe('futaie');
   expect(ile5 - bourg4).toBeGreaterThan(60);
-  expect(ile5 - bourg4).toBeLessThan(150);
+  // Le joueur scripté dépose son bois par paquets, quand le stock frôle le plafond : selon la graine, la dernière
+  // offrande se remplit en 1 h 30 à 2 h 30 sans que son montant y change grand-chose.
+  expect(ile5 - bourg4).toBeLessThan(165);
   // Comme l'île 1 (~2 h 40) : ses prix multipliés compensent le stock commun déjà rempli.
   expect(bourg5 - ile5).toBeGreaterThan(120);
   expect(bourg5 - ile5).toBeLessThan(210);

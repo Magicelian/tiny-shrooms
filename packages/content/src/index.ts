@@ -201,7 +201,7 @@ export const contenu: Contenu = {
     debloque: [[], ['poele'], ['confiserie'], ['lanterne'], ['vernisseur']],
     // Le stock commun arrive plein sur chaque nouvelle île : ses prix sont multipliés pour qu'elle atteigne le bourg au
     // rythme de la première (~2 h 40 au joueur attentif ; réglé par simulation le 05/11/2026, demande de Celian).
-    prixParIle: [1, 6, 12, 19, 34],
+    prixParIle: [1, 6, 12, 19, 28],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600, tourbe: 300 },
