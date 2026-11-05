@@ -408,7 +408,8 @@ function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat
   const def = contenu.batiments[b.type];
   const cadence =
     cadenceTravail(etat, contenu, centreCase(b), nourri) * bonusProduction(etat, contenu);
-  // Quantités de ce pas, à plein régime ; `part` les réduit si la réserve déborde ou si le stock manque.
+  // Quantités de ce pas, à plein régime ; un stock qui manque réduit tout (`part`), une réserve pleine ne bloque que
+  // sa ressource : la tourbière continue de donner sa tourbe quand la mousse déborde.
   const produit: Partial<Record<Ressource, number>> = {};
   for (const r of cles(def.production ?? {})) {
     produit[r] = (def.production![r]! * multiplicateur(b) * facteurSaison(etat, contenu, r) * cadence) / PAS_PAR_MINUTE;
@@ -417,17 +418,17 @@ function recolter(etat: Etat, contenu: Contenu, h: HabitantEtat, b: BatimentEtat
   for (const r of cles(def.consommation ?? {})) consomme[r] = (def.consommation![r]! * cadence) / PAS_PAR_MINUTE;
 
   let part = 1;
-  for (const r of cles(produit)) {
-    if (produit[r]! > 0) part = Math.min(part, Math.max(0, contenu.habitants.reserveMax - (b.reserve[r] ?? 0)) / produit[r]!);
-  }
   for (const r of cles(consomme)) part = Math.min(part, etat.partie.stocks[r] / consomme[r]!);
-  if (!(part > 0)) {
+  // Part de chaque production qui tient encore dans la réserve ; on ne consomme que pour la plus avancée.
+  const place = (r: Ressource) => (produit[r]! > 0 ? Math.min(1, Math.max(0, contenu.habitants.reserveMax - (b.reserve[r] ?? 0)) / produit[r]!) : 0);
+  const utile = Math.max(0, ...cles(produit).map(place));
+  if (!(part > 0) || !(utile > 0)) {
     h.activite = 'attend';
     h.mission = null;
     return;
   }
-  for (const r of cles(consomme)) etat.partie.stocks[r] -= consomme[r]! * part;
-  for (const r of cles(produit)) b.reserve[r] = (b.reserve[r] ?? 0) + produit[r]! * part;
+  for (const r of cles(consomme)) etat.partie.stocks[r] -= consomme[r]! * part * utile;
+  for (const r of cles(produit)) b.reserve[r] = (b.reserve[r] ?? 0) + produit[r]! * part * place(r);
   h.activite = 'recolte';
 }
 

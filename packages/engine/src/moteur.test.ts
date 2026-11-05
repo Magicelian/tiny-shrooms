@@ -1388,6 +1388,20 @@ describe('Bâtiments des îles', () => {
     expect(recolte(true)).toBeGreaterThan(recolte(false) + 15);
   });
 
+  it('un bâtiment à deux productions continue la seconde quand la première déborde', () => {
+    const contenu = contenuDeTest({ tourbiere: { production: { boisMort: 6, tourbe: 3 } } }, { reserveMax: 10 }, {
+      // Bois mort au plafond : la réserve de bois de la tourbière se remplit et ne se vide plus.
+      plafondsDeBase: { ...contenuDeTest().plafondsDeBase, boisMort: 100 },
+    });
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('tourbiere', caseLibre(moteur)));
+    moteur.simuler(6 * PAS_PAR_MINUTE);
+    const { partie, batiments, habitants } = moteur.etatCourant;
+    const enChemin = habitants.reduce((s, h) => s + (h.charge?.ressource === 'tourbe' ? h.charge.quantite : 0), 0);
+    expect(batiments[0]!.reserve.boisMort).toBeCloseTo(10);
+    expect(partie.stocks.tourbe + (batiments[0]!.reserve.tourbe ?? 0) + enChemin).toBeGreaterThan(10);
+  });
+
   it('le vernisseur ajoute son bonus aux bâtiments de production qui le touchent', () => {
     const contenu = contenuDeTest({ tasDeBois: { production: { boisMort: 6 } }, vernisseur: { vernit: 0.25 } });
     const moteur = new Moteur(contenu, 0);
