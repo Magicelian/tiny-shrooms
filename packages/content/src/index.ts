@@ -206,7 +206,7 @@ export const contenu: Contenu = {
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600, tourbe: 300 },
       { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000, miel: 300 },
-      { boisMort: 9000, mousse: 4000, baiesSechees: 2000, spores: 6000, cristaux: 200 },
+      { boisMort: 8500, mousse: 4000, baiesSechees: 2000, spores: 6000, cristaux: 200 },
     ],
   },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.
