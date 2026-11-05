@@ -5,6 +5,7 @@ export const fr = {
   'ressource.boisMort': 'Bois mort',
   'ressource.mousse': 'Mousse',
   'ressource.spores': 'Spores',
+  'ressource.tourbe': 'Tourbe',
   'ressource.parMinute': '{valeur}/min',
   'ressource.plafond': '{quantite} / {plafond}',
 
@@ -26,6 +27,7 @@ export const fr = {
   'batiment.marche': 'Place du marché',
   'batiment.sanctuaire': 'Sanctuaire des spores',
   'batiment.kiosque': 'Kiosque à lanternes',
+  'batiment.poele': 'Poêle à tourbe',
 
   // Rangs des logements
   'rang.1': 'Hutte-chapeau',
@@ -35,6 +37,8 @@ export const fr = {
 
   'effet.production': 'Produit {liste} par habitant',
   'effet.consommation': 'Consomme {liste}',
+  'effet.combustible': 'Brûle {liste}',
+  'effet.eteint': 'Éteint : plus rien à brûler',
   'effet.logement': 'Loge {nombre} habitants, plus une fois agrandi',
   'effet.portee': '{besoin} à {portee} cases autour',
   'effet.tenu': 'Il faut un habitant pour le tenir',

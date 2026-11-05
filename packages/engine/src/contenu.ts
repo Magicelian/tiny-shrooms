@@ -49,6 +49,8 @@ export interface DefinitionBatiment {
    * sur un même bâtiment.
    */
   pollinise?: { cibles: TypeBatiment[]; bonus: number };
+  /** Brûlé dans les stocks par minute une fois achevé (poêle) ; faute de quoi le bâtiment s'éteint. */
+  combustible?: Quantites;
 }
 
 /** Récolte à la main d'un type d'élément naturel. */
@@ -150,8 +152,8 @@ export interface DefinitionRang {
 
 export interface ContenuLogement {
   rangs: DefinitionRang[];
-  /** Bâtiment dont la portée satisfait chaque besoin de proximité. */
-  sources: Partial<Record<Besoin, TypeBatiment>>;
+  /** Bâtiment (ou bâtiments) qui satisfait un besoin de proximité, chacun à sa portée. */
+  sources: Partial<Record<Besoin, TypeBatiment | readonly TypeBatiment[]>>;
 }
 
 export interface DefinitionPalier {
@@ -206,8 +208,9 @@ export interface Contenu {
    * l'archipel compte donc une île de plus que d'offrandes. `biomes[i]` : biome de l'île i (forêt au-delà).
    * `prixParIle[i]` : multiplicateur des prix de l'île i (constructions, montées en gamme, atelier), le dernier au-delà ;
    * le stock commun est déjà rempli par les îles d'avant, il faut que chaque île nouvelle se paie comme la première.
+   * `debloque[i]` : bâtiments offerts sur toutes les îles dès que l'île i est découverte (ceux de sa ressource).
    */
-  archipel: { offrandes: Quantites[]; biomes: Biome[]; prixParIle?: number[] };
+  archipel: { offrandes: Quantites[]; biomes: Biome[]; prixParIle?: number[]; debloque?: TypeBatiment[][] };
   /** Hausse du prix d'un bâtiment par exemplaire du même type déjà posé (0,06 → +6 % composés). */
   hausseParExemplaire: number;
   /** Part du coût rendue à la démolition, entre 0 et 1. */

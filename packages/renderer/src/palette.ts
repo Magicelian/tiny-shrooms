@@ -51,6 +51,7 @@ export const COULEURS_BATIMENT: Record<TypeBatiment, number> = {
   marche: 0xd9a441,
   sanctuaire: 0xb58fd6,
   kiosque: 0x3fae9a,
+  poele: 0x8a4b32,
 };
 
 export const COULEURS_SURFACE: Record<Exclude<Terrain, 'vide'>, number> = {

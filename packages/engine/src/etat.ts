@@ -101,7 +101,7 @@ export function creerPartie(contenu: Contenu, graine = 1, prestige: Prestige = p
     pas: 0,
     graine,
     stocks,
-    arrivages: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
+    arrivages: quantitesNulles(),
     prestige,
     reglages: {
       langue: 'fr',
@@ -116,6 +116,19 @@ export function creerPartie(contenu: Contenu, graine = 1, prestige: Prestige = p
   };
   ajouterIle(partie, contenu, graine);
   return partie;
+}
+
+/** Une quantité nulle de chaque ressource. */
+export function quantitesNulles(): Record<Ressource, number> {
+  return Object.fromEntries(RESSOURCES.map((r) => [r, 0])) as Record<Ressource, number>;
+}
+
+/** Offre à toutes les îles les bâtiments des îles déjà découvertes (`Contenu.archipel.debloque`). */
+export function debloquerArchipel(partie: Partie, contenu: Contenu): void {
+  const types = (contenu.archipel.debloque ?? []).slice(0, partie.iles.length).flat();
+  for (const ile of partie.iles) {
+    for (const type of types) if (!ile.batimentsDebloques.includes(type)) ile.batimentsDebloques.push(type);
+  }
 }
 
 /** Première île d'une partie neuve. */
@@ -151,6 +164,7 @@ export function ajouterIle(partie: Partie, contenu: Contenu, graine = graineIle(
     offrande: {},
   };
   partie.iles.push(etat);
+  debloquerArchipel(partie, contenu);
   for (let i = 0; i < contenu.habitants.auDepart + effets.habitantsDeDepart; i++) ajouterHabitant(etat);
   etat.populationMax = etat.habitants.length;
   return etat;

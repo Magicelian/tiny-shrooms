@@ -2,7 +2,7 @@
 // Le temps réel est toujours passé en paramètre, pour rester testable.
 import type { Evenement, MessageDepuisMoteur, MessageVersMoteur } from './contrat';
 import type { Contenu } from './contenu';
-import { creerPartie, type Etat, type Partie } from './etat';
+import { creerPartie, debloquerArchipel, type Etat, type Partie } from './etat';
 import { casesLibres } from './grille';
 import { Horloge } from './horloge';
 import { chargerPremiereValide, serialiser } from './sauvegarde';
@@ -39,6 +39,8 @@ export class Moteur {
       case 'demarrer': {
         const reprise = chargerPremiereValide(message.sauvegardes);
         this.partie = reprise && 'partie' in reprise ? reprise.partie : creerPartie(this.contenu);
+        // Une partie d'avant les ressources d'île reçoit les bâtiments des îles qu'elle a déjà découvertes.
+        debloquerArchipel(this.partie, this.contenu);
         this.evenements = [];
         // Le temps passé jeu fermé ne compte pas : l'horloge repart d'ici.
         this.horloge.reveil(maintenantMs);

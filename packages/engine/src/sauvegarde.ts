@@ -1,6 +1,7 @@
 // Format du fichier de sauvegarde : un numéro de version et la partie complète (champ `etat`, nom d'origine).
 // Aucun horodatage : le temps passé jeu fermé ne rapporte rien.
 import type { Case, Ile } from './contrat';
+import { RESSOURCES } from './contrat';
 import type { Etat, Partie } from './etat';
 import { placerElements } from './ile';
 import { prestigeNeuf } from './prestige';
@@ -113,6 +114,11 @@ export function charger(texte: string): Partie {
   }
   verifier(etat as Record<string, unknown>);
   const partie = etat as unknown as Partie;
+  // Ressource ajoutée depuis (tourbe…) : elle part de zéro.
+  for (const r of RESSOURCES) {
+    partie.stocks[r] ??= 0;
+    partie.arrivages[r] ??= 0;
+  }
   for (const ile of partie.iles) ile.partie = partie;
   return partie;
 }

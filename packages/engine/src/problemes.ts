@@ -1,23 +1,25 @@
 import type { Contenu } from './contenu';
+import { sourcesDe } from './logements';
 import type { Batiment, Habitant, Instantane, Probleme, Saison, TypeBatiment } from './contrat';
 
 /** Ce qu'il faut savoir d'une île pour y repérer les problèmes : une île du moteur comme un instantané conviennent. */
 export interface VueProblemes {
   faim?: boolean;
-  batiments: readonly Pick<Batiment, 'type' | 'chantier'>[];
+  batiments: readonly Pick<Batiment, 'type' | 'chantier' | 'eteint'>[];
   habitants: readonly Pick<Habitant, 'bienEtre'>[];
   batimentsDebloques: readonly TypeBatiment[];
 }
 
 /**
  * Problèmes en cours sur une île, dans un ordre stable. `froid` : l'hiver est là, on sait bâtir un feu de camp
- * mais aucun n'est achevé ; les habitants travaillent alors au ralenti partout. `malheur` : le bien-être moyen
+ * mais aucun feu (feu de camp, poêle allumé) n'est achevé ; les habitants travaillent alors au ralenti partout. `malheur` : le bien-être moyen
  * est sous le seuil de départ, des habitants s'en vont.
  */
 export function problemesDe(ile: VueProblemes, saison: Saison, contenu: Contenu): Probleme[] {
   const liste: Probleme[] = [];
   if (ile.faim) liste.push('faim');
-  const auChaud = ile.batiments.some((b) => b.type === 'feuDeCamp' && b.chantier === null);
+  const chaleur = sourcesDe(contenu, 'chaleur');
+  const auChaud = ile.batiments.some((b) => chaleur.includes(b.type) && b.chantier === null && !b.eteint);
   if (saison === 'hiver' && ile.habitants.length > 0 && ile.batimentsDebloques.includes('feuDeCamp') && !auChaud) {
     liste.push('froid');
   }

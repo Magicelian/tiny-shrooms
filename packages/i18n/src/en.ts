@@ -8,6 +8,7 @@ export const en: Record<keyof typeof fr, string> = {
   'ressource.boisMort': 'Deadwood',
   'ressource.mousse': 'Moss',
   'ressource.spores': 'Spores',
+  'ressource.tourbe': 'Peat',
   'ressource.parMinute': '{valeur}/min',
   'ressource.plafond': '{quantite} / {plafond}',
 
@@ -29,6 +30,7 @@ export const en: Record<keyof typeof fr, string> = {
   'batiment.marche': 'Market square',
   'batiment.sanctuaire': 'Spore shrine',
   'batiment.kiosque': 'Lantern bandstand',
+  'batiment.poele': 'Peat stove',
 
   // Rangs des logements
   'rang.1': 'Cap hut',
@@ -38,6 +40,8 @@ export const en: Record<keyof typeof fr, string> = {
 
   'effet.production': 'Makes {liste} per villager',
   'effet.consommation': 'Uses {liste}',
+  'effet.combustible': 'Burns {liste}',
+  'effet.eteint': 'Out: nothing left to burn',
   'effet.logement': 'Houses {nombre} villagers, more once upgraded',
   'effet.portee': '{besoin} within {portee} tiles',
   'effet.tenu': 'Needs a villager to run it',

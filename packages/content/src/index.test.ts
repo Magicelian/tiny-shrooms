@@ -7,7 +7,7 @@ import { contenu as contenuV1 } from './index';
 // Village déjà lancé (stock et habitants de l'ancien départ) : la partie neuve est testée dans recolte.test.ts.
 const contenu = {
   ...contenuV1,
-  stocksDeDepart: { baies: 20, baiesSechees: 0, boisMort: 60, mousse: 10, spores: 0 },
+  stocksDeDepart: { baies: 20, baiesSechees: 0, boisMort: 60, mousse: 10, spores: 0, tourbe: 0 },
   habitants: { ...contenuV1.habitants, auDepart: 2, logementDeBase: 2 },
 };
 

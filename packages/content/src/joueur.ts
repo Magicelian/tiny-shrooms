@@ -12,6 +12,7 @@ import {
   PAS_PAR_MINUTE,
   RESSOURCES,
   refusMontee,
+  sourcesDe,
   terrainEn,
   terrainManquant,
   type Besoin,
@@ -115,7 +116,8 @@ export class Joueur {
 
   /** Service qui couvre le plus de logements auxquels ce besoin manque. */
   private service(besoin: Besoin): boolean {
-    const type = contenu.logement.sources[besoin]!;
+    // La première source du besoin : le feu de camp pour la chaleur, sans combustible à fournir.
+    const type = sourcesDe(contenu, besoin)[0]!;
     const manquants = this.etat.batiments.filter((b) => b.chantier === null && b.besoins[besoin] === false);
     if (manquants.length === 0 || this.chantiers(type) > 0) return false;
     const couverts = (c: Case) => manquants.filter((m) => aPortee(contenu, { type, case: c, chantier: null }, m.case)).length;

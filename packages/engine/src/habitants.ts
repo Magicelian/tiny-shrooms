@@ -9,7 +9,7 @@ import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './sai
 import { bonusProduction, effetAmelioration } from './ameliorations';
 import { etapeVers, preparerGrille } from './chemins';
 import { avancerDefrichage, memeCase } from './defrichage';
-import { besoinsManquants, evaluerBesoins, majPollinisation, placesLogement, placesSouche, rangLogement } from './logements';
+import { alimenterFoyers, besoinsManquants, evaluerBesoins, majPollinisation, placesLogement, placesSouche, rangLogement } from './logements';
 import { effetsPrestige } from './prestige';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -53,6 +53,7 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   etat.faim = etat.habitants.length > 0 && !nourri;
   preparerGrille(etat);
   const tenus = emploisTenus(etat);
+  alimenterFoyers(etat, contenu);
   evaluerBesoins(etat, contenu, nourri, tenus);
   majPollinisation(etat, contenu, tenus);
   const { loges, capacite } = logements(etat, contenu);
@@ -347,8 +348,8 @@ function reservePleine(b: BatimentEtat, production: Partial<Record<Ressource, nu
 function executer(etat: Etat, contenu: Contenu, h: HabitantEtat, nourri: boolean, evenements: Evenement[]): void {
   const m = h.mission;
   if (!m) {
-    // Sans rien à faire en hiver, on va se réchauffer au feu de camp.
-    const feu = estLHiver(etat, contenu) ? feuLePlusProche(etat, h.position) : null;
+    // Sans rien à faire en hiver, on va se réchauffer au feu le plus proche.
+    const feu = estLHiver(etat, contenu) ? feuLePlusProche(etat, contenu, h.position) : null;
     if (!feu) h.activite = 'attend';
     else if (marcherVers(etat, h, feu, 0.8 + (h.id % 3) * 0.15, contenu)) h.activite = 'seRechauffe';
     return;

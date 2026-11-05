@@ -1,6 +1,6 @@
 // Logements : places, besoins par rang, montée en gamme et paliers de population.
 // Les fonctions pures ne lisent que des types du contrat : le frontend s'en sert pour les bulles et l'aperçu.
-import type { Batiment, Besoin, BonusPrestige, Case, Evenement, Ile, Prestige, Quantites, RaisonRefus, Ressource } from './contrat';
+import type { Batiment, Besoin, BonusPrestige, Case, Evenement, Ile, Prestige, Quantites, RaisonRefus, Ressource, TypeBatiment } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu, DefinitionRang } from './contenu';
 import type { BatimentEtat, Etat } from './etat';
@@ -103,12 +103,27 @@ function consommer(etat: Etat, consommation: Quantites): boolean {
   return servi;
 }
 
+/** Bâtiments qui satisfont un besoin de proximité (le feu de camp et le poêle pour la chaleur). */
+export function sourcesDe(contenu: Contenu, besoin: Besoin): readonly TypeBatiment[] {
+  const sources = contenu.logement.sources[besoin];
+  return sources === undefined ? [] : typeof sources === 'string' ? [sources] : sources;
+}
+
+/** Les bâtiments à combustible achevés brûlent leur part de ce pas ; à court, ils s'éteignent. */
+export function alimenterFoyers(etat: Etat, contenu: Contenu): void {
+  for (const b of etat.batiments) {
+    const combustible = contenu.batiments[b.type].combustible;
+    if (!combustible || b.chantier !== null) continue;
+    if (consommer(etat, combustible)) delete b.eteint;
+    else b.eteint = true;
+  }
+}
+
 function sourceAPortee(etat: Etat, contenu: Contenu, besoin: Besoin, logement: BatimentEtat, occupes: ReadonlySet<number>): boolean {
-  const type = contenu.logement.sources[besoin];
-  if (!type) return false;
-  // Un bâtiment qui a des emplois (marché) ne rend service que s'il est tenu.
-  const tenu = (b: BatimentEtat) => !contenu.batiments[b.type].postes || occupes.has(b.id);
-  return etat.batiments.some((b) => b.type === type && b.chantier === null && aPortee(contenu, b, logement.case) && tenu(b));
+  const types = sourcesDe(contenu, besoin);
+  // Un bâtiment qui a des emplois (marché) ne rend service que s'il est tenu ; un poêle, que s'il est allumé.
+  const actif = (b: BatimentEtat) => (!contenu.batiments[b.type].postes || occupes.has(b.id)) && !b.eteint;
+  return etat.batiments.some((b) => types.includes(b.type) && b.chantier === null && aPortee(contenu, b, logement.case) && actif(b));
 }
 
 /**

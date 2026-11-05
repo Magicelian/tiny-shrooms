@@ -23,15 +23,15 @@ function contenuDeTest(
   for (const t of TYPES_BATIMENT) defs[t] = { cout: {}, constructionSecondes: 0, ...batiments[t] };
   return {
     ile: { taille: 12 },
-    stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores: 0 },
-    plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000 },
+    stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores: 0, tourbe: 0 },
+    plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000, tourbe: 1000 },
     batiments: defs,
     logement: {
       rangs: [
         { places: 2, besoins: ['nourriture'], palier: 0, sporesParMinute: 0 },
         { places: 4, besoins: ['nourriture', 'eau'], cout: { boisMort: 10 }, palier: 1, sporesParMinute: 0 },
       ],
-      sources: { eau: 'puits' },
+      sources: { eau: 'puits', chaleur: ['feuDeCamp', 'poele'] },
     },
     souche: { coutRetrait: { spores: 0 }, retraitSecondes: 10 },
     defrichage: {
@@ -495,6 +495,44 @@ describe('Saisons et météo', () => {
     expect(recolte(HIVER, true) / automne).toBeCloseTo(1, 1);
   });
 
+  it('le poêle chauffe plus loin tant qu’il a de la tourbe à brûler, puis s’éteint', () => {
+    const contenu = contenuDeTest(
+      { tasDeBois: { production: { boisMort: 6 } }, poele: { portee: 4, combustible: { tourbe: 6 } } },
+      { reserveMax: 1000 },
+      { saisons: { ...saisonsNeutres, travailAuFroid: 0.5 } },
+    );
+    const recolte = (tourbe: number) => {
+      const moteur = moteurAu(contenu, HIVER);
+      moteur.etatCourant.partie.stocks.tourbe = tourbe;
+      const tas = caseLibre(moteur);
+      commander(moteur, poser('tasDeBois', tas));
+      // À 3 ou 4 cases du tas : hors de portée d'un feu de camp, à portée du poêle.
+      const loin = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) >= 3 && Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) <= 4);
+      commander(moteur, poser('poele', loin!));
+      const avant = moteur.etatCourant.partie.stocks.boisMort;
+      moteur.simuler(2 * MIN);
+      const { partie: { stocks }, batiments, habitants } = moteur.etatCourant;
+      const enChemin = habitants.reduce((s, h) => s + (h.charge?.quantite ?? 0), 0);
+      return { bois: stocks.boisMort - avant + (batiments[0]!.reserve.boisMort ?? 0) + enChemin, poele: batiments[1]!, tourbe: stocks.tourbe };
+    };
+    const allume = recolte(100);
+    const eteint = recolte(0);
+    expect(allume.poele.eteint).toBeUndefined();
+    // Deux minutes à 6 tourbes par minute.
+    expect(allume.tourbe).toBeCloseTo(88, 0);
+    expect(eteint.poele.eteint).toBe(true);
+    expect(eteint.bois / allume.bois).toBeCloseTo(0.5, 1);
+  });
+
+  it('offre le poêle à toutes les îles dès que le marais est découvert', () => {
+    const contenu = contenuDeTest({}, {}, { archipel: { offrandes: [{}, {}], biomes: ['foret', 'marais'], debloque: [[], ['poele']] } });
+    contenu.paliers[0]!.debloque = contenu.paliers[0]!.debloque.filter((t) => t !== 'poele');
+    const partie = creerPartie(contenu);
+    expect(partie.iles[0]!.batimentsDebloques).not.toContain('poele');
+    ajouterIle(partie, contenu);
+    expect(partie.iles.map((ile) => ile.batimentsDebloques.includes('poele'))).toEqual([true, true]);
+  });
+
   it('va se réchauffer au feu quand il n’a rien à faire en hiver', () => {
     const moteur = moteurAu(contenuDeTest(), HIVER);
     commander(moteur, poser('feuDeCamp', caseLibre(moteur)));
@@ -596,7 +634,7 @@ describe('Récolte à la main', () => {
   });
 
   it('ne donne que ce qui tient dans le stock', () => {
-    const moteur = new Moteur(contenuDeTest({}, {}, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 101, mousse: 1000, spores: 1000 } }), 0);
+    const moteur = new Moteur(contenuDeTest({}, {}, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 101, mousse: 1000, spores: 1000, tourbe: 1000 } }), 0);
     const element = premier(moteur, 'boisMort');
     expect(commander(moteur, { type: 'recolter', element })).toMatchObject([{ quantite: 1 }]);
     moteur.simuler(PAS_PAR_MINUTE / 6);

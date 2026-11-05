@@ -4,7 +4,10 @@ import type { Batiment, Saison } from './contrat';
 import { problemes, problemesDe, type VueProblemes } from './problemes';
 
 /** Juste ce que lit `problemesDe`. */
-const contenu = { habitants: { depart: { seuil: 0.5, delaiSecondes: 90, minimum: 1 } } } as unknown as Contenu;
+const contenu = {
+  habitants: { depart: { seuil: 0.5, delaiSecondes: 90, minimum: 1 } },
+  logement: { sources: { chaleur: 'feuDeCamp' } },
+} as unknown as Contenu;
 
 function village(partiel: { faim?: boolean; saison?: Saison; feux?: (number | null)[]; debloque?: boolean; bienEtre?: number[] }): [VueProblemes, Saison] {
   const ile: VueProblemes = {

@@ -25,7 +25,7 @@ export function Interface({ controleur }: Props) {
   if (etat.menu !== null) return <Accueil controleur={controleur} />;
 
   return (
-    <div class={`interface ${etat.focus ? 'active' : ''}`}>
+    <div class={`interface ${etat.focus ? 'active' : ''} ${ressourcesDIle(instantane).length > 0 ? 'deux-rangees' : ''}`}>
       <Ecriteau instantane={instantane} />
       <Population controleur={controleur} instantane={instantane} />
       <Archipel controleur={controleur} instantane={instantane} />
@@ -262,9 +262,28 @@ function Rangee({ instantane }: { instantane: Instantane }) {
   const { stocks } = instantane;
   const visibles: Ressource[] = ['baies', 'boisMort', 'mousse', 'spores'];
   if (stocks.baiesSechees.quantite > 0 || instantane.batimentsDebloques.includes('sechoir')) visibles.splice(1, 0, 'baiesSechees');
+  const ilesTrouvees = ressourcesDIle(instantane);
+  return (
+    <div class="rangees">
+      <Planches instantane={instantane} ressources={visibles} />
+      {ilesTrouvees.length > 0 && <Planches instantane={instantane} ressources={ilesTrouvees} />}
+    </div>
+  );
+}
+
+/** Ressource propre à une île, et l'indice de cette île : elle n'apparaît qu'une fois l'île découverte. */
+const RESSOURCES_DES_ILES: readonly [Ressource, number][] = [['tourbe', 1]];
+
+/** Ressources d'île déjà trouvées : leur île est découverte, ou il en reste en stock. */
+export function ressourcesDIle(instantane: Instantane): Ressource[] {
+  return RESSOURCES_DES_ILES.filter(([r, ile]) => instantane.iles.length > ile || instantane.stocks[r].quantite > 0).map(([r]) => r);
+}
+
+function Planches({ instantane, ressources }: { instantane: Instantane; ressources: readonly Ressource[] }) {
+  const { stocks } = instantane;
   return (
     <ul class="rangee">
-      {visibles.map((r) => {
+      {ressources.map((r) => {
         const stock = stocks[r];
         const variation = stock.productionParMinute;
         return (

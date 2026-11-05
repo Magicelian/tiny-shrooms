@@ -443,6 +443,26 @@ function scierie(): Voxels {
   return v;
 }
 
+/** Poêle à tourbe : un ventre de fonte sur un socle de pierre, son foyer rougeoyant, son tuyau et ses briques de tourbe. */
+function poele(): Voxels {
+  const v = new Voxels();
+  const fonte = COULEURS_BATIMENT.poele;
+  v.boite(-4, 0, -4, 3, 0, 3, TEINTES.pierreFonce);
+  v.cylindre(C, C, 1, 6, 2.6, fonte, 3);
+  v.dome(C, C, 7, 3, 2, fonte);
+  // Porte du foyer, vers l'avant.
+  v.boite(-2, 2, 3, 1, 4, 3, TEINTES.suie);
+  v.boite(-1, 2, 3, 0, 3, 3, TEINTES.orange);
+  v.poser(-1, 3, 3, TEINTES.jaune);
+  // Tuyau coudé.
+  v.boite(0, 8, -2, 1, 12, -1, TEINTES.metal);
+  v.boite(0, 12, -2, 1, 12, 0, TEINTES.metal);
+  // Briques de tourbe empilées à côté.
+  v.boite(4, 0, -1, 5, 1, 3, TEINTES.tourbe);
+  v.boite(4, 2, 0, 5, 2, 2, TEINTES.tourbeClaire);
+  return v;
+}
+
 const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   cueillette,
   tasDeBois,
@@ -460,6 +480,7 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   marche,
   sanctuaire,
   kiosque,
+  poele,
 };
 
 const cacheBatiments = new Map<string, Modele>();

@@ -2,7 +2,7 @@
 import type { Cle } from '@tiny-shrooms/i18n';
 import { nombre, t } from '@tiny-shrooms/i18n';
 import type { Batiment, Besoin, Contenu, Quantites, RaisonRefus, Ressource, Stock, TypeBatiment } from '@tiny-shrooms/engine';
-import { RESSOURCES, TYPES_BATIMENT } from '@tiny-shrooms/engine';
+import { RESSOURCES, sourcesDe, TYPES_BATIMENT } from '@tiny-shrooms/engine';
 
 export function nomRessource(r: Ressource): string {
   return t(`ressource.${r}`);
@@ -59,9 +59,10 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   const lignes: string[] = [];
   if (def.production) lignes.push(t('effet.production', { liste: listeQuantites(def.production, 1, '/min') }));
   if (def.consommation) lignes.push(t('effet.consommation', { liste: listeQuantites(def.consommation, 1, '/min') }));
+  if (def.combustible) lignes.push(t('effet.combustible', { liste: listeQuantites(def.combustible, 1, '/min') }));
   if (def.logement) lignes.push(t('effet.logement', { nombre: contenu.logement.rangs[0]?.places ?? 0 }));
   if (def.stockage) lignes.push(t('effet.stockage', { liste: listeQuantites(def.stockage).replace(/^|, /g, '$&+') }));
-  const besoin = (Object.keys(contenu.logement.sources) as Besoin[]).find((b) => contenu.logement.sources[b] === type);
+  const besoin = (Object.keys(contenu.logement.sources) as Besoin[]).find((b) => sourcesDe(contenu, b).includes(type));
   if (besoin && def.portee) lignes.push(t('effet.portee', { besoin: nomBesoin(besoin), portee: def.portee }));
   if (def.pollinise) {
     const cible = def.pollinise.cibles.map((c) => nomBatiment(c).toLowerCase()).join(', ');

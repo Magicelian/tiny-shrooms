@@ -5,7 +5,7 @@ import { bonusProduction, coutAmelioration, payer, rembourser } from './ameliora
 import { BONUS_PRESTIGE } from './contrat';
 import { coutBatiment, coutBonus, debloquerIle, offrande, offrandeRemplie, offrir, recommencer, sanctuaireAcheve } from './prestige';
 import type { Contenu } from './contenu';
-import { ajouterHabitant, plafonds, type Etat, type Partie } from './etat';
+import { ajouterHabitant, plafonds, quantitesNulles, type Etat, type Partie } from './etat';
 import { problemesDe } from './problemes';
 import { dejaConstruit, majBonusVoisinage, multiplicateur, verifierEmplacement } from './grille';
 import { appelerArracheurs, avancerHabitants, estLaNuit, logements } from './habitants';
@@ -113,7 +113,7 @@ function fluxDeLArchipel(partie: Partie, contenu: Contenu): { direct: Flux; prod
 }
 
 function fluxNul(): Flux {
-  return { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 };
+  return quantitesNulles();
 }
 
 /**

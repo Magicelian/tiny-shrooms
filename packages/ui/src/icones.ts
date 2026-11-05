@@ -75,6 +75,21 @@ const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }
     ],
     palette: { j: '#e8d56a' },
   },
+  // Brique de tourbe, fibreuse, du marais.
+  tourbe: {
+    motif: [
+      '.........',
+      '.#######.',
+      '#fffffff#',
+      '#tttdttt#',
+      '#dtttttd#',
+      '#ttdttdt#',
+      '#tttttdt#',
+      '.#######.',
+      '.........',
+    ],
+    palette: { t: '#6b4a33', d: '#3b2a22', f: '#a8805a' },
+  },
   graine: {
     motif: [
       '....#....',

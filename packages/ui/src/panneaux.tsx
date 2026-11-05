@@ -129,6 +129,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
       {!def.logement && !(batiment.type === 'sanctuaire' && !enChantier) && effets(contenu, batiment.type).map((ligne) => (
         <p key={ligne}>{ligne}</p>
       ))}
+      {batiment.eteint && <p class="manque">{t('effet.eteint')}</p>}
       {batiment.bonusVoisinage > 1 && <p class="bonus">{t('effet.bonusActuel', { pourcent: pourcent(batiment.bonusVoisinage - 1) })}</p>}
       {(batiment.pollinisation ?? 0) > 0 && <p class="bonus">{t('effet.pollinisation', { pourcent: pourcent(batiment.pollinisation!) })}</p>}
       {batiment.type === 'atelier' && !enChantier && <Ameliorations controleur={controleur} instantane={instantane} />}

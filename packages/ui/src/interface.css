@@ -146,12 +146,19 @@
 }
 
 /* Habitants et ressources : rangée de petites planches en bas à gauche */
-.rangee {
+/* Ressources de base en bas ; celles des îles découvertes sur une seconde rangée, juste au-dessus. */
+.rangees {
   position: absolute;
   /* Au-dessus des messages : l'infobulle d'une ressource survolée passe devant eux. */
   z-index: 2;
   left: 4px;
   bottom: 4px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 4px;
+}
+.rangee {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -316,6 +323,9 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 3px;
+}
+.deux-rangees .messages {
+  bottom: 50px;
 }
 
 
@@ -489,6 +499,9 @@
 }
 .bulle.bas {
   bottom: 32px;
+}
+.deux-rangees .bulle.bas {
+  bottom: 56px;
 }
 /* En-tête : planche avec vignette et clous */
 .bulle header {

@@ -4,8 +4,8 @@ import type { Contenu } from '@tiny-shrooms/engine';
 export const contenu: Contenu = {
   ile: { taille: 12 },
   // Partie neuve : rien en stock, tout commence par la récolte à la main.
-  stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0 },
-  plafondsDeBase: { baies: 50, baiesSechees: 40, boisMort: 80, mousse: 30, spores: 40 },
+  stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0, tourbe: 0 },
+  plafondsDeBase: { baies: 50, baiesSechees: 40, boisMort: 80, mousse: 30, spores: 40, tourbe: 60 },
   batiments: {
     hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: true },
     cueillette: { cout: { boisMort: 15 }, constructionSecondes: 20, production: { baies: 6 }, voisinage: [{ voisin: 'buisson', bonus: 0.25 }] },
@@ -19,11 +19,13 @@ export const contenu: Contenu = {
         { voisin: 'foret', bonus: 0.25 },
       ],
     },
-    // Le bâtiment phare du marais : bien plus de mousse qu'un tapis, mais il doit toucher l'eau.
+    // Le bâtiment phare du marais : bien plus de mousse qu'un tapis, mais il doit toucher l'eau. Il extrait aussi la
+    // tourbe, la ressource du marais, et en garde un peu sur place.
     tourbiere: {
       cout: { boisMort: 20, baies: 10 },
       constructionSecondes: 40,
-      production: { mousse: 8 },
+      production: { mousse: 8, tourbe: 1.5 },
+      stockage: { tourbe: 40 },
       postes: 2,
       biomes: ['marais'],
       exige: 'eau',
@@ -77,6 +79,9 @@ export const contenu: Contenu = {
     // Le bâtiment de la cité : un musicien y joue sous les lanternes, et la fête qu'il donne fait monter les manoirs
     // alentour en tours-chapeaux.
     kiosque: { cout: { boisMort: 120, mousse: 60, spores: 40 }, constructionSecondes: 90, postes: 1, portee: 3 },
+    // Offert sur toutes les îles dès le marais découvert : il chauffe deux fois plus loin qu'un feu de camp, mais
+    // brûle de la tourbe, et s'éteint quand il n'y en a plus.
+    poele: { cout: { boisMort: 40, tourbe: 30 }, constructionSecondes: 40, portee: 4, combustible: { tourbe: 0.3 } },
   },
   logement: {
     rangs: [
@@ -102,7 +107,7 @@ export const contenu: Contenu = {
         consommation: { mousse: 0.75 },
       },
     ],
-    sources: { chaleur: 'feuDeCamp', eau: 'puits', commerce: 'marche', fete: 'kiosque' },
+    sources: { chaleur: ['feuDeCamp', 'poele'], eau: 'puits', commerce: 'marche', fete: 'kiosque' },
   },
   souche: { coutRetrait: { spores: 40 }, retraitSecondes: 45 },
   defrichage: {
@@ -182,9 +187,11 @@ export const contenu: Contenu = {
   // `iles-3-a-5.ts`).
   archipel: {
     biomes: ['foret', 'marais', 'prairie', 'grotte', 'futaie'],
+    // La ressource de chaque île ouvre son bâtiment sur tout l'archipel : la tourbe du marais, le poêle.
+    debloque: [[], ['poele']],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
-      { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600 },
+      { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600, tourbe: 300 },
       { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000 },
       { boisMort: 21000, mousse: 4000, baiesSechees: 2000, spores: 6000 },
     ],
