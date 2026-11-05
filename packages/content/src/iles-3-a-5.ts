@@ -47,7 +47,8 @@ function sporesParMinute(etat: Etat): number {
     }, 0);
 }
 
-export const DUREE_MAX_MS = 3_600_000;
+// Les îles payées plus cher font une partie plus longue : jusqu'à deux heures de calcul.
+export const DUREE_MAX_MS = 7_200_000;
 
 /** Joue une partie jusqu'au bourg de la futaie et vérifie les critères de la prairie, de la grotte, puis de la futaie. */
 export function ilesTroisACinq(graine: number): void {
