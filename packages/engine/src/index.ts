@@ -10,8 +10,8 @@ export { calendrier, meteoAu, type Calendrier } from './saisons';
 export { problemes, problemesDe } from './problemes';
 export { coutAmelioration, effetAmelioration } from './ameliorations';
 export { demanderDefrichage, natureEn } from './defrichage';
-export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutTotal, placesLogement, placesSouche, rangLogement, refusMontee } from './logements';
-export { coutBatiment, coutBonus, effetsPrestige, gainGraines, offrande, prestigeNeuf, sanctuaireAcheve, type EffetsPrestige } from './prestige';
+export { aPortee, besoinsManquants, besoinsSuivis, capaciteLogement, casesCouvertes, coutRang, coutTotal, placesLogement, placesSouche, rangLogement, refusMontee } from './logements';
+export { coutBatiment, coutBonus, effetsPrestige, gainGraines, majorer, offrande, prixIle, prestigeNeuf, sanctuaireAcheve, type EffetsPrestige } from './prestige';
 export type { Contenu, ContenuPrestige, ContenuLogement, DefinitionPalier, DefinitionRang, DefinitionAmelioration, ContenuHabitants, ContenuMeteo, ContenuSaisons, DefinitionBatiment, DefinitionRecolte, RegleVoisinage } from './contenu';
 
 export type * from './contrat';

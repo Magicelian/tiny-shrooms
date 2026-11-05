@@ -8,6 +8,7 @@ import {
   BONUS_PRESTIGE,
   coutAmelioration,
   coutBatiment,
+  coutRang,
   coutBonus,
   coutTotal,
   dejaConstruit,
@@ -37,7 +38,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
   const { choix } = bulle;
   // La tourbière doit toucher l'eau : la case choisie peut ne pas lui convenir.
   const refus = choix && ile ? terrainManquant(ile, contenu, choix, bulle.case) : null;
-  const payable = choix !== null && !refus && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix, instantane.batiments), instantane.stocks);
+  const payable = choix !== null && !refus && abordable(coutBatiment(contenu, instantane.prestige.bonus, choix, instantane.batiments, instantane.ile), instantane.stocks);
   // Un bâtiment en un seul exemplaire disparaît du catalogue tant qu'il est là.
   const batissables = instantane.batimentsDebloques.filter((type) => !dejaConstruit(contenu, instantane.batiments, type));
   // Débloqués d'abord, puis les plans des paliers suivants, grisés avec le palier qui les donne.
@@ -48,7 +49,7 @@ export function BulleConstruire({ controleur, instantane, bulle }: Props & { bul
     <>
       <ul class="catalogue">
         {batissables.map((type) => {
-          const cout = coutBatiment(contenu, instantane.prestige.bonus, type, instantane.batiments);
+          const cout = coutBatiment(contenu, instantane.prestige.bonus, type, instantane.batiments, instantane.ile);
           return (
             <li key={type}>
               <button
@@ -100,7 +101,7 @@ export function BulleBatiment({ controleur, batiment, instantane }: Props & { ba
   const [confirmer, setConfirmer] = useState(false);
   const { contenu } = controleur;
   const def = contenu.batiments[batiment.type];
-  const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus, instantane.batiments);
+  const remboursement = coutTotal(contenu, batiment, instantane.prestige.bonus, instantane.batiments, instantane.ile);
   const enChantier = batiment.chantier !== null;
   // Construction, agrandissement ou amélioration : il faut des bâtisseurs.
   const enTravaux = enChantier || batiment.agrandissement !== null || batiment.amelioration !== null;
@@ -172,7 +173,7 @@ function Logement({ controleur, instantane, batiment }: Props & { batiment: Bati
   const places = placesLogement(contenu, batiment, effets.places);
   const loges = Math.min(places, Math.max(0, instantane.habitants.length - avant));
   const refus = refusMontee(contenu, batiment, instantane.palier);
-  const cout = suivant?.cout ?? {};
+  const cout = coutRang(contenu, batiment.niveau, instantane.ile);
   const suivis = besoinsSuivis(contenu, batiment.niveau);
   const Besoins = ({ liste }: { liste: readonly string[] }) => (
     <ul class="besoins">
@@ -316,7 +317,7 @@ function Ameliorations({ controleur, instantane }: Props) {
       {AMELIORATIONS_VILLAGE.map((a) => {
         const def = controleur.contenu.ameliorations[a];
         const niveau = instantane.ameliorations[a];
-        const cout = coutAmelioration(controleur.contenu, a, niveau);
+        const cout = coutAmelioration(controleur.contenu, a, niveau, instantane.ile);
         // Travaux en cours : la jauge remplace le bouton, ici comme sur un agrandissement.
         const enCours = instantane.batiments.find((b) => b.amelioration?.village === a);
         return (

@@ -3,15 +3,15 @@ import type { AmeliorationVillage, Quantites } from './contrat';
 import { RESSOURCES } from './contrat';
 import type { Contenu } from './contenu';
 import type { Etat } from './etat';
-import { effetsPrestige } from './prestige';
+import { effetsPrestige, prixIle } from './prestige';
 
 /** Coût du prochain niveau, ou `null` si le niveau maximal est atteint. */
-export function coutAmelioration(contenu: Contenu, amelioration: AmeliorationVillage, niveau: number): Quantites | null {
+export function coutAmelioration(contenu: Contenu, amelioration: AmeliorationVillage, niveau: number, ile: number): Quantites | null {
   const def = contenu.ameliorations[amelioration];
   if (niveau >= def.niveauMax) return null;
   const cout: Quantites = {};
   for (const r of RESSOURCES) {
-    if (def.cout[r] !== undefined) cout[r] = Math.round(def.cout[r] * def.hausseCout ** niveau);
+    if (def.cout[r] !== undefined) cout[r] = Math.round(def.cout[r] * def.hausseCout ** niveau * prixIle(contenu, ile));
   }
   return cout;
 }

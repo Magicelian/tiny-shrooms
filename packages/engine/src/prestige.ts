@@ -62,16 +62,30 @@ export function coutBatiment(
   contenu: Contenu,
   bonus: Record<BonusPrestige, number>,
   type: TypeBatiment,
-  batiments: readonly Pick<Batiment, 'type'>[] = [],
+  batiments: readonly Pick<Batiment, 'type'>[],
+  ile: number,
 ): Quantites {
   const exemplaires = batiments.filter((b) => b.type === type).length;
-  const facteur = effetsPrestige(contenu, bonus).cout * (1 + contenu.hausseParExemplaire) ** exemplaires;
+  const facteur = effetsPrestige(contenu, bonus).cout * (1 + contenu.hausseParExemplaire) ** exemplaires * prixIle(contenu, ile);
   const cout: Quantites = {};
   const base = contenu.batiments[type].cout;
   for (const r of RESSOURCES) {
     if (base[r] !== undefined) cout[r] = Math.ceil(base[r] * facteur);
   }
   return cout;
+}
+
+/** Multiplicateur des prix de l'île d'indice `ile` (voir `Contenu.archipel.prixParIle`). */
+export function prixIle(contenu: Contenu, ile: number): number {
+  const prix = contenu.archipel.prixParIle ?? [];
+  return prix.length === 0 ? 1 : prix[Math.min(ile, prix.length - 1)]!;
+}
+
+/** Quantités multipliées par `facteur`, arrondies à l'unité supérieure. */
+export function majorer(quantites: Quantites, facteur: number): Quantites {
+  const resultat: Quantites = {};
+  for (const r of RESSOURCES) if (quantites[r] !== undefined) resultat[r] = Math.ceil(quantites[r] * facteur);
+  return resultat;
 }
 
 /** Offrande en cours sur cette île : seulement la dernière débloquée, tant qu'il reste des îles. */

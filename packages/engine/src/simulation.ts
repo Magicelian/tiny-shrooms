@@ -160,7 +160,7 @@ export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Co
       const emplacement = verifierEmplacement(etat, commande.case, undefined, commande.batiment, contenu);
       if (emplacement) return refus(emplacement);
       const def = contenu.batiments[commande.batiment];
-      if (!payer(etat, coutBatiment(contenu, etat.partie.prestige.bonus, commande.batiment, etat.batiments))) return refus('ressourcesInsuffisantes');
+      if (!payer(etat, coutBatiment(contenu, etat.partie.prestige.bonus, commande.batiment, etat.batiments, partie.vue))) return refus('ressourcesInsuffisantes');
       etat.batiments.push({
         id: etat.prochainId++,
         type: commande.batiment,
@@ -195,7 +195,7 @@ export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Co
         return refus('depotRequis');
       }
       const [b] = etat.batiments.splice(i, 1);
-      const cout = coutTotal(contenu, b!, etat.partie.prestige.bonus, etat.batiments);
+      const cout = coutTotal(contenu, b!, etat.partie.prestige.bonus, etat.batiments, partie.vue);
       for (const r of cles(cout)) etat.partie.stocks[r] += (cout[r] ?? 0) * contenu.remboursementDemolition;
       // La récolte en attente n'est pas perdue.
       for (const r of cles(b!.reserve)) etat.partie.stocks[r] += b!.reserve[r] ?? 0;
@@ -288,7 +288,7 @@ export function appliquerCommande(partie: Partie, contenu: Contenu, commande: Co
         return refus(etat.batimentsDebloques.includes('atelier') ? 'indisponible' : 'nonDebloque');
       }
       const amelioration = commande.cible.village;
-      const cout = coutAmelioration(contenu, amelioration, etat.ameliorations[amelioration]);
+      const cout = coutAmelioration(contenu, amelioration, etat.ameliorations[amelioration], partie.vue);
       if (!cout) return refus('indisponible');
       // Un atelier ne mène qu'une amélioration à la fois, et jamais deux fois la même.
       const atelier = ateliers.find((b) => b.amelioration === null);

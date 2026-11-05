@@ -7,7 +7,7 @@ import type { BatimentEtat, Etat } from './etat';
 import { payer } from './ameliorations';
 import { disponibleSur } from './grille';
 import { terrainEn } from './ile';
-import { coutBatiment, effetsPrestige } from './prestige';
+import { coutBatiment, effetsPrestige, majorer, prixIle } from './prestige';
 import { PAS_PAR_MINUTE } from './temps';
 
 type Emprise = Pick<Batiment, 'type' | 'case' | 'chantier'>;
@@ -145,11 +145,16 @@ export function refusMontee(
   return null;
 }
 
+/** Prix de la montée au rang `rang` (indice dans `contenu.logement.rangs`) sur l'île d'indice `ile`. */
+export function coutRang(contenu: Contenu, rang: number, ile: number): Quantites {
+  return majorer(contenu.logement.rangs[rang]?.cout ?? {}, prixIle(contenu, ile));
+}
+
 export function monterLogement(etat: Etat, contenu: Contenu, b: BatimentEtat): RaisonRefus | null {
   const refus = refusMontee(contenu, b, etat.palier);
   if (refus) return refus;
   const suivant = contenu.logement.rangs[b.niveau]!;
-  if (!payer(etat, suivant.cout ?? {})) return 'ressourcesInsuffisantes';
+  if (!payer(etat, coutRang(contenu, b.niveau, etat.partie.iles.indexOf(etat)))) return 'ressourcesInsuffisantes';
   // Les habitants font les travaux ; le logement garde son rang et ses occupants d'ici là.
   if (suivant.agrandissementSecondes) b.agrandissement = 0;
   else b.niveau++;
@@ -163,12 +168,14 @@ export function coutTotal(
   b: Pick<Batiment, 'id' | 'type' | 'niveau' | 'agrandissement'>,
   bonus: Record<BonusPrestige, number>,
   batiments: readonly Pick<Batiment, 'id' | 'type'>[],
+  ile: number,
 ): Quantites {
-  const total = coutBatiment(contenu, bonus, b.type, batiments.filter((autre) => autre.id !== b.id));
+  const total = coutBatiment(contenu, bonus, b.type, batiments.filter((autre) => autre.id !== b.id), ile);
   if (!contenu.batiments[b.type].logement) return total;
   // Un agrandissement payé mais pas fini compte aussi.
-  for (const rang of contenu.logement.rangs.slice(1, b.niveau + (b.agrandissement !== null ? 1 : 0))) {
-    for (const r of RESSOURCES) if (rang.cout?.[r]) total[r] = (total[r] ?? 0) + rang.cout[r];
+  for (let rang = 1; rang < b.niveau + (b.agrandissement !== null ? 1 : 0); rang++) {
+    const cout = coutRang(contenu, rang, ile);
+    for (const r of RESSOURCES) if (cout[r]) total[r] = (total[r] ?? 0) + cout[r];
   }
   return total;
 }

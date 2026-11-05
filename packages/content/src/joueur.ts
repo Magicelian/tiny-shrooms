@@ -54,7 +54,7 @@ export class Joueur {
   }
 
   private abordable(type: TypeBatiment): boolean {
-    const cout = coutBatiment(contenu, this.etat.partie.prestige.bonus, type, this.etat.batiments);
+    const cout = coutBatiment(contenu, this.etat.partie.prestige.bonus, type, this.etat.batiments, this.etat.partie.iles.indexOf(this.etat));
     return RESSOURCES.every((r) => this.etat.partie.stocks[r] >= (cout[r] ?? 0));
   }
 

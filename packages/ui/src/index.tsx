@@ -1,7 +1,7 @@
 // Interface : reçoit les messages du moteur, traduit la souris en commandes et en mouvements de caméra.
 import { render } from 'preact';
 import type { Batiment, Case, Commande, Contenu, Defrichable, IdBatiment, Ile, Instantane, MessageDepuisMoteur, TypeBatiment } from '@tiny-shrooms/engine';
-import { AMELIORATIONS_VILLAGE, bonusVoisinage, casesCouvertes, centreSouche, coutAmelioration, coutBatiment, dansLaSouche, elementEn, emplacementRefuse, natureEn, refusMontee, terrainManquant } from '@tiny-shrooms/engine';
+import { AMELIORATIONS_VILLAGE, bonusVoisinage, casesCouvertes, centreSouche, coutAmelioration, coutBatiment, coutRang, dansLaSouche, elementEn, emplacementRefuse, natureEn, refusMontee, terrainManquant } from '@tiny-shrooms/engine';
 import { choisirLangue, t, type Langue } from '@tiny-shrooms/i18n';
 
 export type { Langue };
@@ -389,13 +389,13 @@ export class ControleurInterface {
     const { stocks, ameliorations, batiments } = instantane;
     // Amélioration de village que l'atelier pourrait lancer : ni au maximum, ni déjà en travaux, et payable.
     const villagePossible = AMELIORATIONS_VILLAGE.some((a) => {
-      const cout = coutAmelioration(contenu, a, ameliorations[a]);
+      const cout = coutAmelioration(contenu, a, ameliorations[a], instantane.ile);
       return cout && !batiments.some((b) => b.amelioration?.village === a) && abordable(cout, stocks);
     });
     return batiments.filter((b) => {
       if (b.type === 'atelier') return b.chantier === null && b.amelioration === null && villagePossible;
       if (refusMontee(contenu, b, instantane.palier) !== null) return false;
-      return abordable(contenu.logement.rangs[b.niveau]?.cout ?? {}, stocks);
+      return abordable(coutRang(contenu, b.niveau, instantane.ile), stocks);
     });
   }
 
@@ -562,7 +562,7 @@ export class ControleurInterface {
     // Bulle de construction : le fantôme reste sur sa case, où que soit la souris.
     if (bulle?.type === 'construire') {
       const { choix } = bulle;
-      const convient = !choix || (!terrainManquant(ile, this.contenu, choix, bulle.case) && abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix, batiments), instantane.stocks));
+      const convient = !choix || (!terrainManquant(ile, this.contenu, choix, bulle.case) && abordable(coutBatiment(this.contenu, instantane.prestige.bonus, choix, batiments, instantane.ile), instantane.stocks));
       scene.montrerFantome(bulle.case, choix, convient);
       scene.montrerPortee(choix ? casesCouvertes(ile, this.contenu, { type: choix, case: bulle.case }) : []);
       scene.surligner(null);
