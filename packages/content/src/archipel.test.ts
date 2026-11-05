@@ -1,5 +1,6 @@
 // Critères des étapes 18 et 19 : au bourg, l'offrande du sanctuaire débloque l'île suivante en ~1 h 30-2 h de jeu attentif ;
-// la première île continue de vivre pendant qu'on bâtit la seconde (le marais), qui atteint le bourg plus vite
+// la première île continue de vivre pendant qu'on bâtit la seconde (le marais), qui atteint le bourg au même rythme
+// (ses prix sont multipliés, le stock commun étant déjà rempli : demande de Celian du 05/11/2026)
 // et fait bien plus de mousse.
 import { describe, expect, it } from 'vitest';
 import { charger, creerPartie, Moteur, serialiser, type Etat } from '@tiny-shrooms/engine';
@@ -21,7 +22,7 @@ function mousseParMinute(etat: Etat): number {
 }
 
 describe('Archipel', () => {
-  it.each([1, 2, 3])('graine %i : l’offrande débloque l’île 2 en ~1 h 30-2 h, qui atteint le bourg plus vite', (graine) => {
+  it.each([1, 2, 3])('graine %i : l’offrande débloque l’île 2 en ~1 h 30-2 h, qui atteint le bourg au rythme de la première', (graine) => {
     const moteur = new Moteur(contenu, 0, creerPartie(contenu, graine));
     const joueur = new Joueur(moteur);
     const partie = moteur.partieCourante;
@@ -58,7 +59,8 @@ describe('Archipel', () => {
     );
     expect(ile2 - bourg1).toBeGreaterThan(60);
     expect(ile2 - bourg1).toBeLessThan(150);
-    expect(bourg2 - ile2).toBeLessThan(bourg1);
+    expect(bourg2 - ile2).toBeGreaterThan(bourg1 * 0.75);
+    expect(bourg2 - ile2).toBeLessThan(bourg1 * 1.3);
     // L'île 2 est le marais : ses tourbières y font bien plus de mousse que la forêt.
     expect(marais.ile.biome).toBe('marais');
     expect(mousseParMinute(marais)).toBeGreaterThan(mousseParMinute(premiere) * 2);

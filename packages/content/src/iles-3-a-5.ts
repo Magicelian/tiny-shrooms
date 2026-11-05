@@ -83,6 +83,9 @@ export function ilesTroisACinq(graine: number): void {
   expect(prairie.ile.biome).toBe('prairie');
   expect(ile3 - bourg2).toBeGreaterThan(60);
   expect(ile3 - bourg2).toBeLessThan(150);
+  // Comme l'île 1 (~2 h 40) : ses prix multipliés compensent le stock commun déjà rempli.
+  expect(bourg3 - ile3).toBeGreaterThan(120);
+  expect(bourg3 - ile3).toBeLessThan(210);
   expect(ruches).toBeGreaterThan(0);
   expect(parCueillette(prairie)).toBeGreaterThan(parCueillette(premiere) * 1.5);
   expect(baiesParMinute(prairie)).toBeGreaterThan(baiesParMinute(premiere));
@@ -115,6 +118,9 @@ export function ilesTroisACinq(graine: number): void {
   expect(grotte.ile.biome).toBe('grotte');
   expect(ile4 - bourg3).toBeGreaterThan(60);
   expect(ile4 - bourg3).toBeLessThan(150);
+  // Comme l'île 1 (~2 h 40) : ses prix multipliés compensent le stock commun déjà rempli.
+  expect(bourg4 - ile4).toBeGreaterThan(120);
+  expect(bourg4 - ile4).toBeLessThan(210);
   expect(champignonnieres).toBeGreaterThan(0);
   expect(sporesParMinute(grotte)).toBeGreaterThan(sporesParMinute(premiere) * 2);
 
@@ -132,6 +138,9 @@ export function ilesTroisACinq(graine: number): void {
   expect(futaie.ile.biome).toBe('futaie');
   expect(ile5 - bourg4).toBeGreaterThan(60);
   expect(ile5 - bourg4).toBeLessThan(150);
+  // Comme l'île 1 (~2 h 40) : ses prix multipliés compensent le stock commun déjà rempli.
+  expect(bourg5 - ile5).toBeGreaterThan(120);
+  expect(bourg5 - ile5).toBeLessThan(210);
   expect(scieries).toBeGreaterThan(0);
   expect(boisParMinute(futaie)).toBeGreaterThan(boisParMinute(premiere) * 2);
 }
