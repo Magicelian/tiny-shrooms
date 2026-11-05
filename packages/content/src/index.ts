@@ -199,11 +199,14 @@ export const contenu: Contenu = {
     biomes: ['foret', 'marais', 'prairie', 'grotte', 'futaie'],
     // La ressource de chaque île ouvre son bâtiment sur tout l'archipel : le poêle, la confiserie, la lanterne, le vernisseur.
     debloque: [[], ['poele'], ['confiserie'], ['lanterne'], ['vernisseur']],
+    // Le stock commun arrive plein sur chaque nouvelle île : ses prix sont multipliés pour qu'elle atteigne le bourg au
+    // rythme de la première (~2 h 40 au joueur attentif ; réglé par simulation le 05/11/2026, demande de Celian).
+    prixParIle: [1, 6, 12, 19, 34],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600, tourbe: 300 },
       { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000, miel: 300 },
-      { boisMort: 21000, mousse: 4000, baiesSechees: 2000, spores: 6000, cristaux: 200 },
+      { boisMort: 11000, mousse: 4000, baiesSechees: 2000, spores: 6000, cristaux: 200 },
     ],
   },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.
