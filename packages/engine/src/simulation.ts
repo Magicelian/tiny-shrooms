@@ -36,6 +36,14 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
     const joie = Math.max(0, (habitant.bienEtre - h.seuilBonheur) / (1 - h.seuilBonheur));
     direct.spores += (rang?.sporesParMinute ?? 0) * Math.min(1, joie) * bonus;
   }
+  // Ce qu'un bâtiment tenu verse tout seul dans les stocks : le miel d'une ruche dont l'apiculteur est à son poste.
+  for (const habitant of etat.habitants) {
+    const m = habitant.mission;
+    if (m?.tache !== 'tenir' || habitant.activite !== 'tient') continue;
+    const b = etat.batiments.find((x) => x.id === m.batiment);
+    const recolte = b && b.chantier === null ? contenu.batiments[b.type].recolteTenue : undefined;
+    for (const r of cles(recolte ?? {})) direct[r] += (recolte![r] ?? 0) * bonus;
+  }
 
   const production = fluxNul();
   const estime = { ...direct };
@@ -43,6 +51,9 @@ function fluxParMinute(etat: Etat, contenu: Contenu): { direct: Flux; production
   for (const b of etat.batiments) {
     const consommation = b.chantier === null ? rangLogement(contenu, b)?.consommation : undefined;
     for (const r of cles(consommation ?? {})) estime[r] -= consommation![r] ?? 0;
+    // Le combustible des poêles et confiseries en marche, prélevé lui aussi pas à pas.
+    const combustible = b.chantier === null && !b.eteint ? contenu.batiments[b.type].combustible : undefined;
+    for (const r of cles(combustible ?? {})) estime[r] -= combustible![r] ?? 0;
   }
   estime.baies -= etat.habitants.length * h.baiesParMinute;
   // Estimation : on considère le village nourri tant qu'il reste de quoi manger.

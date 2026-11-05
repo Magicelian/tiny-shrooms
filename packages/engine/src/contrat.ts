@@ -23,8 +23,8 @@ export type Orientation = 0 | 1 | 2 | 3;
 
 // ─── Ressources ──────────────────────────────────────────────────────────────
 
-// Les quatre dernières viennent des îles de l'archipel (marais, prairie, grotte, futaie) ; la tourbe d'abord.
-export const RESSOURCES = ['baies', 'baiesSechees', 'boisMort', 'mousse', 'spores', 'tourbe'] as const;
+// Les quatre dernières viennent des îles de l'archipel : marais, prairie, grotte, futaie.
+export const RESSOURCES = ['baies', 'baiesSechees', 'boisMort', 'mousse', 'spores', 'tourbe', 'miel', 'cristaux', 'resine'] as const;
 export type Ressource = (typeof RESSOURCES)[number];
 
 export type Quantites = Partial<Record<Ressource, number>>;
@@ -110,6 +110,9 @@ export const TYPES_BATIMENT = [
   'sanctuaire',
   'kiosque',
   'poele',
+  'confiserie',
+  'lanterne',
+  'vernisseur',
 ] as const;
 export type TypeBatiment = (typeof TYPES_BATIMENT)[number];
 
@@ -132,7 +135,7 @@ export interface Batiment {
   bonusVoisinage: number;
   /** Bonus d'une ruche tenue alentour, qui s'ajoute au voisinage (0,5 → +50 %) ; absent ou 0 sans ruche. */
   pollinisation?: number;
-  /** Bâtiment à combustible (poêle) à court de ce qu'il brûle : il ne rend plus service ; absent s'il est allumé. */
+  /** Bâtiment à combustible (poêle, confiserie) à court de ce qu'il use : il ne rend plus service ; absent sinon. */
   eteint?: boolean;
   /**
    * Logements seulement : besoins du rang actuel et du rang suivant, satisfaits ou non.

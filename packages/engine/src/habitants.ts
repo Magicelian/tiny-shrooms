@@ -9,7 +9,7 @@ import { cadenceTravail, estLHiver, facteurSaison, feuLePlusProche } from './sai
 import { bonusProduction, effetAmelioration } from './ameliorations';
 import { etapeVers, preparerGrille } from './chemins';
 import { avancerDefrichage, memeCase } from './defrichage';
-import { alimenterFoyers, besoinsManquants, evaluerBesoins, majPollinisation, placesLogement, placesSouche, rangLogement } from './logements';
+import { alimenterFoyers, aPortee, besoinsManquants, evaluerBesoins, majPollinisation, placesLogement, placesSouche, rangLogement } from './logements';
 import { effetsPrestige } from './prestige';
 import { heureDuJour, PAS_DE_SIMULATION_MS, PAS_PAR_MINUTE } from './temps';
 
@@ -61,8 +61,8 @@ export function avancerHabitants(etat: Etat, contenu: Contenu, evenements: Evene
   const bonusBienEtre = effetsPrestige(contenu, etat.partie.prestige.bonus).bienEtre;
 
   for (const h of etat.habitants) {
-    majBienEtre(h, contenu, loges.get(h.id), nourri, bonusBienEtre);
-    if (nuit) {
+    majBienEtre(h, contenu, loges.get(h.id), nourri, bonusBienEtre + douceur(etat, contenu, loges.get(h.id)));
+    if (nuit && !eclaire(etat, contenu, h)) {
       dormir(etat, contenu, h, loges.get(h.id));
       continue;
     }
@@ -179,6 +179,28 @@ export function logements(etat: Etat, contenu: Contenu): { loges: Map<number, Ba
     if (place) loges.set(h.id, place);
   });
   return { loges, capacite: places.length };
+}
+
+/** Bien-être apporté à un logement par les confiseries en marche à sa portée (la plus forte seulement). */
+function douceur(etat: Etat, contenu: Contenu, logement: BatimentEtat | true | undefined): number {
+  if (!logement || logement === true) return 0;
+  let bonus = 0;
+  for (const b of etat.batiments) {
+    const effet = contenu.batiments[b.type].bienEtre;
+    if (effet && b.chantier === null && !b.eteint && aPortee(contenu, b, logement.case)) bonus = Math.max(bonus, effet);
+  }
+  return bonus;
+}
+
+/** Vrai si l'habitant travaille, de nuit, à la portée d'une lanterne : il continue au lieu d'aller dormir. */
+function eclaire(etat: Etat, contenu: Contenu, h: HabitantEtat): boolean {
+  const m = h.mission;
+  if (!m || (m.tache !== 'recolter' && m.tache !== 'tenir' && m.tache !== 'construire')) return false;
+  const poste = trouver(etat, m.batiment);
+  return (
+    !!poste &&
+    etat.batiments.some((b) => contenu.batiments[b.type].eclaire && b.chantier === null && aPortee(contenu, b, poste.case))
+  );
 }
 
 function majBienEtre(h: HabitantEtat, contenu: Contenu, logement: BatimentEtat | true | undefined, nourri: boolean, bonus: number): void {

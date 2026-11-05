@@ -39,6 +39,12 @@ export function bonusVoisinage(ile: Ile, batiments: readonly Emprise[], contenu:
   for (const regle of contenu.batiments[type].voisinage ?? []) {
     if (voisinTrouve(ile, batiments, c, regle.voisin)) bonus += regle.bonus;
   }
+  // Un vernisseur qui touche un bâtiment de production lui ajoute son bonus (une fois par type de vernisseur).
+  if (contenu.batiments[type].production) {
+    for (const [voisin, def] of Object.entries(contenu.batiments)) {
+      if (def.vernit && voisinTrouve(ile, batiments, c, voisin)) bonus += def.vernit;
+    }
+  }
   return bonus;
 }
 

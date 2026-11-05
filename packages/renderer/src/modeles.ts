@@ -463,6 +463,57 @@ function poele(): Voxels {
   return v;
 }
 
+/** Confiserie : un petit champignon au chapeau rose, des pots de miel devant sa porte et une sucette en enseigne. */
+function confiserie(): Voxels {
+  const v = new Voxels();
+  pied(v, C, -1, 0, 6, 3, [3]);
+  chapeau(v, C, -1, 7, 5, 3.5, COULEURS_BATIMENT.confiserie, TEINTES.blanc, 5);
+  // Pots de miel au couvercle de tissu.
+  for (const x of [-5, 3]) {
+    v.boite(x, 0, 3, x + 1, 1, 4, TEINTES.jaune);
+    v.boite(x, 2, 3, x + 1, 2, 4, TEINTES.toile);
+  }
+  // Sucette sur un bâton, plantée à côté.
+  poteau(v, 4, 0, 0, 5, TEINTES.blanc);
+  v.boite(3, 6, 0, 5, 8, 0, COULEURS_BATIMENT.confiserie);
+  v.poser(4, 7, 0, TEINTES.blanc);
+  return v;
+}
+
+/** Lanterne de cristal : un mât de bois et sa cage, où brille un cristal luisant. */
+function lanterne(): Voxels {
+  const v = new Voxels();
+  v.disque(C, 0, C, 2.2, TEINTES.pierreFonce);
+  poteau(v, -1, -1, 1, 9);
+  poteau(v, 0, -1, 1, 9);
+  // Potence et cage.
+  v.boite(-1, 10, -1, 3, 10, 0, TEINTES.boisFonce);
+  v.boite(1, 5, -2, 4, 9, 1, TEINTES.metal);
+  v.boite(2, 6, -1, 3, 8, 0, COULEURS_BATIMENT.lanterne);
+  v.poser(2, 9, -1, TEINTES.blanc);
+  return v;
+}
+
+/** Vernisseur : un établi, des tonneaux de résine ambrée et un pot où trempe le pinceau. */
+function vernisseur(): Voxels {
+  const v = new Voxels();
+  const ambre = COULEURS_BATIMENT.vernisseur;
+  // Abri : quatre poteaux et un toit de planches.
+  for (const [x, z] of [[-5, -4], [4, -4], [-5, 3], [4, 3]] as const) poteau(v, x, z, 0, 7);
+  v.boite(-6, 8, -5, 5, 8, 4, TEINTES.planche);
+  v.boite(-6, 9, -2, 5, 9, 1, TEINTES.boisFonce);
+  // Établi et pot de résine.
+  v.boite(-3, 0, -3, 2, 2, -2, TEINTES.boisClair);
+  v.boite(-1, 3, -3, 0, 4, -2, ambre);
+  poteau(v, 0, -3, 5, 6, TEINTES.boisFonce);
+  // Tonneaux.
+  v.cylindre(-3, 1.5, 0, 3, 1.5, TEINTES.bois);
+  v.disque(-3, 4, 1.5, 1.2, ambre);
+  v.cylindre(2, 1.5, 0, 3, 1.5, TEINTES.bois);
+  v.disque(2, 4, 1.5, 1.2, ambre);
+  return v;
+}
+
 const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   cueillette,
   tasDeBois,
@@ -481,6 +532,9 @@ const CONSTRUCTEURS: Record<Exclude<TypeBatiment, 'hutte'>, () => Voxels> = {
   sanctuaire,
   kiosque,
   poele,
+  confiserie,
+  lanterne,
+  vernisseur,
 };
 
 const cacheBatiments = new Map<string, Modele>();

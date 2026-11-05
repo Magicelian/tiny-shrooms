@@ -90,6 +90,51 @@ const MOTIFS: Record<Icone, { motif: string[]; palette: Record<string, string> }
     ],
     palette: { t: '#6b4a33', d: '#3b2a22', f: '#a8805a' },
   },
+  // Pot de miel de la prairie.
+  miel: {
+    motif: [
+      '..#####..',
+      '.#ttttt#.',
+      '..#####..',
+      '.#mmmmm#.',
+      '#mwmmmmo#',
+      '#mwmmmmo#',
+      '#mmmmmoo#',
+      '.#ooooo#.',
+      '..#####..',
+    ],
+    palette: { t: '#f5ecd6', m: '#f2b53a', w: '#ffe9a8', o: '#c9822a' },
+  },
+  // Cristaux luisants de la grotte.
+  cristaux: {
+    motif: [
+      '...#.....',
+      '..#c#.#..',
+      '..#cl##c#',
+      '.#cclc#c#',
+      '.#ccl#cc#',
+      '#c#cc#c#.',
+      '#cc#cc#..',
+      '.#######.',
+      '.........',
+    ],
+    palette: { c: '#5ff0e6', l: '#e6fffd' },
+  },
+  // Goutte de résine ambrée de la futaie.
+  resine: {
+    motif: [
+      '....#....',
+      '...#a#...',
+      '..#aaa#..',
+      '.#aaaaa#.',
+      '#awaaaao#',
+      '#aawaaao#',
+      '#aaaaaoo#',
+      '.#aoooo#.',
+      '..#####..',
+    ],
+    palette: { a: '#e8a33d', w: '#ffe0a0', o: '#b56a1f' },
+  },
   graine: {
     motif: [
       '....#....',

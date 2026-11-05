@@ -23,8 +23,8 @@ function contenuDeTest(
   for (const t of TYPES_BATIMENT) defs[t] = { cout: {}, constructionSecondes: 0, ...batiments[t] };
   return {
     ile: { taille: 12 },
-    stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores: 0, tourbe: 0 },
-    plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000, tourbe: 1000 },
+    stocksDeDepart: { baies: 100, baiesSechees: 0, boisMort: 100, mousse: 0, spores: 0, tourbe: 0, miel: 0, cristaux: 0, resine: 0 },
+    plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 1000, mousse: 1000, spores: 1000, tourbe: 1000, miel: 1000, cristaux: 1000, resine: 1000 },
     batiments: defs,
     logement: {
       rangs: [
@@ -634,7 +634,7 @@ describe('Récolte à la main', () => {
   });
 
   it('ne donne que ce qui tient dans le stock', () => {
-    const moteur = new Moteur(contenuDeTest({}, {}, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 101, mousse: 1000, spores: 1000, tourbe: 1000 } }), 0);
+    const moteur = new Moteur(contenuDeTest({}, {}, { plafondsDeBase: { baies: 1000, baiesSechees: 1000, boisMort: 101, mousse: 1000, spores: 1000, tourbe: 1000, miel: 1000, cristaux: 1000, resine: 1000 } }), 0);
     const element = premier(moteur, 'boisMort');
     expect(commander(moteur, { type: 'recolter', element })).toMatchObject([{ quantite: 1 }]);
     moteur.simuler(PAS_PAR_MINUTE / 6);
@@ -1319,6 +1319,17 @@ describe('Ruche', () => {
     expect(etat.batiments[1]!.pollinisation).toBeUndefined();
   });
 
+  it('tenue, elle verse son miel dans le stock', () => {
+    const contenu = contenuDeTest({ ruche: { ...ruche, recolteTenue: { miel: 2 } } }, { auDepart: 1, logementDeBase: 1 });
+    const moteur = new Moteur(contenu, 0);
+    commander(moteur, poser('ruche', caseLibre(moteur)));
+    moteur.simuler(PAS_PAR_MINUTE);
+    const miel = moteur.etatCourant.partie.stocks.miel;
+    moteur.simuler(2 * PAS_PAR_MINUTE);
+    // Deux minutes à 2 miels, l'apiculteur à son poste.
+    expect(moteur.etatCourant.partie.stocks.miel - miel).toBeCloseTo(4, 0);
+  });
+
   it('la prairie seule la propose, ses fleurs se défrichent', () => {
     const contenu = contenuDeTest({ ruche: { ...ruche, biomes: ['prairie'] } }, {}, {
       paliers: [{ nom: 'hameau', population: 0, debloque: ['hutte', 'ruche'] }],
@@ -1336,5 +1347,56 @@ describe('Ruche', () => {
     expect(terrain.filter((t) => t === 'buisson').length).toBeGreaterThan(foret.ile.terrain.filter((t) => t === 'buisson').length);
     const fleur = terrain.indexOf('fleurs');
     expect(natureEn(prairie.ile, { x: fleur % prairie.ile.largeur, y: Math.floor(fleur / prairie.ile.largeur) })).toBe('fleur');
+  });
+});
+
+describe('Bâtiments des îles', () => {
+  it('la confiserie en marche rend plus heureux les habitants des logements à sa portée', () => {
+    const confiserie = { portee: 3, bienEtre: 0.2, combustible: { miel: 1 } };
+    const contenu = contenuDeTest({ hutte: { logement: true }, confiserie }, { auDepart: 0, logementDeBase: 0, baiesParMinute: 0 });
+    const bienEtre = (miel: number) => {
+      const moteur = new Moteur(contenu, 0);
+      moteur.etatCourant.partie.stocks.miel = miel;
+      const hutte = caseLibre(moteur);
+      commander(moteur, poser('hutte', hutte));
+      const proche = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - hutte.x), Math.abs(c.y - hutte.y)) <= 3);
+      commander(moteur, poser('confiserie', proche!));
+      moteur.simuler(10 * PAS_PAR_MINUTE);
+      const { habitants } = moteur.etatCourant;
+      return habitants.reduce((s, h) => s + h.bienEtre, 0) / habitants.length;
+    };
+    expect(bienEtre(1000) - bienEtre(0)).toBeCloseTo(0.2, 1);
+  });
+
+  it('à la lumière d’une lanterne, on continue de récolter la nuit', () => {
+    const contenu = contenuDeTest(
+      { tasDeBois: { production: { boisMort: 6 } }, lanterne: { portee: 3, eclaire: true } },
+      { reserveMax: 1000, nuit: { debut: 0.1, fin: 0.999 } },
+    );
+    const recolte = (lanterne: boolean) => {
+      const moteur = new Moteur(contenu, 0);
+      const tas = caseLibre(moteur);
+      commander(moteur, poser('tasDeBois', tas));
+      if (lanterne) {
+        const proche = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) <= 3);
+        commander(moteur, poser('lanterne', proche!));
+      }
+      // Une minute de jour pour prendre son poste, puis quatre de nuit.
+      moteur.simuler(5 * PAS_PAR_MINUTE);
+      return moteur.etatCourant.batiments[0]!.reserve.boisMort ?? 0;
+    };
+    expect(recolte(true)).toBeGreaterThan(recolte(false) + 15);
+  });
+
+  it('le vernisseur ajoute son bonus aux bâtiments de production qui le touchent', () => {
+    const contenu = contenuDeTest({ tasDeBois: { production: { boisMort: 6 } }, vernisseur: { vernit: 0.25 } });
+    const moteur = new Moteur(contenu, 0);
+    const tas = caseLibre(moteur);
+    commander(moteur, poser('tasDeBois', tas));
+    const voisine = moteur.casesLibres().find((c) => Math.max(Math.abs(c.x - tas.x), Math.abs(c.y - tas.y)) === 1);
+    commander(moteur, poser('vernisseur', voisine!));
+    expect(moteur.etatCourant.batiments[0]!.bonusVoisinage).toBeCloseTo(1.25);
+    // Le vernisseur lui-même ne produit rien : il ne se vernit pas.
+    expect(moteur.etatCourant.batiments[1]!.bonusVoisinage).toBe(1);
   });
 });

@@ -49,8 +49,16 @@ export interface DefinitionBatiment {
    * sur un même bâtiment.
    */
   pollinise?: { cibles: TypeBatiment[]; bonus: number };
-  /** Brûlé dans les stocks par minute une fois achevé (poêle) ; faute de quoi le bâtiment s'éteint. */
+  /** Pris dans les stocks par minute une fois achevé (poêle, confiserie) ; faute de quoi le bâtiment s'arrête. */
   combustible?: Quantites;
+  /** Versé dans les stocks par minute tant qu'un habitant le tient (le miel de la ruche), sans passer par un porteur. */
+  recolteTenue?: Quantites;
+  /** Bien-être ajouté aux habitants des logements à sa portée (confiserie). */
+  bienEtre?: number;
+  /** À sa portée, ceux qui travaillent continuent la nuit (lanterne de cristal). */
+  eclaire?: boolean;
+  /** Bonus ajouté au voisinage des bâtiments de production qui le touchent (vernisseur). */
+  vernit?: number;
 }
 
 /** Récolte à la main d'un type d'élément naturel. */

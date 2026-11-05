@@ -60,6 +60,9 @@ export function effets(contenu: Contenu, type: TypeBatiment): string[] {
   if (def.production) lignes.push(t('effet.production', { liste: listeQuantites(def.production, 1, '/min') }));
   if (def.consommation) lignes.push(t('effet.consommation', { liste: listeQuantites(def.consommation, 1, '/min') }));
   if (def.combustible) lignes.push(t('effet.combustible', { liste: listeQuantites(def.combustible, 1, '/min') }));
+  if (def.bienEtre) lignes.push(t('effet.bienEtre', { pourcent: pourcent(def.bienEtre), portee: def.portee ?? 0 }));
+  if (def.eclaire) lignes.push(t('effet.eclaire', { portee: def.portee ?? 0 }));
+  if (def.vernit) lignes.push(t('effet.vernit', { pourcent: pourcent(def.vernit) }));
   if (def.logement) lignes.push(t('effet.logement', { nombre: contenu.logement.rangs[0]?.places ?? 0 }));
   if (def.stockage) lignes.push(t('effet.stockage', { liste: listeQuantites(def.stockage).replace(/^|, /g, '$&+') }));
   const besoin = (Object.keys(contenu.logement.sources) as Besoin[]).find((b) => sourcesDe(contenu, b).includes(type));

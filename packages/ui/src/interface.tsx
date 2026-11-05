@@ -272,7 +272,12 @@ function Rangee({ instantane }: { instantane: Instantane }) {
 }
 
 /** Ressource propre à une île, et l'indice de cette île : elle n'apparaît qu'une fois l'île découverte. */
-const RESSOURCES_DES_ILES: readonly [Ressource, number][] = [['tourbe', 1]];
+const RESSOURCES_DES_ILES: readonly [Ressource, number][] = [
+  ['tourbe', 1],
+  ['miel', 2],
+  ['cristaux', 3],
+  ['resine', 4],
+];
 
 /** Ressources d'île déjà trouvées : leur île est découverte, ou il en reste en stock. */
 export function ressourcesDIle(instantane: Instantane): Ressource[] {

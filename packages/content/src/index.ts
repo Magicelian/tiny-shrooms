@@ -4,8 +4,8 @@ import type { Contenu } from '@tiny-shrooms/engine';
 export const contenu: Contenu = {
   ile: { taille: 12 },
   // Partie neuve : rien en stock, tout commence par la récolte à la main.
-  stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0, tourbe: 0 },
-  plafondsDeBase: { baies: 50, baiesSechees: 40, boisMort: 80, mousse: 30, spores: 40, tourbe: 60 },
+  stocksDeDepart: { baies: 0, baiesSechees: 0, boisMort: 0, mousse: 0, spores: 0, tourbe: 0, miel: 0, cristaux: 0, resine: 0 },
+  plafondsDeBase: { baies: 50, baiesSechees: 40, boisMort: 80, mousse: 30, spores: 40, tourbe: 60, miel: 60, cristaux: 60, resine: 60 },
   batiments: {
     hutte: { cout: { boisMort: 20 }, constructionSecondes: 30, logement: true },
     cueillette: { cout: { boisMort: 15 }, constructionSecondes: 20, production: { baies: 6 }, voisinage: [{ voisin: 'buisson', bonus: 0.25 }] },
@@ -31,38 +31,42 @@ export const contenu: Contenu = {
       exige: 'eau',
       voisinage: [{ voisin: 'roseaux', bonus: 0.25 }],
     },
-    // Le bâtiment phare de la prairie : tenue par son apiculteur, elle fait pousser plus vite les cueillettes alentour.
+    // Le bâtiment phare de la prairie : tenue par son apiculteur, elle fait pousser plus vite les cueillettes alentour,
+    // et donne du miel, la ressource de la prairie.
     ruche: {
       cout: { boisMort: 25, mousse: 10 },
       constructionSecondes: 40,
       postes: 1,
+      recolteTenue: { miel: 1 },
       portee: 2,
       biomes: ['prairie'],
       pollinise: { cibles: ['cueillette'], bonus: 1 },
     },
     // Le bâtiment phare de la grotte : le seul qui fasse des spores, adossé à un rocher ; il en garde un peu sur place.
+    // Il détache aussi des cristaux luisants, la ressource de la grotte.
     champignonniere: {
       cout: { boisMort: 30, mousse: 15 },
       constructionSecondes: 45,
-      production: { spores: 3 },
+      production: { spores: 3, cristaux: 0.5 },
       postes: 2,
-      stockage: { spores: 40 },
+      stockage: { spores: 40, cristaux: 30 },
       biomes: ['grotte'],
       exige: 'rocher',
       voisinage: [{ voisin: 'luisants', bonus: 0.25 }],
     },
     // Le bâtiment phare de la futaie : une scierie à roue à aube, au bord de l'eau, qui débite bien plus de bois
-    // qu'un tas, mieux encore près des vieux chênes.
+    // qu'un tas, mieux encore près des vieux chênes. Elle recueille aussi la résine, la ressource de la futaie.
     scierie: {
       cout: { boisMort: 30, mousse: 15 },
       constructionSecondes: 45,
-      production: { boisMort: 8 },
+      production: { boisMort: 8, resine: 0.5 },
       postes: 2,
+      stockage: { resine: 30 },
       biomes: ['futaie'],
       exige: 'eau',
       voisinage: [{ voisin: 'chenes', bonus: 0.25 }],
     },
-    gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 80 } },
+    gardeManger: { cout: { boisMort: 25 }, constructionSecondes: 40, stockage: { baies: 100, baiesSechees: 80, miel: 40 } },
     remise: { cout: { boisMort: 30 }, constructionSecondes: 40, stockage: { boisMort: 100, mousse: 50 } },
     sechoir: {
       cout: { boisMort: 20, mousse: 10 },
@@ -82,6 +86,12 @@ export const contenu: Contenu = {
     // Offert sur toutes les îles dès le marais découvert : il chauffe deux fois plus loin qu'un feu de camp, mais
     // brûle de la tourbe, et s'éteint quand il n'y en a plus.
     poele: { cout: { boisMort: 40, tourbe: 30 }, constructionSecondes: 40, portee: 4, combustible: { tourbe: 0.3 } },
+    // Dès la prairie découverte : ses douceurs au miel rendent plus heureux les habitants des logements alentour.
+    confiserie: { cout: { boisMort: 60, miel: 40 }, constructionSecondes: 45, portee: 3, bienEtre: 0.15, combustible: { miel: 0.3 } },
+    // Dès la grotte découverte : à sa lumière, on continue de travailler la nuit.
+    lanterne: { cout: { boisMort: 30, mousse: 20, cristaux: 30 }, constructionSecondes: 40, portee: 3, eclaire: true },
+    // Dès la futaie découverte : les bâtiments de production qui le touchent produisent 25 % de plus.
+    vernisseur: { cout: { boisMort: 50, resine: 40 }, constructionSecondes: 45, vernit: 0.25 },
   },
   logement: {
     rangs: [
@@ -187,13 +197,13 @@ export const contenu: Contenu = {
   // `iles-3-a-5.ts`).
   archipel: {
     biomes: ['foret', 'marais', 'prairie', 'grotte', 'futaie'],
-    // La ressource de chaque île ouvre son bâtiment sur tout l'archipel : la tourbe du marais, le poêle.
-    debloque: [[], ['poele']],
+    // La ressource de chaque île ouvre son bâtiment sur tout l'archipel : le poêle, la confiserie, la lanterne, le vernisseur.
+    debloque: [[], ['poele'], ['confiserie'], ['lanterne'], ['vernisseur']],
     offrandes: [
       { boisMort: 1000, mousse: 3500, baiesSechees: 500, spores: 1800 },
       { boisMort: 2000, mousse: 2000, baiesSechees: 2500, spores: 3600, tourbe: 300 },
-      { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000 },
-      { boisMort: 21000, mousse: 4000, baiesSechees: 2000, spores: 6000 },
+      { boisMort: 3000, mousse: 3000, baiesSechees: 1500, spores: 11000, miel: 300 },
+      { boisMort: 21000, mousse: 4000, baiesSechees: 2000, spores: 6000, cristaux: 200 },
     ],
   },
   // Chaque exemplaire déjà posé renchérit le suivant du même type : le début reste vif, la suite ralentit.

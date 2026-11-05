@@ -6,6 +6,9 @@ export const fr = {
   'ressource.mousse': 'Mousse',
   'ressource.spores': 'Spores',
   'ressource.tourbe': 'Tourbe',
+  'ressource.miel': 'Miel',
+  'ressource.cristaux': 'Cristaux luisants',
+  'ressource.resine': 'Résine',
   'ressource.parMinute': '{valeur}/min',
   'ressource.plafond': '{quantite} / {plafond}',
 
@@ -28,6 +31,9 @@ export const fr = {
   'batiment.sanctuaire': 'Sanctuaire des spores',
   'batiment.kiosque': 'Kiosque à lanternes',
   'batiment.poele': 'Poêle à tourbe',
+  'batiment.confiserie': 'Confiserie au miel',
+  'batiment.lanterne': 'Lanterne de cristal',
+  'batiment.vernisseur': 'Vernisseur',
 
   // Rangs des logements
   'rang.1': 'Hutte-chapeau',
@@ -37,8 +43,11 @@ export const fr = {
 
   'effet.production': 'Produit {liste} par habitant',
   'effet.consommation': 'Consomme {liste}',
-  'effet.combustible': 'Brûle {liste}',
-  'effet.eteint': 'Éteint : plus rien à brûler',
+  'effet.combustible': 'Consomme {liste}',
+  'effet.eteint': 'À l’arrêt : plus rien en stock pour l’alimenter',
+  'effet.bienEtre': '+{pourcent} % de bien-être aux logements à {portee} cases autour',
+  'effet.eclaire': 'À {portee} cases autour, on travaille aussi la nuit',
+  'effet.vernit': '+{pourcent} % de production aux bâtiments qui le touchent',
   'effet.logement': 'Loge {nombre} habitants, plus une fois agrandi',
   'effet.portee': '{besoin} à {portee} cases autour',
   'effet.tenu': 'Il faut un habitant pour le tenir',

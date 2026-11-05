@@ -9,6 +9,9 @@ export const en: Record<keyof typeof fr, string> = {
   'ressource.mousse': 'Moss',
   'ressource.spores': 'Spores',
   'ressource.tourbe': 'Peat',
+  'ressource.miel': 'Honey',
+  'ressource.cristaux': 'Glowing crystals',
+  'ressource.resine': 'Resin',
   'ressource.parMinute': '{valeur}/min',
   'ressource.plafond': '{quantite} / {plafond}',
 
@@ -31,6 +34,9 @@ export const en: Record<keyof typeof fr, string> = {
   'batiment.sanctuaire': 'Spore shrine',
   'batiment.kiosque': 'Lantern bandstand',
   'batiment.poele': 'Peat stove',
+  'batiment.confiserie': 'Honey sweet shop',
+  'batiment.lanterne': 'Crystal lantern',
+  'batiment.vernisseur': 'Varnisher',
 
   // Rangs des logements
   'rang.1': 'Cap hut',
@@ -40,8 +46,11 @@ export const en: Record<keyof typeof fr, string> = {
 
   'effet.production': 'Makes {liste} per villager',
   'effet.consommation': 'Uses {liste}',
-  'effet.combustible': 'Burns {liste}',
-  'effet.eteint': 'Out: nothing left to burn',
+  'effet.combustible': 'Uses {liste}',
+  'effet.eteint': 'Stopped: nothing left in stock to run it',
+  'effet.bienEtre': '+{pourcent}% well-being for homes within {portee} tiles',
+  'effet.eclaire': 'Within {portee} tiles, work goes on at night',
+  'effet.vernit': '+{pourcent}% production for buildings touching it',
   'effet.logement': 'Houses {nombre} villagers, more once upgraded',
   'effet.portee': '{besoin} within {portee} tiles',
   'effet.tenu': 'Needs a villager to run it',
