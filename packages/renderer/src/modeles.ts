@@ -488,7 +488,10 @@ function lanterne(): Voxels {
   poteau(v, 0, -1, 1, 9);
   // Potence et cage.
   v.boite(-1, 10, -1, 3, 10, 0, TEINTES.boisFonce);
-  v.boite(1, 5, -2, 4, 9, 1, TEINTES.metal);
+  // Cage ajourée : fond, couvercle et quatre montants ; le cristal se voit entre eux.
+  v.boite(1, 5, -2, 4, 5, 1, TEINTES.metal);
+  v.boite(1, 9, -2, 4, 9, 1, TEINTES.metal);
+  for (const [x, z] of [[1, -2], [4, -2], [1, 1], [4, 1]] as const) poteau(v, x, z, 6, 8, TEINTES.metal);
   v.boite(2, 6, -1, 3, 8, 0, COULEURS_BATIMENT.lanterne);
   v.poser(2, 9, -1, TEINTES.blanc);
   return v;
