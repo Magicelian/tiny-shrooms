@@ -214,7 +214,8 @@ export interface Contenu {
   /**
    * `offrandes[i]` : ce qu'il faut déposer au sanctuaire de l'île i pour débloquer l'île i + 1 ;
    * l'archipel compte donc une île de plus que d'offrandes. `biomes[i]` : biome de l'île i (forêt au-delà).
-   * `prixParIle[i]` : multiplicateur des prix de l'île i (constructions, montées en gamme, atelier), le dernier au-delà ;
+   * `prixParIle[i]` : multiplicateur des prix de l'île i (constructions sauf le sanctuaire, montées en gamme, atelier),
+   * le dernier au-delà ;
    * le stock commun est déjà rempli par les îles d'avant, il faut que chaque île nouvelle se paie comme la première.
    * `debloque[i]` : bâtiments offerts sur toutes les îles dès que l'île i est découverte (ceux de sa ressource).
    */

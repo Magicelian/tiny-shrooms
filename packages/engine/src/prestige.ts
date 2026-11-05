@@ -66,7 +66,9 @@ export function coutBatiment(
   ile: number,
 ): Quantites {
   const exemplaires = batiments.filter((b) => b.type === type).length;
-  const facteur = effetsPrestige(contenu, bonus).cout * (1 + contenu.hausseParExemplaire) ** exemplaires * prixIle(contenu, ile);
+  // Le sanctuaire, porte de l'île suivante, garde son prix partout : plus cher, il ne ferait qu'attendre.
+  const ileFacteur = type === 'sanctuaire' ? 1 : prixIle(contenu, ile);
+  const facteur = effetsPrestige(contenu, bonus).cout * (1 + contenu.hausseParExemplaire) ** exemplaires * ileFacteur;
   const cout: Quantites = {};
   const base = contenu.batiments[type].cout;
   for (const r of RESSOURCES) {
