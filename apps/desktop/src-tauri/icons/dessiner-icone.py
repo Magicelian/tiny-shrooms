@@ -1,7 +1,7 @@
 """Icône du jeu en pixel art, dessinée sur une grille de 32 × 32 puis agrandie sans lissage.
 
-Version « premium » (12/11/2026) : ciel en dégradé tramé avec soleil, nuages ombrés, hutte-champignon en trois
-tons avec fenêtre allumée, île à strates et racines, petits rochers qui flottent, étincelles.
+Version « premium » (12/11/2026) : hutte-champignon en trois tons avec fenêtre allumée, île à strates et racines,
+petits rochers qui flottent, sur fond transparent (le ciel reste dessiné dans `fond` mais n'est plus utilisé).
 Couleurs proches de `packages/renderer/src/palette.ts`. Usage :
     python3 dessiner-icone.py && pnpm --filter desktop tauri icon src-tauri/icons/icone.png
 (puis supprimer les dossiers `android` et `ios` générés).
@@ -168,27 +168,9 @@ for x, y in ((4, 13), (28, 17), (21, 2)):
     fond.point(x, y, ETINCELLE)
 
 devant.detourer()
-for y in range(N):
-    for x in range(N):
-        if devant.p[y][x] is not None:
-            fond.p[y][x] = devant.p[y][x]
 
-# ─── Carré arrondi (rayon 5), liseré sombre et reflet clair en haut ─────────────────
-# Marge de 2 pixels tout autour, comme les icônes de macOS.
-R, M = 5, 2
-BAS, HAUT = M + R, N - 1 - M - R
-for y in range(N):
-    for x in range(N):
-        cx = min(max(x, BAS), HAUT)
-        cy = min(max(y, BAS), HAUT)
-        d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-        if d > R + 0.4:
-            fond.p[y][x] = None
-        elif d > R - 0.6:
-            fond.p[y][x] = CONTOUR
-for x in range(BAS, HAUT + 1):
-    if fond.p[M + 1][x] in CIELS:
-        fond.p[M + 1][x] = CIELS[-1]
+# Fond transparent (demande de Celian, 12/11/2026) : seule l'île, détourée, sans ciel ni cadre.
+image = devant.p
 
 
 def ecrire_png(chemin, pixels, echelle):
@@ -209,4 +191,4 @@ def ecrire_png(chemin, pixels, echelle):
     )
 
 
-ecrire_png(Path(__file__).parent / 'icone.png', fond.p, ECHELLE)
+ecrire_png(Path(__file__).parent / 'icone.png', image, ECHELLE)
