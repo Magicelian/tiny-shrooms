@@ -61,5 +61,20 @@ fn ouvrir_menu(app: &AppHandle, menu: &Menu<Wry>) {
     let _ = icone.set_menu(None::<Menu<Wry>>);
 }
 
+/// Windows (et Linux) : le menu reste attaché à l'icône et s'ouvre au clic droit ; le clic gauche montre ou cache
+/// la fenêtre.
 #[cfg(not(target_os = "macos"))]
-pub fn surveiller(_app: AppHandle, _menu: Menu<Wry>, _basculer: fn(&AppHandle)) {}
+pub fn surveiller(app: AppHandle, menu: Menu<Wry>, basculer: fn(&AppHandle)) {
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
+
+    let Some(icone) = app.tray_by_id("main") else {
+        return;
+    };
+    let _ = icone.set_menu(Some(menu));
+    let _ = icone.set_show_menu_on_left_click(false);
+    icone.on_tray_icon_event(move |icone, evenement| {
+        if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = evenement {
+            basculer(icone.app_handle());
+        }
+    });
+}
